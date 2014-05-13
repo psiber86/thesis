@@ -1,0 +1,190 @@
+\documentclass[a4paper]{article}
+\usepackage{fancyhdr}
+\usepackage[includeheadfoot,left=1in, right=0.5in, top=0.5in, bottom=0.5in]{geometry}
+\usepackage{lastpage}
+\usepackage{extramarks}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{tikz}
+\usepackage{color}
+\usepackage{float}
+\usepackage{url}
+\usepackage{subfigure}
+\usepackage{varwidth}
+\usepackage{caption}
+\usepackage{multirow}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+\usepackage[compact,small]{titlesec}
+\usepackage{microtype}
+\usepackage{verbatim}
+\usepackage{booktabs}
+\usepackage{indentfirst}
+\usepackage{enumitem}
+\usepackage{pdfpages}
+
+\captionsetup[sub]{labelsep=newline}
+
+% line spacing
+\linespread{2.0}
+
+% bold item
+\let\origitem\item
+\renewcommand{\item}{\normalfont\origitem}
+\newcommand{\bolditem}{\small\bfseries\origitem}
+
+% tilde
+%\newcommand{\small_tilde}{\raise.17ex\hbox{$\scriptstyle\sim$}}
+
+% indent item
+\newcommand{\indentitem}{\setlength\itemindent{24pt}}
+
+% perfect tilde
+\newcommand{\tildep}{\raise.17ex\hbox{$\scriptstyle\sim$}}
+
+\parskip = 0.5\baselineskip
+\setlength{\belowcaptionskip}{-\baselineskip}
+
+\captionsetup{font=scriptsize}
+\captionsetup{labelfont=bf}
+
+\pagestyle{fancy}
+\rhead{\fancyplain{}{\rightmark }}
+\lhead{\fancyplain{}{\leftmark }}
+\rfoot{Page\ \thepage\ of \protect\pageref{LastPage}}
+\cfoot{}
+\renewcommand\headrulewidth{0.4pt}
+\renewcommand\footrulewidth{0.4pt}
+
+% make verbatim text small
+\makeatletter
+\g@addto@macro\@verbatim\small
+\makeatother
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+%\setlength\parindent{24pt}
+
+\definecolor{sh_comment}{rgb}{0.12, 0.38, 0.18 } %adjusted, in Eclipse: {0.25, 0.42, 0.30 } = #3F6A4D
+\definecolor{sh_keyword}{rgb}{0.37, 0.08, 0.25}  % #5F1441
+\definecolor{sh_string}{rgb}{0.06, 0.10, 0.98} % #101AF9
+
+%\sectionfont{\centering}
+\lstset{
+    language=vhdl,
+    xleftmargin=.25in,
+    xrightmargin=.25in,
+    numbers=left,
+    numberstyle=\tiny,
+    frame=tb,
+    showstringspaces=false,
+    captionpos=b,
+    stringstyle=\color{sh_string},
+    keywordstyle = \color{sh_keyword}\bfseries,
+    commentstyle=\color{sh_comment}\itshape,
+    basicstyle=\small\sffamily,
+    %numbersep=-5pt,
+    belowskip=\baselineskip,
+    aboveskip=\baselineskip
+}
+\usepackage{authblk}
+
+\title{
+    \vspace{2in}
+    \textbf{Experiments with Hardware-based Transactional Memory in Parallel
+    Simulation \\}
+    \vspace{2in}
+}
+
+\author{Joshua Hay}
+
+\affil{hayja@mail.uc.edu}
+    \vspace{10pt}
+    
+\affil{(513) 607-4929}
+    \vspace{2.0in}
+
+\titleformat*{\section}{\large\normalfont}
+
+\begin{document}
+
+%\includepdf{}
+\maketitle
+\thispagestyle{empty}
+\newpage
+\thispagestyle{empty}
+\parskip = 0.2\baselineskip
+\newpage
+\thispagestyle{empty}
+\section*{\textbf{Abstract}}
+\newpage
+\thispagestyle{empty}
+\section*{\textbf{Acknowledgements}}
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+\thispagestyle{empty}
+\listoffigures
+\listoftables
+\parskip = 0.5\baselineskip
+\newpage
+
+\section{\textbf{Introduction}}
+
+The advent of multi-core programming introduced a new avenue for increased
+performance and scalability through multi-threaded programming.  However, this
+avenue came with a toll: synchronization mechanisms for access to critical
+sections.  The critical section is segment of code accessing a shared resource
+that can only be executed by one thread at any given time \cite{os_concepts}.
+This effectively results in the serialization of thread execution on this
+segment of code. \par
+
+For example, a multi-threaded application is designed to operate on a single,
+shared memory data structure.  For the sake of simplicity, programmers typically
+use coarse-grained locking techniques to protect the critical section, e.g. a
+single atomic lock for the entire data structure.  A thread will lock all other
+threads out of the entire data structure until it has completed its task, thus
+forcing the threads to execute this segment of code serially. \par
+
+Coarse-grained locking is a pessimistic synchronization mechanism; accesses to
+shared resources are statically serialized by the programmer \cite{}.  It
+prevents multi-threaded applications from executing at their full potential as
+provided by the underlying hardware.  More importantly, it increases  
+lock contention, resulting in performance penalties rather than performance
+gains. \par
+
+
+
+\subsection{\textbf{Research Statement}}
+
+\subsection{\textbf{Thesis Overview}}
+
+%    \begin{figure}[H]
+%        \centering
+%        \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{../../magic/pics/magic_layout_32_bit.png}
+%        \caption{\textbf{32 Bit Layout - Magic}}
+%        \label{fig:gg}
+%    \end{figure}
+
+%\section{\textbf{Work Division}}
+%    \begin{table}[H]
+%        \centering
+%        \begin{tabular}{l | p{8cm}}
+%            \hline
+%            \textbf{Student}   & \textbf{Task} \\ \hline
+%            \midrule
+%                Both        & Modified Pin-out Diagram \\
+%                Both        & Magic Layout \\
+%                Both        & IRSIM \\
+%                Both        & VHDL \\
+%                Both        & Modified Floor Plan
+%        \end{tabular}
+%        \caption{\textbf{Task Assignment}}
+%    \end{table}
+
+\newpage
+\bibliographystyle{abbrv}
+\bibliography{refs}
+
+\end{document}
