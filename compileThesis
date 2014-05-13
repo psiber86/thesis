@@ -1,0 +1,7 @@
+#!/bin/bash
+
+pdflatex thesis_tsx
+bibtex thesis_tsx
+pdflatex thesis_tsx
+pdflatex thesis_tsx
+
