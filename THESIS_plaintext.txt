@@ -1,0 +1,215 @@
+Transactional Memory:  
+Reducing Multi-threaded Synchronization Overhead through Dynamic Lock Elision
+
+A thesis submitted to the
+
+Division of Research and Advanced Studies of the University of Cincinnati
+
+In partial fulfillment of the requirements for the degree of
+MASTER OF SCIENCE
+
+In the Department of Electronics and Computing Systems of the College of Engineering and Applied Sciences
+
+April 3, 2014
+
+By
+
+Joshua Hay
+BS University of Cincinnati College of Engineering and Applied Science 2013
+
+Thesis Advisor and Committee Chair: Dr. Philip A. Wilsey
+ 
+Abstract
+
+PDES and Transactional Memory
+ 
+Acknowledgements
+ 
+Table of Contents
+1.0	Introduction	1
+1.1	Research Statement	2
+1.2	Thesis Overview	3
+2.0	Background	4
+2.1	Transactional Memory Systems	4
+2.2	Related Studies	5
+2.3	Transactional Synchronization Extensions (TSX)	6
+2.3.1	Hardware Lock Elision (HLE)	7
+2.3.2	Restricted Transactional Memory (RTM)	7
+3.0	Practical Programming with TSX	10
+3.1	Memory Organization	10
+3.2	Transaction Size	10
+3.3	Transaction Duration	13
+4.0	Warped	15
+4.1	Previous Studies with the Pending Event Set	15
+4.2	Pending Event Set Data Structures	15
+5.0	Experimental Analysis	16
+5.1	Conventional Lock Contention	16
+5.2	WARPED with TSX	18
+6.0	Conclusions	19
+6.1	Future Work	19
+Bibliography	20
+
+ 
+Table of Figures
+Figure 1) Generic HLE software interface	7
+Figure 2) Generic RTM software interface to begin transaction	8
+Figure 3) Generic RTM software interface to end transaction	8
+Figure 4) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Standard Core	12
+Figure 5) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Hyper-Threaded Core	13
+Figure 6) TSX RTM Abort Rate vs Transaction Duration	14
+Figure 7) RAID Simulation Model Execution Time using one schedule queue	17
+Figure 8) Epidemic Simulation Model Execution Time using one schedule queue	17
+
+ 
+1.0	Introduction
+The advent of multi-core processors introduced a new avenue for increased performance and scalability through multi-threaded programming. However, this avenue came with a toll: thread synchronization.  Thread synchronization, or more simply put, serialization, is defined as the application of mechanisms to ensure two concurrently executing threads do not execute specific portions of a program at the same time [?].  The terms synchronization and serialization will be used interchangebly throughout this research. 
+For example, a multi-threaded application is designed to operate on a single, shared memory data structure.  For the sake of simplicity, programmers typically use coarse-grained locking techniques, e.g. a single atomic lock for the entire structure.  A thread will lock all other threads out of the entire data structure until it has completed its task, effectively serializing all accesses to the shared structure.  In this way, coarse-grained locking is a pessimistic mechanism; accesses to shared memory are statically serialized by the programmer [?].  It prevents multi-threaded applications from taking full advantage of the parallel programming and results in increased lock contention.  However, if the threads were to operate on independent memory locations within the data structure, they could potentially execute concurrently.
+There are two ways to achieve this concurrent execution: 1) fine-grained locking, or 2) transactional memory.  In the previous example, programmers could implement fine-grained locking techniques by using several atomic locks to control access to smaller, independent regions of a shared data structure.  This would allow for more concurrent thread execution, resulting in better multi-threaded performance as well as decreased lock contention.  However, as the number of locks increases, so does the complexity of maintaing these locks.  This approach is also more error prone [?].  Transactional memory, on the other hand, attempts to eliminate the complexity of fine-grained locking while still providing the same performance enhancements.
+Transactional memory (TM) is a concurrency control mechanism that attempts to eliminate the pessimism of coarse-grained locking by dynamically determining when accesses to shared resources need to be serialized [?].  Programmers identify regions of code as transactional regions that are executed atomically and in isolation.  Transactions execute concurrently and only serialize when necessary, as determined by the TM system [RAJWAR].  Transactional memory is analgous to traffic roundabouts whereas conventional synchronization mechanisms are analgous to conventional traffic stop lights.  [*MICHAEL NEULING].  
+One problem space that could benefit from transactional memory is that of Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES) applications, logical processes representing various parts of a physical system are executed as discrete events to simulate the entire system.  In PDES applications, a logical process is executed concurrently, but its events must be retrieved from a global pending event set by one of many multiple execution threads, resulting in non-trivial contention for this structure.  Transactional memory can help alleviate contention for this shared structure and expose untapped concurrency in the simulation’s execution.
+1.1	Research Statement
+The goal of this thesis is to explore the use of transactional memory in a parallel discrete event simulation application, sepcifically, WARPED: a Time Warp synchronized Parallel Discrete Event Simulation application.
+The primary objective is to modify the WARPED locking mechanisms to utilize the underlying hardware support for transactional memory on Intel’s HTM supported Haswell platform.  This will ultimately expose untapped parallelism during simulation execution, there by improving performance of WARPED on the Haswell platform.
+Due to the wide availability of Intel’s HTM supported platforms, it was selected as the focus of this research.  Intel’s HTM implementation is aptly named Transactional Synchronization Extensions (TSX). This nameing will be used to refer to Intel’s HTM implementation for the remainder of this study.   
+While many shared memory data structures will make use of transactional memory, the focus of this thesis is on the pending event set.  It is the primary bottleneck in PDES applications, and hence the primary motivation for this study.
+1.2	Thesis Overview
+The remainder of this thesis is organized as follows:
+	Chapter 2 provides a general overview of transasctional memory.  It gives some examples of other TM implementations and discusses why they do not work as well as TSX.  Finally, it provides examples of related studies with TSX.
+	Chapter 3 provides a brief background of PDES and the WARPED simulation kernel.
+	Chapter 4 discusses the details of Intel’s TSX on the Haswell platform, as well as programming considerations for implementing TSX.
+	Chapter 5 gives an overview of the experimental setup and the simulation model used for performance analysis. 
+	Chapter 6 summarizes the results and describes the findings of this research. 
+ 
+2.0	Background
+This section provides a high level explanation of how transactional memory operates.  It then intoduces other implementations, as well as reasons they were not explored.  Finally, it provides an overview of Intel’s implementation, Transactional Synchronization Extensions (TSX).
+2.1	Transactional Memory Systems
+Transactional Memory (TM) is a concurrency control mechanism that dynamically determines when to serialize thread execution. TM operates on the atomicity and isolation principles of database transcations [HARRIS].   The programmer identifies a region of code as a transctional region.  At first, it is executed without explicit synchronization, e.g. without acquiring a lock.  “Locks can be elided and critical sections concurrently executed if atomicity can be guaranteed for all memory operations within the critical sections” [RAJWAR].  
+As the transaction is executed, it builds a set of memory addresses it has read from and a set of memory addresses it has written to, referred to as the read-set and write-set respectively [?].  Furthermore, all memory operations are buffered until the transaction completes.  If all memory operations within the local transaction do not conflict with memory operations within any other threads execution path, the transaction can safely complete execution.  At this time, the transaction will atomically commit all of the buffered memory operations, henceforth referred to simply as a commit.
+However, if any memory operation within the local transaction does conflict with memory operations outside its scope, the transcation cannot safely continue execution.  This is referred to as a data conflict and only occurs if: 1) another thread attempts to read a location that is part of the local transaction’s write-set, or 2) another thread attempts to write to a location that is part of the local  transaction’s read or write-set [?].  Once a data conflict is detected, the transaction will abort execution, henceforth referred to simply as an abort.
+In the case of a commit, the transaction has ensured that its memory operations are executed in isolation from other threads and that all of its memory operations are atomically commited, thus satisfying the isolation and atomicity principles.  Note that only at this time will the memory operations performed within in the transaction become visible to other threads.  In the case of an abort in an ideal TM system, it is clear that the isolation principle has been violated.  It should be noted that transactions can abort for a variety of reasons depending on implementation [?,?,?], but the primary cause is data conflicts. Upon abort, all memory operations are discarded as memory operations must be atomically commited, i.e. all or nothing.  The processor returns to the state prior to the start of the transaction, and resumes exectuion from this point with explicit synchronization, i.e. acquiring a lock [?].
+2.2	Related Studies
+Transactional memory is not a new concept.  There have been many implementations, mostly in software.  Software Transactional Memory (STM) offers better portability, but at the cost of performance [?].  Gajinov et al. performed another study with STM by developing a parallel version of the Quake multiplayer game server from the ground up using OpenMP parallelization pragmas and atomic blocks [GAJINOV].  Their results showed that the overhead required for STM resulted in execution times that were 4 for 6 times longer than the sequential version of the server.  STM in general has been found to result in significant slowdown [CASCAVAL].  Although STM is more widely available than HTM, this study dismissed it as a potential solution due to the reasons discussed above. 
+Hardware Transactional Memory (HTM) provides the physical resources necessary to implement transactional memory effectively.  Chip manufacturers have added, or at least sought to add, support for HTM.  IBM released one of the first commercially available HTM systems in their Blue Gene/Q machine [WANG].  Even though they found that this implementation was an improvement over STM, it still incurred significant overhead.  AMD’s Advanced Synchronization Facility and Sun’s Rock processor included HTM support [CHUNG, DICE]; however, AMD has not released any news regarding future releases and Sun’s Rock processor was cancelled after Sun was acquired by Oracle [?]. 
+With the release of Intel’s latest Haswell generation processors, Intel’s Transactional Synchronization Extensions (TSX) is the most widely commercially available HTM system [?].  Numerous studies have already been done with TSX, primarily evaluating its performance capabilities.  Chitters et al. [CHITTERS] modified Google’s write optimized persistent key-value store, LevelDB, to use TSX based synchronization instead of a global mutex.  Their implementation showed 20-25% increased throughput for write-only workloads and increased throughput for 50% read / 50% write workloads.  Wang et al. [WANG] studied the performance scalability of a concurrent skip-list using TSX Restricted Transactional Memory (RTM).  They compared the TSX implementation to a fine-grain locking implementation and a lock-free implementation, and found that they performance was comparable to the lock-free implementation without the added complexity.  Yoo et al. [YOO] evaluated the performance of TSX using high-performance computing (HPC) workloads, as well as in a user-level parallel TCP/IP stack.  They measured an average speed up of 1.41x and 1.31x respectively.  The decision to use Intel’s TSX for this research was based on its wide availability and the performance improvements observed in other studies.
+2.3	Transactional Synchronization Extensions (TSX)
+Intel’s Transactional Synchronization Extensions (TSX) is an extension to the x86 instruction set architecture that adds support for HTM. TSX operates in the L1 cache using the cache coherence protocol [INTEL OPT MAN].  It is a best-effort implementation, meaning it does not guarantee transactions will commit [INTEL PROG MAN].  TSX has two interfaces: 1) Hardware Lock Elision (HLE) and 2) Restricted Transactional Memory (RTM).  While both operate on the same principles of transactional memory, they have subtle differences.
+2.3.1	Hardware Lock Elision (HLE)
+The Hardware Lock Elision (HLE) interface introduces two new instruction prefixes, XACQUIRE and XRELEASE.  XACQUIRE is placed before a locking instruction to mark the beginning of a transaction.  XRELEASE is placed before the unlocking instruction to mark the end of the transaction.   
+These prefixes are hints to the processor to elide the write operation to the lock variable during lock acquisition/release.  When the XACQUIRE prefixed lock instruction is executed successfully, the lock is added to the transaction’s read-set rather than its write-set, since the write operation is never performed.  Furthermore, other threads will see the lock as free.  This allows other threads to enter the critical section and execute concurrently [INTEL PROG REF].  
+Execution of the XRELEASE prefixed lock release instruction will also prevent the lock from being added to the transaction write-set.  If the unlocking instruction attempts to restore the lock to the value it had prior to the XACQUIRE prefixed locking instruction, the write operation on the lock is elided.  It is at this time that the processor attempts to commit the transaction [INTEL PROG REF].
+However, if the transaction aborts for any reason, it will be re-executed without lock elision, i.e. non-transactionally [INTEL PROG REF].  There are many causes for transactional aborts, but one important case to make note of is data conflicts involving the lock.  The local transaction has added the lock variable to its read-set.  However, if another thread attempt to write to the lock, i.e. without elision, a data conflict technically occurs and the local transaction must abort.  Regardless, the automatic re-execution of the critical section ensures forward progress. 
+A general implementation for the HLE software interface is shown in Figure 1 and Figure 2.  GCC 4.8 and above includes support for the __ATOMIC_HLE_ACQUIRE and __ATOMIC_HLE_RELEASE memory models [GCC].
+/* Acquire lock with lock elision */
+while(__atomic_exchange_n(&lock, 1, __ATOMIC_HLE_ACQUIRE|__ATOMIC_ACQUIRE));
+/* Begin Critical Section transactionally or with lock */
+...
+Figure 1) HLE Lock Acquire Software Interface
+/* End Critical Section */
+/* Free lock with lock elision */
+__atomic_store_n(&lock, 0, __ATOMIC_HLE_RELEASE|__ATOMIC_RELEASE);
+Figure 2) HLE Lock Release Software Interface
+HLE is legacy compatible.  Code utilizing the HLE interface can be executed on legacy hardware, but the HLE prefixes will be ignored [?], i.e. the write operations will be performed on the locks.  While this interface does nothing for multi-threaded applications on legacy hardware, it does allow for easier cross-platform code deployment.
+2.3.2	Restricted Transactional Memory (RTM)
+The Restricted Transactional Memory (RTM) interface introduces four new instructions: 1) XBEGIN, 2) XEND, 3) XABORT, and 4) XTEST.  XBEGIN marks the start of a transaction, while XEND marks the end of a transaction.  XABORT used is by the programmer to manually abort a transaction.  XTEST can be used to test if a transaction region is being executed transactionally or non-transactionally.  
+The XBEGIN transitions the processor into transactional execution [INTEL PROG REF], without looking at the locking variable.  Therefore, the programmer must manually add the locking variable to the transactions read-set by checking if the lock appears free [?].  If it is free, the transaction can execute safely.  Once execution reaches the XEND instruction, the processor will attempt to atomically commit the transaction.
+As previously mentioned, the transaction can abort for many other reasons.  One case specific to RTM occurs if the lock is not free upon entering the transactional region.  In this case, the programmer uses the XABORT instruction to explicitly abort the local transaction.  But no matter the reason for the abort, execution jumps to the fallback instruction address [INTEL PROG REF].  This address is an operand of the XBEGIN instruction.  
+RTM is a much more flexible interface because it allows the programmer to define a custom abort path, starting at the fallback instruction address.  RTM does not guarantee forward progress, therefore the programmer must supply an abort path that does [?].  Therefore, this path should acquire the lock to ensure forward progress, but it can be used to tune the performance of RTM.  For instance, a retry routine can be used to specify how many times the processor should try to enter transactional execution before explicitly acquiring the lock.  Furthermore, the EAX register can be used to check the condition of the abort [INTEL PROG MANUAL], such as explicit aborts with the XABORT instruction, data conflicts, etc.  These conditions can be used to make more informed decisions regarding reattempting transactional execution.
+The general algorithm to implement RTM is shown in Figure 2 and Figure 3.  GCC 4.8 and above includes support for the following intrinsics [GCC].
+/* Start transactional region.  Return here on abort */
+if (_xbegin() == _XBEGIN_STARTED) {
+	/* Add lock to read-set */
+	if (lock is not free) {
+		/* Abort if lock is already acquired */
+_xabort(_ABORT_LOCK_BUSY);
+}
+} else { 
+	/* Abort path */ 
+	acquire lock;
+}
+/* Begin Critical Section transactionally or with lock */
+Figure 3) Generic RTM software interface to begin transaction
+/* End Critical Section */
+if (lock is free)
+	/* End transaction */
+_xend();
+else 
+	release lock
+Figure 4) Generic RTM software interface to end transaction
+	While RTM is much more flexible than HLE, it can only be used on supported Haswell platforms.  If a legacy device attempted to execute one of the RTM instructions, it would throw a General Protection Fault [?].  It should also be noted that execution of the XEND instruction outside of a transaction will result in a General Protection Fault as well [INTEL PROG REF].
+	
+ 
+3.0	Practical Programming with TSX
+One of the disadvantages of HTM is the physical limitations of the hardware.  This section evaluates practical programming techniques to consider when using TSX to ensure optimal performance.  Custom benchmarks were developed to evaluate these various constraints.  All benchmarks were run on a system with an Intel i7-4770 running at 3.4 GHz.  Each core has a 32KB 8-way, set associative L1 cache and a 256KB L2 cache.  Each cache line is 64 bytes.  This information was verified using common UNIX commands.  
+3.1	Transaction Size
+TSX maintains a read-set and a write-set in the L1 cache [INTEL OPTIMIZATION MANUAL].  The size of these records is therefore limited by the size of the L1 cache.  Hyper-threading further restricts the size of the transaction data sets because the L1 cache is shared between two threads on the same core [INTEL OPTIMIZATION MANUAL].  Based on granularity of the read-set and write-set stated above, transaction size is defined as the number of cache lines accessed within a transaction.
+A benchmark was developed to access a shared array of custom structures.    Each structure is allocated to occupy an entire cache line, i.e. 64 bytes, and aligned to the nearest cache line boundary using the GCC align attribute to ensure that memory is optimally organized as previously mentioned.  Benchmarks were with varying transaction size and thread count.  
+The first benchmark was run with a single thread.  It accesses 1, 2, 4, 8, …, 131072 cache lines 100 times.  The results can be seen in Figure 4.  Once the thread tries to write 512 cache lines, transactions consistently abort 100% of the time.  This is consistent with the size of the L1 cache; 32KB of 64 byte cache lines equates to 512 cache lines.  These are further split into 64 8-way cache sets; if memory is not organized properly, this could reduce the total write-set size.  However, it is clear that the same size limitation does not hold for the read-set size.  
+“Evictions for read- or write-set addresses from the L1 data cache can occur due to associativity constraints in the cache.  An eviction of a write-set address will cause a transactional abort.  An eviction of a read set address may not always result in an immediate transactional abort since these lines may be tracked in an implementation-specific second level structure.  The architecture however does not provide any guarantee buffering ...” [INTEL OPTIMIZATION MANUAL]
+It should be noted that these results represent ideal conditions; memory is optimally organized and aligned to cache line boundary to prevent cache line sharing data conflicts.
+ 
+Figure 5) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Standard Core 
+	The second benchmark was run with 2 threads on the same core to evaluate the effects of hyper-threading on TSX.  Each thread accesses 1, 2, 4, 8, …, 131072 cache lines 100 times starting at an offset based on the thread number to prevent any data conflicts.  The results can be seen in Figure 5.  It is evident that the write-set size is strictly limited to half of the L1 cache. However, the probability of an abort becomes non-trivial for any set size between 32 and 128 cache lines.  The more surprising result is the observation that the read-set does not fare much better than the write-set with hyper-threading.
+ 
+Figure 6) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Hyper-Threaded Core
+3.2	Memory Organization
+TSX maintains a read-set and a write-set with the granularity of a cache line [INTEL PROGRAMMING MANUL].  During transactional execution, TSX constructs a record of memory addresses read from and a record of memory addresses written to.  A data conflict occurs if another thread tries to read an address in the write-set or tries to write an address in the read-set.  This definition can be expanded to state that a data conflict occurs if: 1) another thread attempts to read a memory address that occupies the same cache line as a memory address to be written, or 2) another thread attempts to write a memory address that occupies the same cache line as a memory address that has been read from.  
+Therefore, aborts can be caused by data occupying the same cache line, especially false sharing, i.e. the occupation of the same cache line by unrelated data [INTEL OPTIMIZATION MANUAL].  To mitigate the effects of shared cache line data conflicts, the programmer must be conscientious of how data is organized in memory.  For instance, the data in the previously discussed benchmarks is optimally organized by allocating individual elements to 64 bytes, i.e. a single cache line.  
+Further more, data elements should be aligned to cache line boundaries to ensure that each element is limited to exactly one cache line, as they are in the previously mentioned benchmark.  If a data element crosses a cache line boundary, the probability of shared cache line data conflicts increases as the data access now has to check two cache lines [?].  
+3.3	Transaction Duration
+Transaction aborts can be caused by a number of run-time events [INTEL PROGRAMMING MANUAL], including but not limited to: interrupts, page faults, I/O operations, context switches, etc.  This is due the inability of the the processor to save the transactional state information [SCHWAHN].  
+To get an idea of how long a transaction can safely execute for, a benchmark was developed to perform 100 to 1000000 increment operations on a single data element.  This benchmark was executed with a single thread to avoid the possibility of data conflicts.  The results are shown in Figure 6.  While it is evident that transactions will abort with a non-trivial probability after about 100000 increment operations, practical applications will probably have variable results.  The purpose of this benchmark is to demonstrate that shorter running transactions will perform better than longer running transactions.  The longer a transaction executes the higher the probability it will abort.
+ 
+Figure 7) TSX RTM Abort Rate vs Transaction Duration
+3.4	Nesting Transactions
+When developing larger TSX enabled multi-threaded applications, it is possible for critical sections to be nested within one another.  TSX supports nested transactions for both HLE and RTM regions.  XACQUIRE and XBEGIN increment the nesting count, whereas XRELEASE and XEND decrement the nesting count.  The nesting count is limited to an implementation specific depth [INTEL PROG REF]; if the nesting count exceeds this limit, the transaction may abort.  Once the nesting count returns to 0 due to an XRELEASE or XEND, the processor attempts to commit the transactions as one monolithic transaction [?]. 
+Furthermore, different locks may be nested within the same critical section.  For instance, one critical section may reside within a separate critical section.  While this is not a concern for RTM regions, it can become a concern for HLE regions, as the processor can only track a fixed number of HLE prefixed locks.  However, any HLE prefixed lock executed after this limit has been reached will simply perform the write operation on the lock and add it to the transaction’s write-set [INTEL PROG REF].	
+
+ 
+4.0	Warped
+	WARPED is a publicly available Parallel Discrete Event Simulation (PDES) kernel implementing the Time Warp protocol [MARTIN].  The original version of WARPED was designed and optimized for parallel execution on a Beowulf Cluster consisting of single core processing nodes.  A threaded version has since been designed for local parallel execution on multi-core processors [MUTHALAGU].  It is has many configuration options and utilizes many different algorithms of the Time Warp protocol [FUJIMOTO], many of which are beyond the scope of this research.
+	Logical processes 
+4.1	Previous Studies with the Pending Event Set
+4.2	Pending Event Set Data Structures
+
+ 
+5.0	Experimental Analysis
+This study compares the performance of the WARPED simulation kernel using conventional synchronization mechanisms, Hardware Lock Elision, and Restricted Transactional Memory.  The following experiments were performed on a machine with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  
+Simulations were configured to use: 1) 1 to 7 worker threads, 2) atomic or mutex synchronization mechanisms, and 3) conventional synchronization, HLE, or RTM. Simulations were run 10 times, and the average execution time and standard deviation were calculated.  The following simulation models are used:
+RAID-5: This simulation model represents a Level 5 RAID (Redundant Array of Inexpensive Disks) composed of 96 sources, 8 forks, and 32 disks requiring a total of 136 logical processes (LP).  Requests for data are generated by the sources, passed through their respective forks, and routed to the appropriate disks.  Each disk responds to a data request after an amount of time that represents the access time to that sector of the disk.
+Epidemic:  This simulation model represents the epidemic outbreak phenomena composed of 1105 geographically distributed people requiring a total of 1105 LPs.  The epidemic is modeled by reaction processes to model progression of the disease within an individual entity, and diffusion processes to model transmission of the disease among individual entities.
+5.1	Conventional Lock Contention
+SOMETHING ABOUT LTSF QUEUE AND CONTENTION.
+The simulation results using conventional synchronization mechanisms, specifically a mutex lock, can be seen in Figure 7 and Figure 8.  While it is not as obvious in the RAID simulation results, it can clearly be seen that lock contention begins to negatively impact performance in the epidemic model with more than 6 worker threads.  It is still evident that lock contention is reducing the potential benefits of increasing parallelism in the RAID simulation.
+ 
+Figure 8) RAID Simulation Model Execution Time using one schedule queue
+ 
+Figure 9) Epidemic Simulation Model Execution Time using one schedule queue
+5.2	WARPED with TSX
+
+
+
+
+
+
+ 
+6.0	Conclusions
+6.1	Future Work
+Although WARPED is an already highly optimized PDES solution, it was not designed with transactional memory in mind.  The critical sections could be re-evaluated with the programming contraints mentioned in Chapter 3: Practical Programming with TSX on page 10.
+Furthermore, other data structures may be better suited for concurrent access.  WARPED currently utilizes the STL multiset, splay tree, and ladder queue data structures to maintain the pending event set.  EVIDENCE THAT DATA STRUCTURES  MAKE A DIFFERENCE. 
+Bibliography
+[1]	Intel Architecture Instruction Set Extensions Programming Reference.  Chapter 8: Intel Transactional Synchronization Extensions.  http://software.intel.com/sites/default/files/m/9/2/3/41604, February 2012.
+[2]	Intel 64 and IA-32 Architecures Optimization Reference Manual.  Chapter 12: Intel TSX Recommendations.  https://www.intel.com/content/www/us/en/architecture-and-technology /64-ia-32-architectures-optimization-manual.html.  July 2013.
+[3]	Tim Harris, James R. Larus, and Ravi Rajwar.  Transactional Memory, 2nd Edition.  Morgan & Claypool, 2010.
+[4]	Oliver Schwahn.  Transactional Memory: An Overview.  July 16, 2011.
+[5]	Ravi Rajwar and James R. Goodman.  Speculative Lock Elision: Enabling Highly Concurrent Multithreaded Execution.  In Proceedings of the 34th Annual ACM/IEEE International Symposium on Microarchitecture, MICRO 34, pages 294-305, Washington, DC, USA, 2001.  IEEE Computer Society.
+[6]	Zhaoguo Wang, Hao Qian, Haibo Chen, andn Jinyan Li.  Opportunities and Pitfalls of Multi-core Scaling Using Hardware Transactional Memory.  In Proceedings of the 4th Asia-Pacific Workshop on Systems, APSys ’13, Article No. 3, New York, NY, USA, 2013.  ACM.
+[7]	Vamsi Chitters, Adam Midvidy, and Jeff Tsui.  Reducing Synchronization Overhead Using Hardware Transactional Memory.  CS262A, December 2013, Berkeley, California.
+[8]	Richard M. Yoo, Christopher J. Hughes, Konrad Lai, and Ravi Rajwar.  Performance Evaluation of Intel Transactional Synchronization Extensions for High-Performance Computing.  SC13, November 17-21, Denver, CO, USA, 2013. ACM.
+[9]	Vladimir Gajinov, Ferad Zyulkyarov, Osman S. Unsal, Adrian Cristal, Eduard Ayguade, Tim Harris, and Mateo Valero.  QuakeTM: Parallelizing a Complex Sequential Applicaation Using Transactional Memory.  In Proceedings of the 23rd International Conference on Supercomputing, ICS ’09, pages 126-135, New York, NY, USA, 2009.  ACM.
+[10]	Calin Cascaval, Colin Blundell, Maged Michael, Harold W. Cain, Peng Wu, Stefanie Chiras, and Siddhartha Chatterjee.  Software Transactional Memory: Why is it Only a Research Toy?  In Communications of the ACM – Remembering Jim Gray, Volume 51 Issue 11, November 2008, pages 40-46, New York, NY, USA, 2008.  ACM.
+[11]	 Miachel Neuling.  What’s the Deal with Hardware Transactional Memory?  In linux.conf.au 2014. Perth, Western Australia.  2014.
+[12]	D. E. Martion, T. J. McBrayer, and P. A. Wilsey.  WARPED: A Time Warp Simulation Kernel for Analysis and Application Development.  In H/ El-Rewini and B.D. Shriver, ediors 29th Hawaii International Conference on System Sciences (HICSS-29), volume Volume I, pages 383-386, Jan. 1996.
+[13]	
+
+
+
