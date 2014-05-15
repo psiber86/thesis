@@ -62,8 +62,8 @@
 \g@addto@macro\@verbatim\small
 \makeatother
 
-\setlength\parindent{0pt} % Removes all indentation from paragraphs
-%\setlength\parindent{24pt}
+%\setlength\parindent{0pt} % Removes all indentation from paragraphs
+\setlength\parindent{24pt}
 
 \definecolor{sh_comment}{rgb}{0.12, 0.38, 0.18 } %adjusted, in Eclipse: {0.25, 0.42, 0.30 } = #3F6A4D
 \definecolor{sh_keyword}{rgb}{0.37, 0.08, 0.25}  % #5F1441
@@ -132,33 +132,219 @@
 
 \section{\textbf{Introduction}}
 
-The advent of multi-core programming introduced a new avenue for increased
+\indent The advent of multi-core programming introduced a new avenue for increased
 performance and scalability through multi-threaded programming.  However, this
-avenue came with a toll: synchronization mechanisms for access to critical
-sections.  The critical section is segment of code accessing a shared resource
+avenue came with a toll: synchronization mechanisms for execution of critical
+sections.  A critical section is segment of code accessing a shared resource
 that can only be executed by one thread at any given time \cite{os_concepts}.
-This effectively results in the serialization of thread execution on this
-segment of code. \par
+\par
 
-For example, a multi-threaded application is designed to operate on a single,
-shared memory data structure.  For the sake of simplicity, programmers typically
-use coarse-grained locking techniques to protect the critical section, e.g. a
-single atomic lock for the entire data structure.  A thread will lock all other
-threads out of the entire data structure until it has completed its task, thus
-forcing the threads to execute this segment of code serially. \par
+\indent For example, a multi-threaded application is designed to operate on a
+single, shared memory data structure.  For the sake of simplicity, the
+programmer uses coarse-grained locking mechanisms to control access to the
+critical section, e.g. a single atomic lock for the entire data structure.  Once
+a thread enters the critical section, it locks all other threads out of the
+entire data structure until it has completed its task, thus forcing the threads
+to essentially execute the critical section sequentially. This increases lock
+contention, resulting in performance penalties rather than performance gains.
+\par
 
-Coarse-grained locking is a pessimistic synchronization mechanism; accesses to
-shared resources are statically serialized by the programmer \cite{}.  It
-prevents multi-threaded applications from executing at their full potential as
-provided by the underlying hardware.  More importantly, it increases  
-lock contention, resulting in performance penalties rather than performance
-gains. \par
+%Continuing with this example, the programmer could improve the performance of
+%the application by employing fine-grained locking mechanisms to break the
+%critical sections into several smaller critical sections.  This allows for more
+%concurrent thread execution, thus reducing lock contention.  However, this
+%approach is vastly more complex and error prone \cite{sle_rajwar}. \par
 
+%Regardless of whether a programmer utilizes coarse or fine-grained locking
+%mechanisms, the decision to serialize any critical section execution
 
+\indent Unfortunately, programmers are limited to using static information when
+identifying critical sections for sequential execution.  However, untapped
+concurrency could be exposed if this identification was made dynamically
+\cite{intel_prog_ref}.  In the previous example, a scenario arises where two threads are operating on
+independent memory locations within the data structure.  The programmer has no
+way of telling the processor to execute both threads concurrently in this
+scenario, but transactional memory systems do. \par
+
+\indent Transactional memory (TM) is a concurrency control mechanism that
+attempts to eliminate the static sequential execution of critical sections by
+dynamically determining when accesses to shared resources can safely execute
+concurrently \cite{sle_rajwar}.  In the previous example, the programmer
+identifies the critical section as a transactional region. Multiple transactions
+execute concurrently.  The TM system records memory accesses as the transactions
+execute, and finds that the transactions operate on independent regions of the
+data structure.  Instead of being forced to execute sequentially by the
+programmer, the critical sections are allowed to safely execute concurrently by
+the TM system.\par 
+
+\indent Transactional memory operates on the same principles as database
+transactions \cite{tm_2nd}.  The processor atomically commits \textit{all}
+memory operations of a successful transaction or discards \textit{all} memory
+operations of a failed transaction.  In order for a transaction to execute
+successfully, it must be executed in isolation, i.e. without interfering with
+other tranasctions/threads memory operations. Transactional memory is analogous
+to traffic roundabouts whereas conventional sycnhronization mechanisms are
+analogous to conventional traffice lights \cite{neuling_vid}. \par
+
+\indent One problem space that could benefit from transactional memory is that of
+Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES)
+applications, logical processes representing various parts of a physical system
+are executed as discrete events to simulate the system in its entirety
+\cite{fujimoto}.  In PDES applications, a logical process is executed
+concurrently, but its events are retrieved from a global pending event set by
+one of multiple execution threads, resulting in non-trivial contention for this
+structure.  Transactional memory can help alleviate contention for this shared
+structure and expose untapped concurrency in the simulation's execution.\par
 
 \subsection{\textbf{Research Statement}}
 
+\indent The goal of this thesis is to explore the use of transactional memory in
+a parallel discrete event simulator, specifically, WARPED: a Time
+Warp synchronized Parallel Discrete Event Simulation application.\par
+
+\indent The primary objective is to \textit{modify the warped pending event set
+    data set locking mechanisms to utilize the underlying hardware support for
+    transactional memory on Intel's Hardware Transactional Memory (HTM)
+supported Haswell platform}.  This will ultimately expose untapped concurrency
+during simulation execution, thereby improving performance of WARPED on the
+Haswell platform.\par
+
+\indent Due to the wide availability of Intel's HTM supported platforms, it was
+selected as the focus of this research.  Intel's HTM implementation is aptly
+named Transactional Synchronization Extensions (TSX).  This nameing will be used
+to refer to Intel's HTM implementation for the remainder of this study.\par
+
+\indent While WARPED uses many shared data structures, the focus of this thesis
+is on the pending event set.  It is the primary bottleneck in PDES applications,
+and hence the primary motivation for this study.\par
+
 \subsection{\textbf{Thesis Overview}}
+
+The remainder of this thesis is organized as follows:
+
+\indent Chapter 2 provides a general overview of transactional memory.  It gives
+some examples of other TM implementations and discusses why they do not work as
+well as TSX.  It provides examples of related studies.  Finally, it provides an
+overview of how TSX works and how it is implemented in software.\par
+
+\newpage
+
+\section{\textbf{Background}}
+
+\indent This section provides a high level explanation of how transactional
+memory operates.  It then introduces other implementations, as well as reasons
+why they were not explored in this study.  Next, it provides some examples of related
+studies with transactional memory. Finally, it provides an overview of Intel's
+implementation, Transactional Synchronization Extensions (TSX).
+
+\subsection{\textbf{Transactional Memory Overview}}
+
+\indent Transactional memory (TM) is a concurrency control mechanism that
+dynamically determines when the critical sections of a process need to be executed
+sequentially \cite{sle_rajwar}.  It does so by applying the properties of
+database transactions to critical sections.  
+
+TM operates on the principles of atomicity and
+isolation as they apply to database transactions \cite{tm_2nd}.  
+
+\indent The programmer identifies a region of code as a transactional region, typically
+any critical section of a multi-threaded application.  If atomicity and
+isolation be can guaranteed for all memory operations performed within a
+critical section, that "critical section" can be executed concurrently
+\cite{sle_rajwar}.  At first, it is executed without explicit synchronization,
+e.g. without acquiring a lock.\par
+
+\indent As the transaction is executed, it builds a set of memory addresses it
+has read from and a set of memory addresses it has written to, referred to as
+the read-set and write-set respectively \cite{intel_prog_ref}.  These memory
+operations are buffered until the transaction completes.  If the  memory
+operations within the local transaction do not conflict with any memory
+operations within any other thread's execution path, the transaction can safely
+complete execution.  Upon completion, the transaction will atomically commit all of
+the buffered memory operations, henceforth referred to simply as a commit.\par
+
+\indent However, if any memory operation within the local transaction does
+conflict with any memory operation within any other thread's execution path, the
+transaction cannot safely continue execution.  This is referred to as a data
+conflict and only occurs if: 1) another thread attempts to read a location that
+is part of the local transaction's write-set, or 2) another thread attempts to
+read a location that is part of the local transaction's write-set
+\cite{intel_prog_ref}.  Once a data conflict is detected, the transaction will
+abort execution, henceforth referred to simply as an abort.\par
+
+\indent In the case of a commit, the transaction has ensured that its memory
+operations are executed in isolation from other threads and that \textit{all} of its
+memory operations are commited, thus satisfying the isolation and
+atomicity principles.  Note that only at this time will the memory operations
+performed within the transaction become visible to other threads.  In the case
+of an abort due to a data conflict, it is clear that the isolation principle has
+been violated.  It should be noted that transactions can abort for a variety of
+reasons depending on the implementation \cite{intel_opt_man,chung_amd}, but the
+primary cause is data conflicts.  Upon abort, all memory operations are
+discarded as all memory operations must be commited or none,  The
+processor returns to the state prior to the start of the transaction, and
+resumes execution from this point with explicit synchronization, e.g. acquiring
+a lock.\par
+
+\subsection{\textbf{Related Studies}}
+
+\indent Transactional memory is not a new concept.  There have been many
+implementations since its conception, mostly in software.  Software
+Transactional Memory (STM) offers better portability but at the cost of
+performance.  Gajinov et al. performed a study with STM by developing a parallel
+version of the Quake multiplayer game server from the ground up useing OpenMP
+parallelizations pragmas and atomic blocks \cite{quake_stm}.  Their results
+showed that the overhead required for STM resulted in execution times that were
+4 to 6 times longer than the sequential version of the server.  STM in general
+has been found to result in significant slowdown \cite{stm_cascaval}.  Although
+STM is more widely available than HTM, this study dismissed it as a potential
+solution due to the reasons discussed above.\par
+
+\indent Hardware Transactional Memory (HTM) provides the physical resources
+necessary to implement transacational memory effectively.  Many chip manufacturers
+have added, or at least sought to add, support for HTM in recent years.  IBM
+released one of the first commercially available HTM systems in their Blue
+Gene/Q machine \cite{blue_wang}.  Even though they found that this
+implementation was an improvement over STM, it still incurred significant
+overhead.  AMD's Advanced Synchronization Facility and Sun's Rock processor
+included support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not
+released any news regarding future releases and Sun's Rock processor was
+cancelled after Sun was acquired by Oracle.\par
+
+\indent With the release of Intel's Haswell generation processors, Intel's
+Transactional Synchronization Extensions (TSX) is the most widely commercially
+available HTM system.  Numerous studies have already been done with TSX,
+primarily evaluating its performance capabilities.  Chitters et al. modified
+Google's write optimized persistent key-value store, LevelDB, to use TSX based
+synchronization instead of a global mutex.  Their implementation shower 20-25\%
+increased throughput for write-only workloads and increased throughput for 50\%
+read / 50\% write workloads \cite{chitters_tsx}.  Wang et al. studied the
+performance scalability of a concurrent skip-list using TSX Restricted
+Transactioanl Memory (RTM).  They compared the TSX implementation to a
+fine-grain locking implementation and a lock-free implementation, and found that
+the performance was comparable to the lock-free implementation without the added
+complexity \cite{wang_tsx}.  Yoo et al. evaluated the performance of TSX using
+high-performance computing (HPC) workloads, as well as in a user-level TCP/IP
+stack.  They measured an average speed up of 1.41x and 1.31x respectively
+\cite{yoo_tsx}.  The decision to use Intel's TSX for this research was based on
+its wide availability and the performance improvements observed in other
+studies.\par
+
+\subsection{\textbf{Transactional Synchronization Extenions (TSX)}}
+
+\indent Intel's Transactional Synchronization Extensions (TSX) is an extension
+to the x86 instruction set architecture that adds support for HTM.  TSX operates
+in the L1 cache using the cache coherence protocol \cite{intel_opt_man}.  It is
+a best effort implementation, meaning it does not guarantee transactions will
+commit \cite{intel_prog_ref}.  TSX has two interfaces: 1) Hardware Lock Elision
+(HLE), and 2) Restricted Transactional Memory (RTM).  While both operate on the
+same principles of transactional memory, they have subtle differences.\par
+
+\subsubsection{\textbf{Hardware Lock Elision (HLE)}}
+
+\indent 
+
+
 
 %    \begin{figure}[H]
 %        \centering
