@@ -1,0 +1,97 @@
+# Simulation runtime summary for hugeepidemicsim using Atomic NOTSX
+# No-thread-migration   Continuous-thread-mig    xEvent-thread-Migration
+# 1 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 206.2192   1.64165    1 207.2035   1.519596    1 205.9834   1.704308
+# 2 threads w/ Xschedq  # 2 threads w/ Xschedq   # 2 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 115.1073   0.557925   1 116.4235   0.927609    1 114.3359   0.478182
+2 111.6427   1.130486   2 115.6024   0.792894    2 110.7394   0.807194
+# 3 threads w/ Xschedq  # 3 threads w/ Xschedq   # 3 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 85.80808   0.457106   1 86.68496   0.561517    1 84.89875   0.439004
+2                       2 85.60182   0.562017    2 165.0669   5.097221
+3 82.80426   0.490714   3 86.3133    0.611038    3 81.97075   0.376903
+# 4 threads w/ Xschedq  # 4 threads w/ Xschedq   # 4 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 68.40767   0.333723   1 69.10316   0.416773    1 68.14138   0.343054
+2 73.62335   0.434143   2 67.84112   0.557016    2 73.09798   0.898705
+3                       3 67.39596   0.478542    3 119.4593   0.65421 
+4 100.74668  1.120102   4 66.76213   0.217363    4 96.34281   2.764898
+# 5 threads w/ Xschedq  # 5 threads w/ Xschedq   # 5 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 64.9579    0.1736     1 65.55224   0.466699    1 64.68363   0.199085
+2                       2 63.47112   0.470764    2 97.78183   2.773873
+3                       3 62.85453   0.371935    3 128.9541   2.532557
+4                       4 62.39749   0.400174    4 127.6238   3.555944
+5                       5 61.99647   0.393403    5 89.15409   2.094856
+# 6 threads w/ Xschedq  # 6 threads w/ Xschedq   # 6 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 62.32475   0.272675   1 63.08122   0.330753    1 62.27391   0.231235
+2 61.03439   0.263379   2 59.60514   0.351059    2 61.0939    0.302044
+3 65.605     1.657766   3 58.95308   0.351657    3 66.27186   1.266098
+4                       4 58.2217    0.223264    4 134.763    2.964545
+5                       5 58.63046   0.420004    5 116.0619   1.834961
+6 73.50022   1.489151   6 57.95653   0.236649    6 72.36081   0.993875
+# 7 threads w/ Xschedq  # 7 threads w/ Xschedq   # 7 threads w/ Xschedq
+# NOTSX      ERRNOTSX   # NOTSX      ERRNOTSX    # NOTSX      ERRNOTSX
+1 61.65579   0.200004   1 62.0087    0.271755    1 61.41005   0.275652
+2                       2 56.45951   0.258021    2
+3                       3 55.55553   0.377311    3
+4                       4 55.06972   0.319667    4 120.3515   2.707014
+5                       5 54.41529   0.246293    5 123.872    1.820024
+6                       6 54.8201    0.412266    6 93.40866   1.617241
+7                       7 54.36719   0.345477    7 55.55422   0.583734
+8                       8 54.40962   0.242194    8
+9                       9 54.28767   0.414273    9
+10                      10 54.05481  0.387055    10
+11                      11 54.24308  0.229327    11
+
+# Simulation runtime summary for hugeepidemicsim using Atomic TSXHLE 
+# No-thread-migration   Continuous-thread-mig    xEvent-thread-Migration
+# 1 threads w/ Xschedq
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 203.1256   1.368994   1  202.2717   1.677629   1 202.7269   1.556023    
+# 2 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 107.93     0.589025   1  108.954    0.944409   1 108.7097   0.41525     
+2 104.7166   0.559697   2  109.2484   0.904029   2 105.1108   1.280615    
+# 3 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 78.36751   0.490356   1  78.97558   0.522907   1 78.43426   0.503341    
+2                       2  78.43174   0.586732   2 161.8736   2.558063    
+3 75.79246   0.582641   3  78.5103    0.705212   3 75.72546   0.523095    
+# 4 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 62.70367   0.34876    1  62.9378    0.448908   1 62.80617   0.320268    
+2 69.23382   0.357011   2  62.37573   0.510566   2 68.80836   0.467739    
+3                       3  62.07258   0.453381   3 115.451    0.745814    
+4 97.87896   1.196641   4  61.90574   0.551825   4 95.73149   2.076122    
+# 5 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 58.48507   0.248567   1  59.10022   0.441333   1 58.54151   0.388495    
+2                       2  57.54082   0.446249   2 92.94038   1.253599    
+3                       3  57.18313   0.469163   3 123.5669   2.937261    
+4                       4  56.92786   0.361326   4 122.8944   2.234398    
+5                       5  56.97688   0.516874   5 86.13282   2.114195    
+# 6 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 54.4856    0.141037   1  55.17      0.367784   1 54.66875   0.190199    
+2 56.03277   0.273745   2  53.75264   0.300897   2 55.91911   0.285062    
+3 63.3307    1.395892   3  53.04769   0.305678   3 63.05896   1.377144    
+4                       4  52.94674   0.338483   4 128.7503   3.19745     
+5                       5  52.73247   0.405719   5 112.3513   1.270779    
+6 69.54849   0.679293   6  52.64116   0.370445   6 68.88624   1.622876    
+# 7 threads w/ Xschedq  #                        #         
+# TSXHLE     ERRTSXHLE  #  TSXHLE     ERRTSXHLE  # TSXHLE     ERRTSXHLE   
+1 51.70706   0.206164   1  52.34157   0.357852   1 51.77282   0.155431    
+2                       2  50.14213   0.323851   2 
+3                       3  49.45753   0.138701   3 
+4                       4  49.30365   0.270125   4 116.1049   1.770201    
+5                       5  48.94958   0.381016   5 116.7405   2.148487    
+6                       6  48.69469   0.185281   6 88.77712   0.726791      
+7                       7  49.17264   0.370419   7 49.78684   0.257389      
+8                       8  48.827     0.24954    8  
+9                       9  48.61016   0.319091   9  
+10                      10 48.55684   0.367562   10 
+11                      11 48.7523    0.277653   11 
