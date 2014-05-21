@@ -161,10 +161,10 @@ contention, resulting in performance penalties rather than performance gains.
 \indent Unfortunately, programmers are limited to using static information when
 identifying critical sections for sequential execution.  However, untapped
 concurrency could be exposed if this identification was made dynamically
-\cite{intel_prog_ref}.  In the previous example, a scenario arises where two threads are operating on
-independent memory locations within the data structure.  The programmer has no
-way of telling the processor to execute both threads concurrently in this
-scenario, but transactional memory systems do. \par
+\cite{intel_prog_ref}.  In the previous example, a scenario arises where two
+threads are operating on independent memory locations within the data structure.
+The programmer has no way of telling the processor to execute both threads
+concurrently in this scenario, but transactional memory systems do. \par
 
 \indent Transactional memory (TM) is a concurrency control mechanism that
 attempts to eliminate the static sequential execution of critical sections by
@@ -175,16 +175,18 @@ execute concurrently.  The TM system records memory accesses as the transactions
 execute, and finds that the transactions operate on independent regions of the
 data structure.  Instead of being forced to execute sequentially by the
 programmer, the critical sections are allowed to safely execute concurrently by
-the TM system.\par 
+the TM system.  Transactional memory is analogous to traffic roundabouts whereas
+conventional sycnhronization mechanisms are analogous to conventional traffice
+lights \cite{neuling_vid}. \par
 
 \indent Transactional memory operates on the same principles as database
 transactions \cite{tm_2nd}.  The processor atomically commits \textit{all}
 memory operations of a successful transaction or discards \textit{all} memory
 operations of a failed transaction.  In order for a transaction to execute
 successfully, it must be executed in isolation, i.e. without interfering with
-other tranasctions/threads memory operations. Transactional memory is analogous
-to traffic roundabouts whereas conventional sycnhronization mechanisms are
-analogous to conventional traffice lights \cite{neuling_vid}. \par
+other tranasctions/threads memory operations.  This is the key principle that
+allows transactional memory to expose untapped concurrenty in multi-threaded
+applications.\par 
 
 \indent One problem space that could benefit from transactional memory is that of
 Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES)
@@ -233,26 +235,20 @@ overview of how TSX works and how it is implemented in software.\par
 
 \indent This section provides a high level explanation of how transactional
 memory operates.  It then introduces other implementations, as well as reasons
-why they were not explored in this study.  Next, it provides some examples of related
-studies with transactional memory. Finally, it provides an overview of Intel's
-implementation, Transactional Synchronization Extensions (TSX).
+why they were not explored in this study.  Next, it provides some examples of
+related studies with transactional memory, specifically the implementation used
+in this study. Finally, it provides an overview of Intel's implementation,
+Transactional Synchronization Extensions (TSX).\par
 
 \subsection{\textbf{Transactional Memory Overview}}
 
 \indent Transactional memory (TM) is a concurrency control mechanism that
-dynamically determines when the critical sections of a process need to be executed
-sequentially \cite{sle_rajwar}.  It does so by applying the properties of
-database transactions to critical sections.  
-
-TM operates on the principles of atomicity and
-isolation as they apply to database transactions \cite{tm_2nd}.  
-
-\indent The programmer identifies a region of code as a transactional region, typically
-any critical section of a multi-threaded application.  If atomicity and
-isolation be can guaranteed for all memory operations performed within a
-critical section, that "critical section" can be executed concurrently
-\cite{sle_rajwar}.  At first, it is executed without explicit synchronization,
-e.g. without acquiring a lock.\par
+dynamically determines when the critical sections of a process can be executed
+concurrently instead of sequentially \cite{sle_rajwar}.  It does so by tracking
+the memory accesses within a transaction's execution to determine whether or not
+two or more threads actually interfere with one another.  If the threads do not
+interfere with one another, the transactions can safely execute concurrently.
+If they do interfere, the transactions must be executed sequentially.\par
 
 \indent As the transaction is executed, it builds a set of memory addresses it
 has read from and a set of memory addresses it has written to, referred to as
@@ -263,7 +259,7 @@ operations within any other thread's execution path, the transaction can safely
 complete execution.  Upon completion, the transaction will atomically commit all of
 the buffered memory operations, henceforth referred to simply as a commit.\par
 
-\indent However, if any memory operation within the local transaction does
+\indent However, if any memory operation within the local transaction happens to  
 conflict with any memory operation within any other thread's execution path, the
 transaction cannot safely continue execution.  This is referred to as a data
 conflict and only occurs if: 1) another thread attempts to read a location that
@@ -271,6 +267,15 @@ is part of the local transaction's write-set, or 2) another thread attempts to
 read a location that is part of the local transaction's write-set
 \cite{intel_prog_ref}.  Once a data conflict is detected, the transaction will
 abort execution, henceforth referred to simply as an abort.\par
+
+\indent TM operates on the principles of database transactions.  A transaction
+is a series of actions with four key attributes: 1) atomicity, 2) consistency,
+3) isolation, and 4) durability \cite{tm_2nd}.  The two key attributes for TM
+are atomicity and isolation; consistency and durability must hold for all
+multi-threaded operations in multi-threaded applications.  If atomicity and
+isolation be can guaranteed for all memory operations performed within a
+critical section, that "critical section" can be executed concurrently
+\cite{sle_rajwar}.\par 
 
 \indent In the case of a commit, the transaction has ensured that its memory
 operations are executed in isolation from other threads and that \textit{all} of its
@@ -281,10 +286,7 @@ of an abort due to a data conflict, it is clear that the isolation principle has
 been violated.  It should be noted that transactions can abort for a variety of
 reasons depending on the implementation \cite{intel_opt_man,chung_amd}, but the
 primary cause is data conflicts.  Upon abort, all memory operations are
-discarded as all memory operations must be commited or none,  The
-processor returns to the state prior to the start of the transaction, and
-resumes execution from this point with explicit synchronization, e.g. acquiring
-a lock.\par
+discarded as all memory operations must be commited or none.\par
 
 \subsection{\textbf{Related Studies}}
 
@@ -338,11 +340,321 @@ in the L1 cache using the cache coherence protocol \cite{intel_opt_man}.  It is
 a best effort implementation, meaning it does not guarantee transactions will
 commit \cite{intel_prog_ref}.  TSX has two interfaces: 1) Hardware Lock Elision
 (HLE), and 2) Restricted Transactional Memory (RTM).  While both operate on the
-same principles of transactional memory, they have subtle differences.\par
+same principles of transactional memory, they have subtle differences.  This
+section discusses some of the implementation details of TSX as well as how the
+programmer utilizes TSX in his or her code.\par
 
 \subsubsection{\textbf{Hardware Lock Elision (HLE)}}
 
-\indent 
+\indent The Hardware Lock Elision (HLE) interface is a legacy-compatible
+interface introducing two instruction prefixes: 1) XACQUIRE and 2) XRELEASE.
+XACQUIRE is placed before the locking instruction to mark the beginning of a
+transaction.  XRELEASE is placed before the unlocking instruction to mark the
+end of a transaction.\par
+
+\indent These prefixes tell the processor to elide the write operation to the
+lock variable during lock acquisition/release.  When the processor encounters an
+XACQUIRE prefixed lock instruction, it adds the lock variable to the
+transaction's read-set instead of issuing any write requests to the lock
+\cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus
+allowing those threads to enter the critical section and execute concurrently.
+All transactions can execute concurrently as long as no transaction aborts and
+explicitly writes to the lock variable.  If that were to happen, a data conflict
+occurs - one transaction writes to a memory location that is part of another
+transaction's read-set.\par
+
+\indent The XRELEASE prefix is placed before the instruction used to release the
+lock.  It also tries to elide the write associated with the lock release
+instruction.  If the unlocking instruction attempts to restore the lock to the
+value it had prior to the XACQUIRE prefixed locking instruction, the write
+operation on the lock is elided \cite{intel_prog_ref}.  It is at this time that
+the processor attempts to commit the transaction.\par
+
+\indent However, if the transaction aborts for any reason, the region will be
+re-executed non-transactionally.  If the processor encounters an abort
+condition, it will discard all memory operations performed within the
+transaction, return to the locking instruction, and resume execution without
+lock elision, i.e. the lock operation will be performed on the lock variable.
+This guarantees forward progress for the application \cite{intel_prog_ref}.\par
+
+\indent A general implementation for the HLE software interface is shown in
+Figure ~\ref{fig:hle_interface}.  GCC 4.8 and above includes support for the
+\_\_ATOMIC\_HLE\_ACQUIRE and \_\_ATOMIC\_HLE\_RELEASE memory models
+\cite{gcc}.\par
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{fig_hleInterface}
+    \caption{\textbf{Generic HLE Software Interface}}
+    \label{fig:hle_interface}
+\end{figure}
+
+\indent HLE is legacy compatible.  COde utilizing the HLE interface can be
+executed on legacy hardware, but the HLE prefixes will be ignored
+\cite{intel_prog_ref}, i.e. the write operations will not be elided.  While this
+interface does nothing for multi-threaded applications on legacy hardware, it
+does allow for easier cross-platform code deployment.\par
+
+\subsection{\textbf{Restricted Transactional Memory (RTM)}}
+
+\indent The Restricted Transactional Memory (RTM) interface introduces four new
+instructions: 1) XBEGIN, 2) XEND, 3) XABORT, and 4) XTEST.  XBEGIN marks the
+start of a transaction, while XEND makes the end of a transaction.  XABORT is
+used by the programmer to manually abort a transaction.  XTEST can be used to
+test if the processor is executing transactionally or non-transactionally.\par
+
+\indent The XBEGIN instruction transitions the processor into transactional
+execution \cite{intel_prog_ref}.  Note that the xbegin instruction does not even
+read the locking variable as HLE does.  Therefore, the programmer should
+manually add the locking variable to the transaction's read-set by checking if
+the lock is free at the start of the transaction.  If it is free, the
+transaction can execute safely.  Once execution reaches the XEND instruction,
+the processor will attempt to atomically commit the transaction.\par
+
+\indent As previously mentioned, the transaction can abort for many reasons.
+One case specific to RTM occurs when the lock is not free upon entering the
+transaction.  In this case, the programmer uses the XABORT instruction to
+explicitly abort the local transaction.  But no matter the reason for the abort,
+execution jumps to the fallback instruction address \cite{intel_prog_ref}.  This
+address is an operand of the XBEGIN instruction.\par
+
+\indent It is this fallback path that makes RTM a much more flexible interface
+than HLE because it is entirely at the discretion of the programmer.  Even so,
+the programmer must still provide an abort path that guarantees forward progress
+\cite{intel_prog_ref}.  Therefore, the abort parth should use explicit
+synchronization, e.g. acquire the lock, to ensure forward progress. However, the
+programmer can use this abort path to tune the performance of RTM enabled
+applications.  For instance, a retry routine can be used to specify how many
+times the processor should try to enter transactional execution before using
+explicit synchronization.  Furthermore, the EAX register reports information
+about the condition of the abort \cite{intel_prog_ref}, such as whether or not
+the abort was caused by the XABORT instruction, a data conflict, etc.  The
+programmer can use this information to make more informed decisions regarding
+reattempting transactional execution.\par
+
+%placeholder
+
+\indent The general algorithm for the RTM software interface is shown in Figure
+~\ref{fig:rtm_interface}.  GCC 4.8 and above includes support for the \_xbegin,
+\_xabort, and \_xend intrinsics \cite{gcc}.
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{fig_rtmInterface}
+    \caption{\textbf{Generic RTM Software Interface}}
+    \label{fig:rtm_interface}
+\end{figure}
+
+\indent While RTM is a much more flexible interface than HLE, it can only be
+used on supported Haswell platforms.  If a legacy device attemps to execute one
+of the RTM instructions, it will throw a General Protection Fault.  It should
+also be noted that execution of the XEND instruction outside of a transaction
+will result in a General Protection Fault as well \cite{intel_opt_man}.
+
+\newpage
+\section{\textbf{Practical Programming with TSX}}
+
+\indent One of the disadvantages of HTM is the physical limitations of the
+hardware.  This section evaluates practical programming techniques to consider
+when using TSX to ensure optimal performance.  Custom benchmarks were developed
+to evaluate these various constraints.  All benchmarks were run on a system with
+an Intel i7-4770 running at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way,
+set associative L1 cache and a 256 L2 cache.  Each cache line is 64 bytes.  This
+information was verified using common Unix commands.\par
+
+\subsection{\textbf{Memory Organization}}
+
+\indent TSX maintains a read-set and a write-set with the granularity of a cache line
+\cite{intel_prog_man}.  During transactional execution, TSX constructs a
+record of memory addresses read from and a record of memory addresses written
+to.  A data conflict occurs if another thread tries to read an address in the
+write-set or tries to write an address in the read-set.  This definition can be
+expanded to state that \textit{a data conflict occurs if: 1) another thread attempts to
+read a memory address that occupies the same cache line as a memory address to
+be written, or 2) another thread attempts to write a memory address that
+occupies the same cache line as a memory address that has been read from.}\par
+
+\indent Therefore, aborts can be caused by data occupying the same cache line,
+especially false sharing, i.e. the occupation of the same cache line by
+unrelated data \cite{intel_opt_man}.  To mitigate the effects of shared
+cache line data conflicts, the programmer must be conscientious of how data is
+organized in memory.  For instance, the data in the previously discussed
+benchmarks is optimally organized by allocating individual elements to 64 bytes,
+i.e. a single cache line.\par
+
+\indent Further more, data elements should be aligned to cache line boundaries
+to ensure that each element is limited to exactly one cache line.  If a data
+element crosses a cache line boundary, the probability of shared cache line data
+conflicts increases as the data access now has to check against two cache lines.  
+
+
+\subsection{\textbf{Transaction Size}}
+
+\indent TSX maintains a transaction read-set and write-set in the L1 cache
+\cite{intel_opt_man}.  The size of these memory sets is therefore limited by
+the size of the L1 cache.  Hyper-threading further restricts the size of the
+transaction data sets becase the L1 cache is shared between two threads on the
+same core \cite{intel_opt_man}.  Based on granularity of the read-set and write-set stated
+above, transaction size is defined as the number of cache lines accessed within
+a transaction.\par 
+
+\indent A set of benchmarks was developed to access a shared array of custom structures. Each
+structure is allocated to occupy an entire cache line, i.e. 64 bytes, and
+aligned to teh nearest cache line boundary using the GCC align attribute.  This
+ensures that memory is optimally organized as previously mentioned.  Benchmarks
+were run with varying transaction sizes and number of threads.\par
+
+\indent The first benchmark was run with a single thread.  Figure
+~\ref{fig:trx_size} shows the abort rate, i.e. \# aborts / \# operations, as the
+number of cache lines accessed within the transaction increases.  The read-set
+data points respresent strictly read operations while the write-set data points
+represent strictly write opreations.\par 
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_size}
+    \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single
+    thread on one core}}
+    \label{fig:trx_size}
+\end{figure}
+
+\indent It is clear that transactions abort 100\% of the time once the thread
+tries to write to 512 or more cache lines within the transaction.  This is
+consistent with the size of the L1 cache, 32KB of 64 bytes caches lines equates
+to 512 cache lines; it is unrealistic to expect that no other process will use
+the cache while the transaction is executing.  Furthermore, the cache is split
+into 64 8-way sets; if memory is not organized properly, the total write-set
+size will be smaller.\par
+
+\indent However, it is evident that the same size limitations do not hold for
+the read-set size.  Eviction of a cache line containing a write-set address will
+always cause a tranasctional abort.  Evicition of a cache line containing a
+read-set address may not cause an immediate transactional abort; these cache
+lines may be tracked by a second-level structure in the L2 cache
+\cite{intel_opt_man}.\par
+
+\indent The second benchmark is run with two threads on the same core to
+evaluate the effects of hyper-threading on TSX.  Each thread accesses the same
+number of cache lines, but at different memory locations to prevent any data
+conflicts. Figure ~\ref{fig:trx_size_ht} shows the abort rate for a single
+thread as the number of cache lines accessed within each transaction
+increases.\par
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_size_ht}
+    \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a two 
+    threads on hyper-threaded core}}
+    \label{fig:trx_size_ht}
+\end{figure}
+
+\indent It is evident that th write-set is strictly limited to half of the L1
+cache.  However, the probability of an abort is non-trivial for any write-set
+size between 32 and 128 cache lines.  It is also evident that the read-set size
+is limited to a similar size as the write-set on a hyper-threaded core.\par
+
+\subsection{\textbf{Transaction Duration}}
+
+\indent Transaction aborts can be caused by a number of run-time events
+\cite{intel_prog_ref}, including but not limited to: interrupts, page faults,
+I/O operations, context switches, illegal instructions, etc.  This is due to the
+inability of the processor to save the transactional state information
+\cite{schwahn}.\par
+
+\indent To evaluate how long a transaction can safely execute for, a third
+benchmark was developed to perform 100 to 1000000 increment operations on a
+single element.  This benchmark was executed with a single thread to minimize
+the possibility of data conflicts. Figure ~\ref{fig:trx_duration} shows the
+transaction abort rate as the length of the transaction is increased, i.e. the
+number of operations performed within the transaction.\par
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_duration}
+    \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a two 
+    threads on hyper-threaded core}}
+    \label{fig:trx_duration}
+\end{figure}
+
+\indent It is clear that the longer a transaction executes, the higher the
+probability is that it will abort.  Note that no absolute limit can be drawn
+from these results.  Practical applications will perform a varying number of
+operations that take varying amounts of time.  This benchmark demonstrates that
+shorter transactions are more likely to succeed than longer transactions.\par
+
+\subsection{\textbf{Nesting Transactions}}
+
+\indent When developing larger TSX enabled multi-threaded applications, it is
+possible for critical sections to be nested within one another.  TSX supports
+nested transactions for both HLE and RTM regions, as well as a combination of
+the two.  When the processor encounters an XACQUIRE instruction prefix or an 
+XBEGIN instruction, it increments a nesting count.  Note that the processor
+transitions to transactional execution when the nesting count goes from 0 to 1
+\cite{intel_prog_ref}.  When the processor encounters an XRELEASE instruction
+prefix or an XEND instruction, the nesting count is decremented.  Once the
+nesting count returns to 0, the processor attempts to commit the transactions as
+one monolithic transaction \cite{intel_prog_ref}.\par
+
+\indent The total nesting depth is still limited by the physical resources of
+the hardware.  If the nesting count exceeds this implementation specific limit,
+the transaction may abort.  Upon abort, the processor transitions to
+non-transactional execution as if the first lock instruction was executed
+without elision \cite{intel_prog_ref}.\par
+
+\indent Scenarios may arise where different locks may be nested within the same
+critical section.  For instance, one critical section may reside within a
+separate critical section.  While this is not a concern for RTM regions, it can
+become a concern for HLE regions, as the processor can only track a fixed number
+of HLE prefixed locks.  However, any HLE prefixed locks executed after this
+implementation specific limit has been reached will simply execute without
+elision; consequently, the secondary lock variable will be added to the
+transaction's write-set \cite{intel_prog_ref}.
+
+\newpage
+\section{\textbf{WARPED}}
+
+\subsection{\textbf{Previous Studies with the Pending Event Set}}
+
+\subsection{\textbf{Pending Event Set Data Structures}}
+
+\newpage
+\section{\textbf{Experimental Analysis}}
+
+\indent This study compares the performance of the WARPED simulation kernel
+using conventional synchronization mechanisms, Hardware Lock Elision, and
+Restricted Transactional memory.  All simulations were performed on a system
+with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  Average execution
+time and standard deviation were calculated from a set of 10 trials for each
+simulation configuration.\par
+
+\indent The simulation model used to obtain the following results is an epidemic
+model.  It consists of 110998 geographically distributed people
+requiring a total of 110998 LPs.  The epidemic is modeled by reaction processes
+to model progression of the disease within an individual entity, and diffusion
+processes to model transmission of the disease among individual entities.\par
+
+\subsection{\textbf{Lock Contention with Conventional Synchronization
+Mechanisms}}
+
+\indent The first part of this study benchmarked the performance of the WARPED
+simulation kernel simulating the epidemic model with the appropriate
+configuration parameters using conventional synchronziation mechanisms, i.e.
+atomic locks.
+
+\subsection{\textbf{Lock Contention with TSX}}
+
+\subsection{\textbf{Thread Migration}}
+
+\newpage
+\section{\textbf{Conclusions}}
+
+
+
 
 
 
