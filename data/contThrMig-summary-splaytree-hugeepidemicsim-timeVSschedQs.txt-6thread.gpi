@@ -1,0 +1,21 @@
+set term pngcairo dashed
+set output "data/contThrMig-summary-splaytree-hugeepidemicsim-timeVSschedQs.txt-6thread.png"
+set key right top
+set xrange [1:6]
+set style line 1 lt 1 lc rgb "black" lw 1
+set style line 2 lt 2 lc rgb "red" lw 1
+set style line 3 lt 3 lc rgb "orange" lw 1
+set style line 4 lt 4 lc rgb "green" lw 1
+set style line 5 lt 5 lc rgb "blue" lw 1
+set xlabel 'Number of LTSF Queues'
+set ylabel 'Simulation Time (s)'
+plot "<(sed -n '29,35p' data/contThrMig-summary-splaytree-hugeepidemicsim-timeVSschedQs.txt)" using 1:2:3 title 'std' with lines ls 1, \
+'' using 1:2:3 notitle with yerrorbars ls 1, \
+'' using 1:4:5 title 'hle' with lines ls 2, \
+'' using 1:4:5 notitle with yerrorbars ls 2, \
+'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \
+'' using 1:6:7 notitle with yerrorbars ls 3, \
+'' using 1:8:9 title 'rtm-4retry' with lines ls 4, \
+'' using 1:8:9 notitle with yerrorbars ls 4, \
+'' using 1:10:11 title 'rtm-9retry' with lines ls 5, \
+'' using 1:10:11 notitle with yerrorbars ls 5 

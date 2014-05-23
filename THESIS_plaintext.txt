@@ -141,20 +141,59 @@ Figure 4) Generic RTM software interface to end transaction
 3.0	Practical Programming with TSX
 One of the disadvantages of HTM is the physical limitations of the hardware.  This section evaluates practical programming techniques to consider when using TSX to ensure optimal performance.  Custom benchmarks were developed to evaluate these various constraints.  All benchmarks were run on a system with an Intel i7-4770 running at 3.4 GHz.  Each core has a 32KB 8-way, set associative L1 cache and a 256KB L2 cache.  Each cache line is 64 bytes.  This information was verified using common UNIX commands.  
 3.1	Transaction Size
-TSX maintains a read-set and a write-set in the L1 cache [INTEL OPTIMIZATION MANUAL].  The size of these records is therefore limited by the size of the L1 cache.  Hyper-threading further restricts the size of the transaction data sets because the L1 cache is shared between two threads on the same core [INTEL OPTIMIZATION MANUAL].  Based on granularity of the read-set and write-set stated above, transaction size is defined as the number of cache lines accessed within a transaction.
-A benchmark was developed to access a shared array of custom structures.    Each structure is allocated to occupy an entire cache line, i.e. 64 bytes, and aligned to the nearest cache line boundary using the GCC align attribute to ensure that memory is optimally organized as previously mentioned.  Benchmarks were with varying transaction size and thread count.  
-The first benchmark was run with a single thread.  It accesses 1, 2, 4, 8, …, 131072 cache lines 100 times.  The results can be seen in Figure 4.  Once the thread tries to write 512 cache lines, transactions consistently abort 100% of the time.  This is consistent with the size of the L1 cache; 32KB of 64 byte cache lines equates to 512 cache lines.  These are further split into 64 8-way cache sets; if memory is not organized properly, this could reduce the total write-set size.  However, it is clear that the same size limitation does not hold for the read-set size.  
-“Evictions for read- or write-set addresses from the L1 data cache can occur due to associativity constraints in the cache.  An eviction of a write-set address will cause a transactional abort.  An eviction of a read set address may not always result in an immediate transactional abort since these lines may be tracked in an implementation-specific second level structure.  The architecture however does not provide any guarantee buffering ...” [INTEL OPTIMIZATION MANUAL]
-It should be noted that these results represent ideal conditions; memory is optimally organized and aligned to cache line boundary to prevent cache line sharing data conflicts.
+TSX maintains a read-set and a write-set in the L1 cache [INTEL OPTIMIZATION
+MANUAL].  The size of these records is therefore limited by the size of the L1
+cache.  Hyper-threading further restricts the size of the transaction data sets
+because the L1 cache is shared between two threads on the same core [INTEL
+OPTIMIZATION MANUAL].  Based on granularity of the read-set and write-set stated
+above, transaction size is defined as the number of cache lines accessed within
+a transaction.  A benchmark was developed to access a shared array of custom
+structures.    Each structure is allocated to occupy an entire cache line, i.e.
+64 bytes, and aligned to the nearest cache line boundary using the GCC align
+attribute to ensure that memory is optimally organized as previously mentioned.
+Benchmarks were with varying transaction size and thread count.  The first
+benchmark was run with a single thread.  It accesses 1, 2, 4, 8, …, 131072 cache
+lines 100 times.  The results can be seen in Figure 4.  Once the thread tries to
+write 512 cache lines, transactions consistently abort 100% of the time.  This
+is consistent with the size of the L1 cache; 32KB of 64 byte cache lines equates
+to 512 cache lines.  These are further split into 64 8-way cache sets; if memory
+is not organized properly, this could reduce the total write-set size.  However,
+it is clear that the same size limitation does not hold for the read-set size.
+“Evictions for read- or write-set addresses from the L1 data cache can occur due
+to associativity constraints in the cache.  An eviction of a write-set address
+will cause a transactional abort.  An eviction of a read set address may not
+always result in an immediate transactional abort since these lines may be
+tracked in an implementation-specific second level structure.  The architecture
+however does not provide any guarantee buffering ...” [INTEL OPTIMIZATION
+MANUAL] It should be noted that these results represent ideal conditions; memory
+is optimally organized and aligned to cache line boundary to prevent cache line
+sharing data conflicts.
  
 Figure 5) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Standard Core 
 	The second benchmark was run with 2 threads on the same core to evaluate the effects of hyper-threading on TSX.  Each thread accesses 1, 2, 4, 8, …, 131072 cache lines 100 times starting at an offset based on the thread number to prevent any data conflicts.  The results can be seen in Figure 5.  It is evident that the write-set size is strictly limited to half of the L1 cache. However, the probability of an abort becomes non-trivial for any set size between 32 and 128 cache lines.  The more surprising result is the observation that the read-set does not fare much better than the write-set with hyper-threading.
  
 Figure 6) TSX RTM Abort Rate vs Cache Lines per Read/Write Set on Hyper-Threaded Core
 3.2	Memory Organization
-TSX maintains a read-set and a write-set with the granularity of a cache line [INTEL PROGRAMMING MANUL].  During transactional execution, TSX constructs a record of memory addresses read from and a record of memory addresses written to.  A data conflict occurs if another thread tries to read an address in the write-set or tries to write an address in the read-set.  This definition can be expanded to state that a data conflict occurs if: 1) another thread attempts to read a memory address that occupies the same cache line as a memory address to be written, or 2) another thread attempts to write a memory address that occupies the same cache line as a memory address that has been read from.  
-Therefore, aborts can be caused by data occupying the same cache line, especially false sharing, i.e. the occupation of the same cache line by unrelated data [INTEL OPTIMIZATION MANUAL].  To mitigate the effects of shared cache line data conflicts, the programmer must be conscientious of how data is organized in memory.  For instance, the data in the previously discussed benchmarks is optimally organized by allocating individual elements to 64 bytes, i.e. a single cache line.  
-Further more, data elements should be aligned to cache line boundaries to ensure that each element is limited to exactly one cache line, as they are in the previously mentioned benchmark.  If a data element crosses a cache line boundary, the probability of shared cache line data conflicts increases as the data access now has to check two cache lines [?].  
+TSX maintains a read-set and a write-set with the granularity of a cache line
+[INTEL PROGRAMMING MANUL].  During transactional execution, TSX constructs a
+record of memory addresses read from and a record of memory addresses written
+to.  A data conflict occurs if another thread tries to read an address in the
+write-set or tries to write an address in the read-set.  This definition can be
+expanded to state that a data conflict occurs if: 1) another thread attempts to
+read a memory address that occupies the same cache line as a memory address to
+be written, or 2) another thread attempts to write a memory address that
+occupies the same cache line as a memory address that has been read from.
+Therefore, aborts can be caused by data occupying the same cache line,
+especially false sharing, i.e. the occupation of the same cache line by
+unrelated data [INTEL OPTIMIZATION MANUAL].  To mitigate the effects of shared
+cache line data conflicts, the programmer must be conscientious of how data is
+organized in memory.  For instance, the data in the previously discussed
+benchmarks is optimally organized by allocating individual elements to 64 bytes,
+i.e. a single cache line.  Further more, data elements should be aligned to
+cache line boundaries to ensure that each element is limited to exactly one
+cache line, as they are in the previously mentioned benchmark.  If a data
+element crosses a cache line boundary, the probability of shared cache line data
+conflicts increases as the data access now has to check two cache lines [?].  
 3.3	Transaction Duration
 Transaction aborts can be caused by a number of run-time events [INTEL PROGRAMMING MANUAL], including but not limited to: interrupts, page faults, I/O operations, context switches, etc.  This is due the inability of the the processor to save the transactional state information [SCHWAHN].  
 To get an idea of how long a transaction can safely execute for, a benchmark was developed to perform 100 to 1000000 increment operations on a single data element.  This benchmark was executed with a single thread to avoid the possibility of data conflicts.  The results are shown in Figure 6.  While it is evident that transactions will abort with a non-trivial probability after about 100000 increment operations, practical applications will probably have variable results.  The purpose of this benchmark is to demonstrate that shorter running transactions will perform better than longer running transactions.  The longer a transaction executes the higher the probability it will abort.
