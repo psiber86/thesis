@@ -1,0 +1,70 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "usage: ./plot4viewer </path/to/data/file> <atomic|mutex>"
+else
+    filename=$(basename "$1")
+    title=$(echo "$filename" | sed 's/.*-\(.*\)$/\1/g')
+
+    if [ $2 == "atomic" ]; then
+        oneschq_lower=3
+        oneschq_upper=10
+        xschq_2thr_lower=24
+        xschq_2thr_upper=27
+        xschq_4thr_lower=28
+        xschq_4thr_upper=31
+        xschq_6thr_lower=32
+        xschq_6thr_upper=35
+    else
+        oneschq_lower=13 
+        oneschq_upper=20
+        xschq_2thr_lower=37  
+        xschq_2thr_upper=40
+        xschq_4thr_lower=41
+        xschq_4thr_upper=44
+        xschq_6thr_lower=45
+        xschq_6thr_upper=48
+    fi
+
+    # write gnuplot.gpi file for 1schQ 
+    echo "set term pngcairo dashed" > "$1-1schQ.gpi"
+    echo "set output \"$1-$2-1schQ.png\"" >> "$1-1schQ.gpi"
+    echo "set key right top" >> "$1-1schQ.gpi"
+    echo "set xrange [1:7]" >> "$1-1schQ.gpi"
+    echo "set style line 1 lt 1 lc 1 lw 1 ps 0" >> "$1-1schQ.gpi"
+    echo "set style line 2 lt 2 lc 3 lw 1 ps 0" >> "$1-1schQ.gpi"
+    echo "set xlabel 'Worker Threads'" >> "$1-1schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$1-1schQ.gpi"
+    echo "plot \"<(sed -n '$oneschq_lower,${oneschq_upper}p' $1)\" using 1:2:3 title 'Multiset' with lines ls 1, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:4:5 title 'Splay Tree' with lines ls 2, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:4:5 notitle with yerrorbars ls 2">> "$1-1schQ.gpi"
+
+    # perform actual plotting
+    gnuplot "$1-1schQ.gpi"
+
+    # write gnuplot.gpi file for # schQ bar graph
+    echo "set terminal postscript eps enhanced 14" > "$1-XschQ.gpi"
+    echo "set output \"$1-$2-XschQ.eps\"" >> "$1-XschQ.gpi"
+    echo "set style data histogram" >> "$1-XschQ.gpi"
+    echo "set style histogram errorbars gap 2 lw 1" >> "$1-XschQ.gpi"
+    echo "set style fill solid border -1" >> "$1-XschQ.gpi"
+    echo "set boxwidth 1 relative" >> "$1-XschQ.gpi"
+#    echo "set xlabel 'Worker Threads'" >> "$1-XschQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$1-XschQ.gpi"
+    echo "plot newhistogram \"2 Worker Threads\", \"<(sed -n '$xschq_2thr_lower, ${xschq_2thr_upper}p' $1)\" using 2:3:xtic(1) title \"1 Schedule Queue\" linecolor rgb \"red\", \\" >> "$1-XschQ.gpi"
+    echo "'' using 4:5 title \"2 Schedule Queues\" linecolor rgb \"green\", \\" >> "$1-XschQ.gpi"
+    echo "newhistogram \"4 Worker Threads\", \"<(sed -n '$xschq_4thr_lower, ${xschq_4thr_upper}p' $1)\" using 2:3:xtic(1) title \"\" linecolor rgb \"red\", \\" >> "$1-XschQ.gpi"
+    echo "'' using 4:5 title \"\" linecolor rgb \"green\", \\" >> "$1-XschQ.gpi"
+    echo "'' using 6:7 title \"4 Schedule Queues\" linecolor rgb \"orange\", \\" >> "$1-XschQ.gpi"
+    echo "newhistogram \"6 Worker Threads\", \"<(sed -n '$xschq_6thr_lower, ${xschq_6thr_upper}p' $1)\" using 2:3:xtic(1) title \"\" linecolor rgb \"red\", \\" >> "$1-XschQ.gpi"
+    echo "'' using 4:5 title \"\" linecolor rgb \"green\"" >> "$1-XschQ.gpi"
+
+    gnuplot "$1-XschQ.gpi"
+
+    #send to virtulab.ceas1.uc.edu
+#    scp *.png hayja@virtulab.ceas1.uc.edu:/home/hayja/thesis/
+#    read -s password
+
+    rm *.gpi
+fi
