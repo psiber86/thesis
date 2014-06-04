@@ -133,11 +133,12 @@
 \section{\textbf{Introduction}}
 
 \indent 
-The advent of multi-core programming introduced a new avenue for increased
+The advent of multi-core processors introduced a new avenue for increased
 performance and scalability through multi-threaded programming.  However, this
-avenue came with a toll: synchronization mechanisms for execution of critical
-sections.  A critical section is segment of code accessing a shared resource
-that can only be executed by one thread at any given time \cite{os_concepts}.
+avenue came with a toll: synchronization between multiple threads of execution,
+especially during the execution of critical sections.  By definition, a critical
+section is segment of code accessing a shared resource that can only be executed
+by one thread at any given time \cite{os_concepts}.
 \par
 
 \indent 
@@ -148,21 +149,21 @@ critical section, e.g. a single atomic lock for the entire data structure.  Once
 a thread enters the critical section, it locks all other threads out of the
 entire data structure until it has completed its task, thus forcing the threads
 to essentially execute the critical section sequentially. This increases lock
-contention, which consequently negatively impacts performance.  While
-programmers could employ more fine-grained locking mechanisms to expose
+contention, consequently negatively impacting performance.  While
+programmers can employ more fine-grained locking mechanisms to expose
 concurrency, this approach is vastly more complicated and error prone
 \cite{sle_rajwar}.  
 \par
 
 \indent 
-Unfortunately, programmers are limited to using static information when
-identifying critical sections for sequential execution regardless of whether
+Unfortunately, programmers are limited to using static information to determine
+when critical sections should be executed sequentially regardless of whether
 coarse-grained or fine-grained locking is used.  However, untapped concurrency
-could be exposed if this identification was made dynamically
-\cite{intel_prog_ref}.  In the previous example, a scenario arises where two
-threads are operating on independent memory locations within the data structure.
-The programmer has no way of telling the processor to execute both threads
-concurrently in this scenario, but transactional memory systems do. 
+could be exposed if the determination to actually execute sequentially was made
+dynamically \cite{intel_prog_ref}.  In the previous example, a scenario arises
+where two threads are operating on independent memory locations within the data
+structure.  The programmer has no way of telling the processor to execute both
+threads concurrently in this scenario, but transactional memory systems do. 
 \par
 
 \indent
@@ -172,7 +173,7 @@ dynamically determining when accesses to shared resources can be safely executed
 concurrently \cite{sle_rajwar}.  In the previous example, the programmer
 identifies the critical section as a transactional region. Multiple transactions
 execute concurrently.  The TM system records memory accesses as the transactions
-execute, and finds that the transactions operate on independent regions of the
+execute and finds that the transactions operate on independent regions of the
 data structure, i.e. there are no conflicting memory accesses.  Instead of being
 forced to execute sequentially by the programmer, the critical sections are
 allowed to safely execute concurrently by the TM system.  Transactional memory
@@ -184,8 +185,8 @@ mechanisms are analogous to conventional traffice lights \cite{neuling_vid}.
 Transactional memory operates on the same principles as database
 transactions \cite{tm_2nd}.  The processor atomically commits \textit{all}
 memory operations of a successful transaction or discards \textit{all} memory
-operations of a failed transaction.  In order for a transaction to execute
-successfully, it must be executed in isolation, i.e. without interfering with
+operations if the transaction should fail.  In order for a transaction to execute
+successfully, it must be executed in isolation, i.e. without conflicting with
 other tranasctions/threads memory operations.  This is the key principle that
 allows transactional memory to expose untapped concurrenty in multi-threaded
 applications.
@@ -199,7 +200,7 @@ processes representing the physical processes of the system \cite{fujimoto}.  In
 PDES applications, the events of a logical process are executed concurrently,
 but must be retrieved from a global pending event set by one of multiple execution
 threads, resulting in non-trivial contention for this structure.  A key
-challenge areas in PDES is the need for contention-free pending event set
+challenge area in PDES is the need for contention-free pending event set
 management solutions \cite{dickman}. Transactional memory can help alleviate
 contention for this shared structure and expose untapped concurrency in the
 simulation's execution.
@@ -625,7 +626,7 @@ represent strictly write opreations.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_size}
+    \includegraphics[totalheight=0.50\textheight,keepaspectratio]{trx_size}
     \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single
     thread on one core}}
     \label{fig:trx_size}
@@ -669,7 +670,7 @@ increases.
 \end{figure}
 
 \indent 
-It is evident that th write-set is strictly limited to half of the L1
+It is evident that the write-set is strictly limited to half of the L1
 cache.  However, the probability of an abort is non-trivial for any write-set
 size between 32 and 128 cache lines.  It is also evident that the read-set size
 is limited to a similar size as the write-set on a hyper-threaded core.
