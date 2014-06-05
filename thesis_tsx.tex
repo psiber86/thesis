@@ -134,36 +134,40 @@
 
 \indent 
 The advent of multi-core processors introduced a new avenue for increased
-performance and scalability through multi-threaded programming.  However, this
-avenue came with a toll: synchronization between multiple threads of execution,
-especially during the execution of critical sections.  By definition, a critical
-section is segment of code accessing a shared resource that can only be executed
-by one thread at any given time \cite{os_concepts}.
-\par
-
-\indent 
-For example, a multi-threaded application is to be designed to operate on a
-single, shared memory data structure.  For the sake of simplicity, the
+software performance and scalability through multi-threaded programming.
+However, this avenue came with a toll: the need for synchronization mechanisms
+between multiple threads of execution, especially during the execution of
+critical sections.  By definition, a critical section is a segment of code
+accessing a shared resource that can only be executed by one thread at any given
+time \cite{os_concepts}.  For example, a multi-threaded application is designed
+to operate on a shared two-dimensional array.  For the sake of simplicity, the
 programmer uses coarse-grained locking mechanisms to control access to the
-critical section, e.g. a single atomic lock for the entire data structure.  Once
+critical section, e.g. a single atomic lock for the entire grid.  The critical
+section reads a single cell, performs a calculation, and updates the cell.  Once
 a thread enters the critical section, it locks all other threads out of the
-entire data structure until it has completed its task, thus forcing the threads
-to essentially execute the critical section sequentially. This increases lock
-contention, consequently negatively impacting performance.  While
-programmers can employ more fine-grained locking mechanisms to expose
-concurrency, this approach is vastly more complicated and error prone
-\cite{sle_rajwar}.  
-\par
-
-\indent 
+entire grid until it has completed its task, thus forcing the threads to
+essentially execute sequentially upon entering the critical section.  This
+results in lock contention, and consequently negatively impacts performance, as
+threads must now wait for the currently executing thread to relinquish access to
+the shared resource.  Programmers can employ more fine-grained locking
+mechanisms to expose concurrency, such as locking individual rows or even
+individual cells in the previous example.  However, this approach is vastly more
+complicated and error prone \cite{sle_rajwar}; this approach requires the
+programmer to maintain a separate lock for each row or each cell respectively.
 Unfortunately, programmers are limited to using static information to determine
 when critical sections should be executed sequentially regardless of whether
-coarse-grained or fine-grained locking is used.  However, untapped concurrency
-could be exposed if the determination to actually execute sequentially was made
-dynamically \cite{intel_prog_ref}.  In the previous example, a scenario arises
-where two threads are operating on independent memory locations within the data
-structure.  The programmer has no way of telling the processor to execute both
-threads concurrently in this scenario, but transactional memory systems do. 
+coarse-grained or fine-grained locking is used.
+\par
+
+\indent
+However, untapped concurrency could be exposed if the determination to execute
+sequentially was made dynamically \cite{intel_prog_ref}.  In the previous
+example, a scenario arises where one thread will access one cell of the two
+dimensional array, while another thread will access a cell in an entirely
+different row.  The programmer only knows that any thread can access any given
+cell at any given time, and thus locks all cells when one thread is executing.
+However, transactional memory systems can dynamically determine when such a
+scenario arises and allow both threads to execute concurrently.
 \par
 
 \indent
@@ -171,8 +175,9 @@ Transactional memory (TM) is a concurrency control mechanism that
 attempts to eliminate the static sequential execution of critical sections by
 dynamically determining when accesses to shared resources can be safely executed
 concurrently \cite{sle_rajwar}.  In the previous example, the programmer
-identifies the critical section as a transactional region. Multiple transactions
-execute concurrently.  The TM system records memory accesses as the transactions
+identifies the critical section as a transactional region.  As threads enter the
+transactional region, they attempt to transactionally execute the critical
+section concurrently.  The TM system records memory accesses as the transactions
 execute and finds that the transactions operate on independent regions of the
 data structure, i.e. there are no conflicting memory accesses.  Instead of being
 forced to execute sequentially by the programmer, the critical sections are
@@ -193,17 +198,26 @@ applications.
 \par 
 
 \indent 
-One problem space that could benefit from transactional memory is that
-of Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation
-(DES) applications, a physical system is modeled as a collection of logical
-processes representing the physical processes of the system \cite{fujimoto}.  In
-PDES applications, the events of a logical process are executed concurrently,
-but must be retrieved from a global pending event set by one of multiple execution
-threads, resulting in non-trivial contention for this structure.  A key
-challenge area in PDES is the need for contention-free pending event set
-management solutions \cite{dickman}. Transactional memory can help alleviate
-contention for this shared structure and expose untapped concurrency in the
-simulation's execution.
+One problem space that could benefit from transactional memory is that of
+Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES)
+applications, a physical system is modeled as a collection of logical processes
+representing the physical processes of the system.  The system being modeled can
+only change state at discrete points in simulated time and only changes state
+upon execution of an event \cite{fujimoto}.  Large simulations, such as those in
+economics, engineering, and military tactics, require enormous resources and
+computational time, making it infeasible to execute them on sequential machines.
+The necessity to perform such large simulations has sparked considerable
+interest in the parallelization of these simulations.  In PDES, the events of a
+logical process are executed concurrently.  To further exploit concurrently,
+optimistic PDES aggressively schedules events instead of strictly enforcing
+causal ordering of event execution \cite{fujimoto,dickman_thesis}, meaning
+events will continue to be scheduled regardless of order until an error is
+\textit{detected}.  More importantly, the events must be retrieved from a global
+pending event set by one of multiple execution threads, resulting in non-trivial
+contention for this structure.  A key challenge area in PDES is the need for
+contention-free pending event set management solutions \cite{dickman}; this will
+be the primary focus of this research. Transactional memory can help alleviate contention for this shared structure and
+expose untapped concurrency in the simulation's execution.
 \par
 
 \subsection{\textbf{Research Statement}}
@@ -756,43 +770,45 @@ system.  Each LP executes and generates events; upon execution of an event, the
 LP updates its state and generates 0 or more events \cite{muthalagu}.  LPs are
 executed concurrently, i.e. their events of are executed concurrently.  However,
 events must be retrieved from a global pending event set by one of multiple
-execution threads, resulting in non-trivial contention for this structure.
+execution threads.  This process is implementation specific and will be
+discussed further below.
 \par
 
-\subsection{\textbf{The Pending Event Set}}
+\subsection{\textbf{WARPED and the Pending Event Set}}
 
-\indent The pending event set is a set of generated events that have not been
+\indent
+WARPED is a publicly available Discrete Event Simulation (DES) kernel
+implementing the Time Warp protocol \cite{martin,fujimoto}.  It was recently
+redesigned for parallel execution on multi-core processing nodes
+\cite{muthalagu}.  It has many configuration options and utilizes many different
+algorithms of the Time Warp protocol \cite{fujimoto}, many of which are beyond
+the scope of this research.
+\par
+
+\indent
+In WARPED, logical processes (LPs) consist of \textit{N} simulation objects.
+When a worker thread removes the top event of the LTSF queue for execution, it
+"schedules" the simulation object associated with that event.  To avoid
+contention for objects at the LTSF queue, the worker thread removes scheduled
+object from the LTSF queue to avoid multiple threads scheduling the same
+simulation object \cite{muthalagu}.
+\par
+
+\indent 
+The pending event set is a set of generated events that have not been
 processed yet.  Its design and implementation are crucial to the performance of
 the simulation \cite{twpes}.  In PDES,  
 
-\subsection{\textbf{WARPED}}
+\indent
+WARPED implements the pending event set in a two-level structure. Each LP
+maintains its own pending event list as an independently locked list.  A common
+Least Time Stamped First (LTSF) pending event queue is populated with the lowest
+timestamped event from each LP's event list.  The worker threads schedule the
+next events for execution from this LTSF queue, which is locked and sorted.
+Clearly this results in contention between the worker threads.  Previous studies
+have shown that contention for the LTSF queue negatively impacts performance
+once the number of worker threads exceeds 5-6.
 
-\indent WARPED is a publicly available Parallel Discrete Event Simulation (PDES)
-kernel implementing the Time Warp protocol \cite{martin}.  The original version
-of WARPED was designed and optimized for parallel execution on a Beowulf Cluster
-consisting of single core processing nodes.  A threaded version has since been
-designed for parallel execution on multi-core processing nodes \cite{muthalagu}.
-It has many configuration options and utilizes many different algorithms of the
-Time Warp protocol \cite{fujimoto}, many of which are beyond the scope of this
-research.\par
-
-\indent WARPED implements the pending event set in a two-level structure. Each
-LP maintains its own pending event list as an independently locked list.  A
-common Least Time Stamped First (LTSF) pending event queue is populated with the
-lowest timestamped event from each LP's event list.  This can be seen in Figure
-\textbf{XXX} \cite{dickman}.  The worker threads schedule the next events for
-execution from this LTSF queue, which is locked and sorted. Clearly this results
-in contention between the worker threads.  Previous studies have shown that
-contention for the LTSF queue negatively impacts performance once the number of
-worker threads exceeds 5-6.
-
-%\indent In WARPED, logical processes (LPs) consist of \textit{N} simulation
-%objects, as seen in Figure \textbf{XXX} \cite{martin}.  
-%When a worker thread removes the top event of the LTSF queue for execution, it
-%\textit{schedules} the simulation object associated with that event.  To avoid
-%contention for objects at the LTSF queue, the worker thread removes scheduled
-%object from the LTSF queue to avoid multiple threads scheduling the same
-%simulation object \cite{muthalagu}.
 
 \subsection{\textbf{Previous Studies with the Pending Event Set in Warped}}
 
@@ -847,7 +863,7 @@ results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
 
 \begin{figure}[H]
     \centering
-    \graphicspath{ {./data/} }
+    \graphicspath{ {./figures/} }
     \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-summary-multiset-hugeepidemicsim-timeVSthreads-1schQ}
     \caption{\textbf{Simulation Time as Number of Worker Threads is Increased
     Using Various Synchronization Mechanisms for 1 STL Multiset LTSF Queue}}
