@@ -222,6 +222,15 @@ contention for this shared structure and expose untapped concurrency in the
 simulation's execution.
 \par
 
+\indent
+Researchers at the University of Cincinnati have developed a PDES kernel called
+WARPED, using the optimistic Time Warp synchronization protocol.  In WARPED,
+events to be scheduled are sorted into a global Least-Time-Stamp-First (LTSF)
+queue.  When a worker thread schedules an event, it locks the LTSF queue and
+retrieves the event from the head of the queue.  Thus, the LTSF becomes the
+primary source of contention in the WARPED kernel. 
+\par
+
 \subsection{\textbf{Research Statement}}
 
 \indent 
@@ -749,6 +758,7 @@ transactions.
 \par
 
 \subsection{\textbf{Synchronization Latency}}
+% not sure if this is relevant at all or if this is an adequate test
 
 \indent
 Conventional synchronization mechanisms have varying latencies, therefore TSX
@@ -776,6 +786,7 @@ mechanisms take longer to actually complete the synchronization process.  This
 can most likely be attributed to the extra actions the hardware must perform to
 initiate transactional execution.
 
+%need to make image cleaner
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
@@ -783,7 +794,6 @@ initiate transactional execution.
     \caption{\textbf{Synchronization Latency}}
     \label{fig:tsx_latency}
 \end{figure}
-
 
 \subsection{\textbf{Nesting Transactions}}
 
@@ -801,7 +811,7 @@ one monolithic transaction \cite{intel_prog_ref}.
 \par
 
 \indent
-The total nesting depth is still limited by the physical resources of
+The total nesting depth is still LIMIted by the physical resources of
 the hardware.  If the nesting count exceeds this implementation specific limit,
 the transaction may abort.  Upon abort, the processor transitions to
 non-transactional execution as if the first lock instruction was executed
