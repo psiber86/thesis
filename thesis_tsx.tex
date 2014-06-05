@@ -833,14 +833,41 @@ transaction's write-set \cite{intel_prog_ref}.
 \section{\textbf{Parallel Discrete Event Simulation (PDES) and WARPED}}
 
 \indent
+Discrete Event Simulation (DES) models a system's state changes at discrete
+points in time.  In general, simulators consist of the following data structures
+\cite{fujimoto}:\par
+\textbf{Pending Event Set:} contains events that have been scheduled, but not
+processed.  Events are retrieved from this structure to be executed.\par
+\textbf{Clock:} denotes how far the simulation has progressed.\par
+\textbf{State:} describes the state of the system.\par
+
+\indent
+Physical processes are represented by Logical Processes (LPs) in the simulation
+\cite{des_misra}.  For example, in an epidemic simulation, LPs represent
+geographical locations containing a subset of the total population.  Events in
+this simulation represent the arrival or departure of individuals to or from
+locations, the progression of a diseased individual within a location, the
+diffusion of a disease within a geographical location, etc.  \cite{epidemic}.
+To effectively model epidemics, a significant population size and number of
+locations needs to be simulated.  It is infeasible to perform this simulation on
+a sequential machine.  
+
+\indent 
+The need for such large simulations has spurred the shift to
+Parallel Discrete Event Simulation (PDES) in which LPs are executed
+concurrently.  
+
+
+
+
+\indent
 Parallel Discrete Event Simulation (PDES) is the simulation of a collection of
 logical processes (LPs), each representing physical processes of a physical
 system.  Each LP executes and generates events; upon execution of an event, the
 LP updates its state and generates 0 or more events \cite{muthalagu}.  LPs are
 executed concurrently, i.e. their events of are executed concurrently.  However,
 events must be retrieved from a global pending event set by one of multiple
-execution threads.  This process is implementation specific and will be
-discussed further below.
+execution threads.  
 \par
 
 \subsection{\textbf{WARPED and the Pending Event Set}}
@@ -856,6 +883,9 @@ the scope of this research.
 
 \indent
 In WARPED, logical processes (LPs) consist of \textit{N} simulation objects.
+The worker threads "schedule" a certain simulation object by removing the top
+event of 
+
 When a worker thread removes the top event of the LTSF queue for execution, it
 "schedules" the simulation object associated with that event.  To avoid
 contention for objects at the LTSF queue, the worker thread removes scheduled
@@ -878,6 +908,37 @@ Clearly this results in contention between the worker threads.  Previous studies
 have shown that contention for the LTSF queue negatively impacts performance
 once the number of worker threads exceeds 5-6.
 
+The general event execution loop for the wprker threads is shown below in Figure
+~\ref{workerThreadAlgorithm} \cite{dickman}.
+
+\begin{figure}
+%\begin{verbatim}
+%worker_thread()
+%
+%  lock LTSF queue
+%  dequeue smallest event from LTSF
+%  unlock LTSF queue
+%
+%  while !done loop
+%
+%    process event (assume from LPi)
+%
+%    lock LPi queue 
+%
+%    dequeue smallest event from LPi
+%
+%    lock LTSF queue
+%
+%    insert event from LPi
+%    dequeue smallest event from LTSF
+%
+%    unlock LTSF queue
+%    unlock LPi queue
+%  end loop
+%\end{verbatim}
+\caption{Generalized event execution loop for the worker threads.  Many details
+  have been omitted for clarity.}\label{workerThreadAlgorithm}
+\end{figure}
 
 \subsection{\textbf{Previous Studies with the Pending Event Set in Warped}}
 
