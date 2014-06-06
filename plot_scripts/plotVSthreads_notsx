@@ -3,27 +3,31 @@
 if [ $# -lt 1 ]; then
     echo "usage: ./plotVSthreads_1schedq </path/to/data/file> "
 else
-    filename=$(basename "$1")
-    title=$(echo "$filename" | sed 's/.*-\(.*\)$/\1/g')
+    filenameEXT=$(basename "$1")
+    title=$(echo "$filenameEXT" | sed 's/.*-\(.*\)$/\1/g')
+    filename=$(echo "$filenameEXT" | sed 's/\(.*\).txt$/\1/g') 
 
     schq1_lower=4
     schq1_upper=11
     
     # write gnuplot.gpi file for 1schQ 
-    echo "set term pngcairo dashed" > "$1-1schQ.gpi"
-    echo "set output \"$1-1schQ.png\"" >> "$1-1schQ.gpi"
-    echo "set key right top" >> "$1-1schQ.gpi"
-    echo "set xrange [1:7]" >> "$1-1schQ.gpi"
-    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$1-1schQ.gpi"
-    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$1-1schQ.gpi"
-    echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$1-1schQ.gpi"
-    echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$1-1schQ.gpi"
-    echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$1-1schQ.gpi"
-    echo "set xlabel 'Number of Worker Threads'" >> "$1-1schQ.gpi"
-    echo "set ylabel 'Simulation Time (s)'" >> "$1-1schQ.gpi"
-    echo "plot \"<(sed -n '$schq1_lower,${schq1_upper}p' $1)\" using 1:2:3 title 'lock' with lines ls 1, \\" >> "$1-1schQ.gpi"
-    echo "'' using 1:2:3 notitle with yerrorbars ls 1" >> "$1-1schQ.gpi"
+    echo "set term pngcairo dashed" > "$filename-1schQ.gpi"
+    echo "set output \"notsx_profile.png\"" >> "$filename-1schQ.gpi"
+    echo "set key right top" >> "$filename-1schQ.gpi"
+    echo "set xrange [1:7]" >> "$filename-1schQ.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set xlabel 'Number of Worker Threads'" >> "$filename-1schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-1schQ.gpi"
+    echo "plot \"<(sed -n '$schq1_lower,${schq1_upper}p' $1)\" using 1:2:3 title '' with lines ls 1, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1" >> "$filename-1schQ.gpi"
 
     # perform actual plotting
-    gnuplot "$1-1schQ.gpi"
+    gnuplot "$filename-1schQ.gpi"
+
+    rm *.gpi
+    mv *.png ../figures/
 fi
