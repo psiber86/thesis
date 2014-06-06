@@ -23,6 +23,7 @@
 \usepackage{indentfirst}
 \usepackage{enumitem}
 \usepackage{pdfpages}
+\usepackage{alltt}
 
 \captionsetup[sub]{labelsep=newline}
 
@@ -835,40 +836,51 @@ transaction's write-set \cite{intel_prog_ref}.
 \indent
 Discrete Event Simulation (DES) models a system's state changes at discrete
 points in time.  In general, simulators consist of the following data structures
-\cite{fujimoto}:\par
+\cite{fujimoto}:
 \textbf{Pending Event Set:} contains events that have been scheduled, but not
-processed.  Events are retrieved from this structure to be executed.\par
-\textbf{Clock:} denotes how far the simulation has progressed.\par
-\textbf{State:} describes the state of the system.\par
+processed.  Events are retrieved from this structure to be executed.
+\textbf{Clock:} denotes how far the simulation has progressed.
+\textbf{State:} describes the state of the system.
+The state of the simulation can only change upon execution of an event.
+During the execution of an event, the simulation: 1) retrieves the least 
+timestamped event from the pending event set, 2) Processes the event, 3) Updates
+the LPs state, and 4) inserts generated events into the pending event set.
+\par
 
 \indent
 Physical processes are represented by Logical Processes (LPs) in the simulation
 \cite{des_misra}.  For example, in an epidemic simulation, LPs represent
-geographical locations containing a subset of the total population.  Events in
-this simulation represent the arrival or departure of individuals to or from
-locations, the progression of a diseased individual within a location, the
-diffusion of a disease within a geographical location, etc.  \cite{epidemic}.
-To effectively model epidemics, a significant population size and number of
-locations needs to be simulated.  It is infeasible to perform this simulation on
-a sequential machine.  
+geographical locations containing a subset of the total population.  The LPs
+state represents the diffusion of the disease within the location and the status
+of the occupants within the location.  Events in this simulation represent the
+arrival or departure of individuals to or from locations, the progression of a
+diseased individual within a location, the diffusion of a disease within a
+geographical location, etc. \cite{epidemic}. To effectively model epidemics, a
+significant population size and number of locations needs to be simulated.  It
+becomes infeasible to perform this simulation on a sequential machine.  
+\par
 
 \indent 
-The need for such large simulations has spurred the shift to
-Parallel Discrete Event Simulation (PDES) in which LPs are executed
-concurrently.  
+The need for such large simulations has energized research in Parallel Discrete
+Event Simulation (PDES).  Events from seaparate LPs are executed concurrently by
+one of \textit{N} threads.  Each LPs' events execute in chronological
+order to ensure local causality constraints are met \cite{fujimoto}.  However,
+PDES is susceptible to other causality errors, optimistically synchronized PDES
+being the most susceptible.  Optimistic approaches, such as the Time Warp
+protocol which is used in the WARPED simulation kernel, detect rather than
+prevent causal errors.  This allows for increased concurrency as events are
+continually scheduled until a causal error is detected.
+%do I need to talk about all the causality stuff
 
-
-
+%maybe something on rollbacks
 
 \indent
-Parallel Discrete Event Simulation (PDES) is the simulation of a collection of
-logical processes (LPs), each representing physical processes of a physical
-system.  Each LP executes and generates events; upon execution of an event, the
-LP updates its state and generates 0 or more events \cite{muthalagu}.  LPs are
-executed concurrently, i.e. their events of are executed concurrently.  However,
-events must be retrieved from a global pending event set by one of multiple
-execution threads.  
-\par
+Another dilemma introduced by PDES is the problem of efficiently managing the
+pending event set.  Management of the pending event set is crucial to the
+performance of the simulation \cite{twpes}.  The worker threads must schedule
+events from a global pending event set, resulting in non-trivial contention for
+this data structure.  The management of the pending event set is implementation
+specific, and will be discussed after a brief background of WARPED.
 
 \subsection{\textbf{WARPED and the Pending Event Set}}
 
@@ -877,68 +889,73 @@ WARPED is a publicly available Discrete Event Simulation (DES) kernel
 implementing the Time Warp protocol \cite{martin,fujimoto}.  It was recently
 redesigned for parallel execution on multi-core processing nodes
 \cite{muthalagu}.  It has many configuration options and utilizes many different
-algorithms of the Time Warp protocol \cite{fujimoto}, many of which are beyond
-the scope of this research.
+algorithms of the Time Warp protocol \cite{fujimoto}.
 \par
 
 \indent
-In WARPED, logical processes (LPs) consist of \textit{N} simulation objects.
-The worker threads "schedule" a certain simulation object by removing the top
-event of 
-
-When a worker thread removes the top event of the LTSF queue for execution, it
-"schedules" the simulation object associated with that event.  To avoid
-contention for objects at the LTSF queue, the worker thread removes scheduled
-object from the LTSF queue to avoid multiple threads scheduling the same
-simulation object \cite{muthalagu}.
+The pending event set is maintained as a two-level structure in WARPED
+\cite{dickman}.  Each LP maintains its own event set as timestamp ordered queue.
+A common Least Time-Stamped First queue is populated with the least time stamped
+event from each LP's pending event set.  As the name suggests, the LTSF queue is
+automatically sorted so that worker threads can simply retrieve an event from he
+head of the queue.
 \par
 
-\indent 
-The pending event set is a set of generated events that have not been
-processed yet.  Its design and implementation are crucial to the performance of
-the simulation \cite{twpes}.  In PDES,  
-
 \indent
-WARPED implements the pending event set in a two-level structure. Each LP
-maintains its own pending event list as an independently locked list.  A common
-Least Time Stamped First (LTSF) pending event queue is populated with the lowest
-timestamped event from each LP's event list.  The worker threads schedule the
-next events for execution from this LTSF queue, which is locked and sorted.
-Clearly this results in contention between the worker threads.  Previous studies
-have shown that contention for the LTSF queue negatively impacts performance
-once the number of worker threads exceeds 5-6.
+A manager thread initiates \textit{n} worker threads at the beginning of the
+simulation.  It can also suspend inactive worker threads if they run out of
+useful work.  When a worker thread is created, or resumes execution after being suspended by
+the manager thread, it attempts to lock the LTSF queue and dequeue the least
+time-stamped event.  If the worker thread succesfully retrieved an event, it
+executes that event as specified by the simulation model.  It then attempts to
+lock the pending event set for the LP associated with the executed event, and
+dequeues the next least timestamped event if it successfully locked the pending
+event set queue.  The dequeued event is inserted into the LTSF queue, which
+resorts based on the event time stamps.  An abstract event processing algorithm
+is shown in Figure ~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the
+worker threads perform many other functions; the previously described actions
+are the only relevant events to this research.  The entire pending event set
+implementation can be seen in Figure ~\ref{fig:singleLTSFqueue} \cite{dickman}.
 
-The general event execution loop for the wprker threads is shown below in Figure
-~\ref{workerThreadAlgorithm} \cite{dickman}.
-
+\linespread{1.0}
 \begin{figure}
-%\begin{verbatim}
-%worker_thread()
-%
-%  lock LTSF queue
-%  dequeue smallest event from LTSF
-%  unlock LTSF queue
-%
-%  while !done loop
-%
-%    process event (assume from LPi)
-%
-%    lock LPi queue 
-%
-%    dequeue smallest event from LPi
-%
-%    lock LTSF queue
-%
-%    insert event from LPi
-%    dequeue smallest event from LTSF
-%
-%    unlock LTSF queue
-%    unlock LPi queue
-%  end loop
-%\end{verbatim}
+\begin{verbatim}
+worker_thread()
+
+  lock LTSF queue
+  dequeue smallest event from LTSF
+  unlock LTSF queue
+
+  while !done loop
+
+    process event (assume from LPi)
+
+    lock LPi queue 
+
+    dequeue smallest event from LPi
+
+    lock LTSF queue
+
+    insert event from LPi
+    dequeue smallest event from LTSF
+
+    unlock LTSF queue
+    unlock LPi queue
+  end loop
+\end{verbatim}
+\linespread{2.0}
 \caption{Generalized event execution loop for the worker threads.  Many details
   have been omitted for clarity.}\label{workerThreadAlgorithm}
 \end{figure}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{single_ltsf_queue}
+    \caption{\textbf{Pending Event Set Scheduling}}
+    \label{fig:singleLTSFqueue}
+\end{figure}
+
 
 \subsection{\textbf{Previous Studies with the Pending Event Set in Warped}}
 
