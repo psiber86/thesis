@@ -872,7 +872,7 @@ prevent causal errors.  This allows for increased concurrency as events are
 continually scheduled until a causal error is detected.
 %do I need to talk about all the causality stuff
 
-%maybe something on rollbacks
+%TODO:rollbacks
 
 \indent
 Another dilemma introduced by PDES is the problem of efficiently managing the
@@ -894,29 +894,34 @@ algorithms of the Time Warp protocol \cite{fujimoto}.
 
 \indent
 The pending event set is maintained as a two-level structure in WARPED
-\cite{dickman}.  Each LP maintains its own event set as timestamp ordered queue.
+\cite{dickman}.  Each LP maintains its own event set as a timestamp ordered queue.
 A common Least Time-Stamped First queue is populated with the least time stamped
 event from each LP's pending event set.  As the name suggests, the LTSF queue is
 automatically sorted so that worker threads can simply retrieve an event from he
-head of the queue.
+head of the queue.  This guarantees the worker thread retrieves the least time-stamped
+event without having to searching through the queue.
 \par
+
+\subsubsection{\textbf{Worker Thread Event Execution}}
 
 \indent
 A manager thread initiates \textit{n} worker threads at the beginning of the
 simulation.  It can also suspend inactive worker threads if they run out of
-useful work.  When a worker thread is created, or resumes execution after being suspended by
-the manager thread, it attempts to lock the LTSF queue and dequeue the least
-time-stamped event.  If the worker thread succesfully retrieved an event, it
-executes that event as specified by the simulation model.  It then attempts to
-lock the pending event set for the LP associated with the executed event, and
-dequeues the next least timestamped event if it successfully locked the pending
-event set queue.  The dequeued event is inserted into the LTSF queue, which
-resorts based on the event time stamps.  An abstract event processing algorithm
-is shown in Figure ~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the
-worker threads perform many other functions; the previously described actions
-are the only relevant events to this research.  The entire pending event set
-implementation can be seen in Figure ~\ref{fig:singleLTSFqueue} \cite{dickman}.
+useful work.  When a worker thread is created, or resumes execution after being
+suspended by the manager thread, it attempts to lock the LTSF queue and dequeue
+the least time-stamped event.  If the worker thread succesfully retrieved an
+event, it executes that event as specified by the simulation model.  It then
+attempts to lock the pending event set for the LP associated with the executed
+event, and dequeues the next least timestamped event if it successfully locked
+the pending event set queue.  The dequeued event is inserted into the LTSF
+queue, which resorts itself based on the event time stamps.  An abstract event
+processing algorithm is shown in Figure ~\ref{workerThreadAlgorithm}
+\cite{dickman}.  Note that the worker threads perform many other functions.  The
+entire pending event set implementation can be seen in Figure
+~\ref{fig:singleLTSFqueue} \cite{dickman}.
 
+%Is it legitimate for me to cite figures and pseudocode or do I need to recreate
+%these?
 \linespread{1.0}
 \begin{figure}
 \begin{verbatim}
@@ -956,17 +961,74 @@ worker_thread()
     \label{fig:singleLTSFqueue}
 \end{figure}
 
+\subsubsection{\textbf{Contention}}
 
-\subsection{\textbf{Previous Studies with the Pending Event Set in Warped}}
+\indent
+Only one worker thread can access the LTSF queue at a time.  This creates a
+clear point of contention during event scheduling as each thread must first
+retrieve an event from the LTSF queue.  The LTSF queue must also be updated when
+events are inserted into any of the LP pending event sets.  This occurs when new
+events are generated or the simulation encounters a causality error and must
+rollback;  previously executed events are reinserted into the LPs pending event
+set. 
+\par
 
-\indent Dickman et al. explored the explored the use of various data structures
-in the WARPED pending event set implementation, specifically, the STL multiset,
-splay tree, and ladder queue data structures. Furthermore, they explored the use
-of multiple LTSF queues \cite{dickman}.  They found that using the ladder queue
-data structure and multiple LTSF queues resulted in better simulation
-performance for certain scenarios.  A secondary focus of this study will expand
-upon the use of multiple LTSF queues, as well as the use of splay tree versus 
-STL multiset data structures.\par
+\indent
+Contention increases with the number of worker threads used to perform the
+simulation.  The initial WARPED implementation execution time was measured and
+analyzed for 1 to 7 worker threads.  These results can be seen in Figure
+~\ref{fig:notsx_profile}.  It is evident that performance begins to plateau once
+the number of worker threads used surpasses four.  This is attributed to the
+increased contention for the LTSF queue; with more threads, each thread has to
+wait longer for access to the LTSF queue.  As the multi-core processor trend
+continues to increase the number of simultaneous execution threads available,
+the contention problem will also increase.  
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{notsx_profile}
+    \caption{\textbf{WARPED Simulation Time versus Worker Thread Count for
+    Epidemic Model}}
+    \label{fig:notsx_profile}
+\end{figure}
+
+\subsection{\textbf{Previous Studies with the Pending Event Set in WARPED}}
+
+\indent 
+Dickman et al. explored the explored the use of various data structures in the
+WARPED pending event set implementation, specifically, the STL multiset, splay
+tree, and ladder queue data structures \cite{dickman}.  A secondary focus of
+this study will expand upon the use of splay tree versus STL multiset data
+structures; at the time of this study, the ladder queue implementation was being
+heavily modified and could not be included in this study.
+\par
+
+\indent
+Another focus of their study was the utilization of multiple LTSF queues
+\cite{dickman}.  Multiple LTSF queues are created at the beginning of the
+simulation.  Each LP is assigned to a specific LTSF queue as shown in Figure
+~\ref{fig:multipleLTSF}.  In a simulation configured with four LPs, two worker
+threads, and two LTSF queues, two LPs and one thread are assigned to each queue.
+This significantly reduced contention as each thread could access separate LTSF
+queues concurrently.  The initial implementation statically assigned LPs to LTSF
+queues.  This resulted in an unbalanced load distribution, leading to an
+increased number of rollbacks and reduced simulation performance.  This was
+corrected using a load balancing algorithm to dynamically reassing LPs to LTSF
+queues.  This study expands the previous multiple LTSF queue to evaluate if
+contention can be reduced even further with TSX.
+\par
+
+\indent
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{multiple_ltsf}
+    \caption{\textbf{WARPED Simulation Time versus Worker Thread Count for
+    Epidemic Model}}
+    \label{fig:multipleLTSF}
+\end{figure}
 
 \newpage
 \section{\textbf{Experimental Analysis}}
