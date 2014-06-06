@@ -260,7 +260,7 @@ to refer to Intel's HTM implementation for the remainder of this study.
 \indent 
 While WARPED uses many shared data structures, the focus of this thesis
 is on the pending event set.  It is the primary bottleneck in PDES applications,
-and hence the primary motivation for this study.
+and hence the primary motivation for this study.  However, two other 
 \par
 
 \subsection{\textbf{Thesis Overview}}
@@ -601,13 +601,15 @@ will result in a General Protection Fault as well \cite{intel_opt_man}.
 \section{\textbf{Practical Programming with TSX}}
 
 \indent 
-One of the disadvantages of HTM is the physical limitations of the
-hardware.  This section evaluates practical programming techniques to consider
-when using TSX to ensure optimal performance.  Custom benchmarks were developed
-to evaluate these various constraints.  All benchmarks were run on a system with
-an Intel i7-4770 running at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way,
-set associative L1 cache and a 256 L2 cache.  Each cache line is 64 bytes.  This
-information was verified using common Unix commands.
+Before implementing TSX in the WARPED simulation kernel, a more in depth
+evaluation of its capabilities needed to be performed.  One of the disadvantages
+of HTM is the physical limitations of the hardware.  This section evaluates
+practical programming techniques to consider when using TSX to ensure optimal
+performance.  Custom benchmarks were developed to evaluate these various
+constraints.  All benchmarks were run on a system with an Intel i7-4770 running
+at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way, set associative L1 cache
+and a 256 L2 cache.  Each cache line is 64 bytes.  This information was verified
+using common Unix commands.
 \par
 
 \subsection{\textbf{Memory Organization}}
@@ -812,7 +814,7 @@ one monolithic transaction \cite{intel_prog_ref}.
 \par
 
 \indent
-The total nesting depth is still LIMIted by the physical resources of
+The total nesting depth is still limited by the physical resources of
 the hardware.  If the nesting count exceeds this implementation specific limit,
 the transaction may abort.  Upon abort, the processor transitions to
 non-transactional execution as if the first lock instruction was executed
@@ -836,10 +838,10 @@ transaction's write-set \cite{intel_prog_ref}.
 \indent
 Discrete Event Simulation (DES) models a system's state changes at discrete
 points in time.  In general, simulators consist of the following data structures
-\cite{fujimoto}:
+\cite{fujimoto}:\par
 \textbf{Pending Event Set:} contains events that have been scheduled, but not
-processed.  Events are retrieved from this structure to be executed.
-\textbf{Clock:} denotes how far the simulation has progressed.
+processed.  Events are retrieved from this structure to be executed.\par
+\textbf{Clock:} denotes how far the simulation has progressed.\par
 \textbf{State:} describes the state of the system.
 The state of the simulation can only change upon execution of an event.
 During the execution of an event, the simulation: 1) retrieves the least 
@@ -860,7 +862,6 @@ significant population size and number of locations needs to be simulated.  It
 becomes infeasible to perform this simulation on a sequential machine.  
 \par
 
-\indent 
 The need for such large simulations has energized research in Parallel Discrete
 Event Simulation (PDES).  Events from seaparate LPs are executed concurrently by
 one of \textit{N} threads.  Each LPs' events execute in chronological
@@ -869,22 +870,62 @@ PDES is susceptible to other causality errors, optimistically synchronized PDES
 being the most susceptible.  Optimistic approaches, such as the Time Warp
 protocol which is used in the WARPED simulation kernel, detect rather than
 prevent causal errors.  This allows for increased concurrency as events are
-continually scheduled until a causal error is detected.
-%do I need to talk about all the causality stuff
+continually executed until a causal error is detected.  In contrast,
+conservative approaches do not execute events until the system has determined it
+is safe to do so \cite{fujimoto}.
+\par
 
-%TODO:rollbacks
+One of the most well-known optimistic protocols is the Time Warp mechanism
+\cite{fujimoto}.  In addition to the standard DES data structures, each LP in a
+simulation implementing the Time Warp protocol consists of the following data
+structures:\par 
+\textbf{Unprocessed Queue:} contains events that have been scheduled, but have
+yet to be executed.  This structure acts as the pending event set for the
+LP.\par 
+\textbf{Processed Queue:} records previously executed events.\par
+\textbf{Output Queue:} contains event messages sent to other LPs.\par
 
-\indent
-Another dilemma introduced by PDES is the problem of efficiently managing the
-pending event set.  Management of the pending event set is crucial to the
-performance of the simulation \cite{twpes}.  The worker threads must schedule
-events from a global pending event set, resulting in non-trivial contention for
-this data structure.  The management of the pending event set is implementation
-specific, and will be discussed after a brief background of WARPED.
+In Time Warp, a causality error occurs if an event message is
+received containing an event timestamp smaller than the timestamp of the
+previously executed event.  Such an event is known as a straggler event.  When a
+straggler event is received by an LP, that LP must undo all effects of all
+events executed with a timestamp greater than that of the straggler event,
+henceforth referred to as a rollback.  During a rollback, prematurely executed
+events are removed from the processed queue and reinserted into the unprocessed
+queue after the straggler event,  For every event message in the output queue
+with an event timestamp greater than that of the straggler event, an
+anti-message is generated.  Anti-messages are sent to the associated LP of that
+event and remove the prematurely generated event from the LP's queue.  Figure
+~\ref{fig:rollback_stragglerrecvd} shows the scheduling state of the LP as a
+straggler event is received.  Figure ~\ref{fig:rollback_processed} shows the
+scheduling state of the LP after the rollback is processed \cite{dickman}.
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{rollback_recv}
+    \caption{\textbf{LP at the time of a straggler event is received}}
+    \label{fig:rollback_stragglerrecvd}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{rollback_processed}
+    \caption{\textbf{LP after a rollback is processed}}
+    \label{fig:rollback_processed}
+\end{figure}
+
+While rollbacks are a problem in themselves, rollbacks represent another issue
+relevant to this study; the need to access the pending event set.  When a
+rollback modifies an LP's local pending event set, the global pending event set
+must be updated as well.  Any access to the global pending event set is a
+possible point of contention as only one thread can access this structure at a
+time.  The implementation and management of the pending event set is crucial to
+the overall performance of PDES \cite{twpes}.  
 
 \subsection{\textbf{WARPED and the Pending Event Set}}
 
-\indent
 WARPED is a publicly available Discrete Event Simulation (DES) kernel
 implementing the Time Warp protocol \cite{martin,fujimoto}.  It was recently
 redesigned for parallel execution on multi-core processing nodes
@@ -892,33 +933,32 @@ redesigned for parallel execution on multi-core processing nodes
 algorithms of the Time Warp protocol \cite{fujimoto}.
 \par
 
-\indent
 The pending event set is maintained as a two-level structure in WARPED
-\cite{dickman}.  Each LP maintains its own event set as a timestamp ordered queue.
-A common Least Time-Stamped First queue is populated with the least time stamped
-event from each LP's pending event set.  As the name suggests, the LTSF queue is
-automatically sorted so that worker threads can simply retrieve an event from he
-head of the queue.  This guarantees the worker thread retrieves the least time-stamped
-event without having to searching through the queue.
-\par
+\cite{dickman}.  Each LP maintains its own event set as a timestamp ordered
+queue.  As previously mentioned, each LP maintains an unprocessed queue for
+scheduled event to be executed and a processed queue to store processed events.  
+A common Least Time-Stamped First queue is populated with the least time
+stamped event from each LP's unprocessed queue.  As the name suggests, the LTSF
+queue is automatically sorted in increasing timestamp order so that worker
+threads can simply retrieve an event from he head of the queue.  This guarantees
+the worker thread retrieves the least timestamped event without having to
+search through the queue.  \par
 
 \subsubsection{\textbf{Worker Thread Event Execution}}
 
-\indent
 A manager thread initiates \textit{n} worker threads at the beginning of the
 simulation.  It can also suspend inactive worker threads if they run out of
 useful work.  When a worker thread is created, or resumes execution after being
 suspended by the manager thread, it attempts to lock the LTSF queue and dequeue
-the least time-stamped event.  If the worker thread succesfully retrieved an
+the least timestamped event.  If the worker thread succesfully retrieved an
 event, it executes that event as specified by the simulation model.  It then
-attempts to lock the pending event set for the LP associated with the executed
-event, and dequeues the next least timestamped event if it successfully locked
-the pending event set queue.  The dequeued event is inserted into the LTSF
-queue, which resorts itself based on the event time stamps.  An abstract event
-processing algorithm is shown in Figure ~\ref{workerThreadAlgorithm}
-\cite{dickman}.  Note that the worker threads perform many other functions.  The
-entire pending event set implementation can be seen in Figure
-~\ref{fig:singleLTSFqueue} \cite{dickman}.
+attempts to lock the unprocessed queue for the LP associated with the executed
+event, and dequeue the next least timestamped event.  The dequeued event is
+inserted into the LTSF queue, which resorts itself based on the event
+timestamps.  An abstract event processing algorithm is shown in Figure
+~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads
+perform many other functions.  The entire pending event set implementation can
+be seen in Figure ~\ref{fig:singleLTSFqueue} \cite{dickman}.
 
 %Is it legitimate for me to cite figures and pseudocode or do I need to recreate
 %these?
@@ -963,26 +1003,24 @@ worker_thread()
 
 \subsubsection{\textbf{Contention}}
 
-\indent
 Only one worker thread can access the LTSF queue at a time.  This creates a
 clear point of contention during event scheduling as each thread must first
 retrieve an event from the LTSF queue.  The LTSF queue must also be updated when
 events are inserted into any of the LP pending event sets.  This occurs when new
 events are generated or the simulation encounters a causality error and must
-rollback;  previously executed events are reinserted into the LPs pending event
-set. 
+rollback.
 \par
 
-\indent
 Contention increases with the number of worker threads used to perform the
 simulation.  The initial WARPED implementation execution time was measured and
 analyzed for 1 to 7 worker threads.  These results can be seen in Figure
 ~\ref{fig:notsx_profile}.  It is evident that performance begins to plateau once
 the number of worker threads used surpasses four.  This is attributed to the
 increased contention for the LTSF queue; with more threads, each thread has to
-wait longer for access to the LTSF queue.  As the multi-core processor trend
+wait longer for access to the LTSF queue.  The multi-core processor trend
 continues to increase the number of simultaneous execution threads available,
-the contention problem will also increase.  
+consequently increasing the contention problem.
+\par
 
 \begin{figure}[H]
     \centering
@@ -995,7 +1033,6 @@ the contention problem will also increase.
 
 \subsection{\textbf{Previous Studies with the Pending Event Set in WARPED}}
 
-\indent 
 Dickman et al. explored the explored the use of various data structures in the
 WARPED pending event set implementation, specifically, the STL multiset, splay
 tree, and ladder queue data structures \cite{dickman}.  A secondary focus of
@@ -1004,7 +1041,6 @@ structures; at the time of this study, the ladder queue implementation was being
 heavily modified and could not be included in this study.
 \par
 
-\indent
 Another focus of their study was the utilization of multiple LTSF queues
 \cite{dickman}.  Multiple LTSF queues are created at the beginning of the
 simulation.  Each LP is assigned to a specific LTSF queue as shown in Figure
@@ -1019,28 +1055,26 @@ queues.  This study expands the previous multiple LTSF queue to evaluate if
 contention can be reduced even further with TSX.
 \par
 
-\indent
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{multiple_ltsf}
-    \caption{\textbf{WARPED Simulation Time versus Worker Thread Count for
-    Epidemic Model}}
+    \caption{\textbf{Pending Event Set Scheduling with Multiple LTSF Queues}}
     \label{fig:multipleLTSF}
 \end{figure}
 
 \newpage
 \section{\textbf{Experimental Analysis}}
 
-\indent This study compares the performance of the WARPED simulation kernel
+This study compares the performance of the WARPED simulation kernel
 using conventional synchronization mechanisms, Hardware Lock Elision, and
 Restricted Transactional memory.  All simulations were performed on a system
 with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  Average execution
 time and standard deviation were calculated from a set of 10 trials for each
 simulation configuration.\par
 
-\indent The simulation model used to obtain the following results is an epidemic
+The simulation model used to obtain the following results is an epidemic
 model.  It consists of 110998 geographically distributed people
 requiring a total of 110998 LPs.  The epidemic is modeled by reaction processes
 to model progression of the disease within an individual entity, and diffusion
@@ -1059,7 +1093,6 @@ processes to model transmission of the disease among individual entities.\par
 
 \subsection{\textbf{Lock Contention}}
 
-\indent
 The first part of this study compares the performance of the original WARPED
 pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
 1 retry, 4) RTM with 4 retries, and 5) RTM with 9 retries.  It should be noted
@@ -1121,7 +1154,6 @@ results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
     \label{tab:noThrMig_6threadsXschq}
 \end{table}
 
-\indent
 It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
 contention is increasing as the number of worker threads increases.
 Furthermore, it would appear that utilizing more than one LTSF queue is no
@@ -1131,7 +1163,6 @@ performance could be attributed to recent changes made to the WARPED kernel.\par
 
 \subsubsection{\textbf{Continuous Thread Migration}}
 
-\indent
 Based on the less than desirable results above, a roaming thread migration
 technique was implemented to alleviate contention on the LTSF queues.  It
 distributes threads that attempt to access the same LTSF queue to separate LTSF
