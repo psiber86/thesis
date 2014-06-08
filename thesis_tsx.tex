@@ -24,11 +24,14 @@
 \usepackage{enumitem}
 \usepackage{pdfpages}
 \usepackage{alltt}
+\usepackage{enumerate}
 
 %\captionsetup[sub]{labelsep=newline}
 
 % line spacing
 \linespread{2.0}
+
+\def\labelitemi{--}
 
 % bold item
 \let\origitem\item
@@ -838,14 +841,15 @@ transaction's write-set \cite{intel_prog_ref}.
 
 \subsection{\textbf{Parallel Discrete Event Simulation Background}}
 
-\indent
 Discrete Event Simulation (DES) models a system's state changes at discrete
 points in time.  In general, simulators consist of the following data structures
 \cite{fujimoto}:\par
-\textbf{Pending Event Set:} contains events that have been scheduled, but not
-processed.  Events are retrieved from this structure to be executed.\par
-\textbf{Clock:} denotes how far the simulation has progressed.\par
-\textbf{State:} describes the state of the system.
+\begin{itemize}
+\item\textbf{Pending Event Set:} contains events that have been scheduled, but not
+processed.  Events are retrieved from this structure to be executed.
+\item\textbf{Clock:} denotes how far the simulation has progressed.
+\item\textbf{State:} describes the state of the system.
+\end{itemize}
 The state of the simulation can only change upon execution of an event.
 During the execution of an event, the simulation: 1) retrieves the least 
 timestamped event from the pending event set, 2) Processes the event, 3) Updates
@@ -882,11 +886,13 @@ One of the most well-known optimistic protocols is the Time Warp mechanism
 \cite{fujimoto}.  In addition to the standard DES data structures, each LP in a
 simulation implementing the Time Warp protocol consists of the following data
 structures:\par 
-\textbf{Unprocessed Queue:} contains events that have been scheduled, but have
+\begin{itemize}
+\item\textbf{Unprocessed Queue:} contains events that have been scheduled, but have
 yet to be executed.  This structure acts as the pending event set for the
-LP.\par 
-\textbf{Processed Queue:} records previously executed events.\par
-\textbf{Output Queue:} contains event messages sent to other LPs.\par
+LP. 
+\item\textbf{Processed Queue:} records previously executed events.
+\item\textbf{Output Queue:} contains event messages sent to other LPs.
+\end{itemize}
 
 In Time Warp, a causality error occurs if an event message is
 received containing an event timestamp smaller than the timestamp of the
@@ -1051,7 +1057,7 @@ consequently increasing the contention problem.
     \label{fig:notsx_profile}
 \end{figure}
 
-\subsection{\textbf{Previous Contention Solutions}}
+\subsection{\textbf{Previous Solutions to Contention}}
 
 Dickman et al. explored the explored the use of various data structures in the
 WARPED pending event set implementation, specifically, the STL multiset, splay
@@ -1083,73 +1089,188 @@ contention can be reduced even further with TSX.
     \label{fig:multipleLTSF}
 \end{figure}
 
-\subsection{\textbf{Another Contention Solution: Thread Migration}}
+\subsection{\textbf{Thread Migration: Another Solution to Contention}}
+
+Another potential solution to contention is to distribute worker threads that
+try to simultaneously access the same LTSF queue to different LTSF queues.
+In the original scheduling scheme, the worker thread would insert the next event
+into the same LTSF it had just scheduled from as seen in Figure
+~\ref{workerThredAlgorithm}.  In this implementation, the worker thread inserts
+the next event into a different LTSF queue, based on a circularly incrementing
+counter.
+
+\linespread{1.0}
+\begin{figure}
+\begin{verbatim}
+worker_thread()
+
+  i = fetch-and-add LTSF queue index
+  lock LTSF[i]
+  dequeue smallest event from LTSF[i]
+  unlock LTSF[i]
+
+  while !done loop
+
+    process event (assume from LPi)
+
+    lock LPi queue
+    
+    dequeue smallest event from LPi
+
+    i = fetch-and-add LTSF queue index
+
+    lock LTSF[i]
+
+    insert event from LPi into LTSF[i]
+    dequeue smallest event from LTSF[i]
+
+    unlock LTSF queue
+    unlock LPi queue
+  end loop
+\end{verbatim}
+\linespread{2.0}
+\caption{Generalized event execution loop for migrating worker threads.  Many details
+  have been omitted for clarity.}\label{migratinWorkerThreadAlgorithm}
+\end{figure}
+
+It was discovered that this implementation resulted in poor performance on NUMA
+architectures.  Jingjing Wang et al. noticed similar performance degredation,
+which they attributed to poor memory locality due to the movement of LPs to
+different threads \cite{numa}.  To offset these performance hits, a migration
+count was implemented in this scheme.  Instead continuous migration, threads
+would be statically assigned to one LTSF after executing a certain number of
+events.
 
 \newpage
-\section{\textbf{TSX WARPED}}
+\section{\textbf{WARPED with TSX}}
 
 This section analyzes the various critical sections that use the TSX mechanism.
 As previously mentioned, the primary focus of this study is the shared LTSF
 queue.  The per LP unprocessed and processed queues also use the TSX mechanism.
-Functions are only explained in terms of the operations pertaining to the
-specific data structure they operate on for the sake of clarity.  
 \par
 
-\subsection{\textbf{LTSF Queue}}
+\subsection{\textbf{Shared Data Structure Critical Sections}}
+
+First, it is important to understand the operations performed in a critical
+section.  If a critical section alwasy writes to the entire shared data
+structure, TSX will most likely not be useful.  Functions are only explained in
+terms of the operations pertaining to the specific data structure they operate
+on for the sake of clarity.  
+\par
+
+\subsubsection{\textbf{LTSF Queue Functions}}
 
 The following functions require synchronization to access the LTSF
 queue:\par
-\texttt{insert()} - insert an event into the LTSF queue if an event was inserted
-at the beginning of a specific LP's unprocessed queue.\par
-\texttt{updatedScheduleQueueAfterExecute()} - inserts the dequeued event from a
-specific LP's unprocessed queue into the LTSF queue.\par
-\texttt{nextEventToBeScheduledTime()} - returns the time of the event at the
-beginning of the LTSF queue.\par
-\texttt{clearScheduleQueue()} - clears the LTSF queue.\par
-\texttt{setLowestObjectPosition()} - \textbf{not clear on this function}
-\texttt{peek()} - peek the lowest event in the LTSF queue.\par
-%not consistent with code
+\begin{itemize}
+\item\texttt{insert()} - insert an event into the LTSF queue if an event was inserted
+at the beginning of a specific LP's unprocessed queue.
+\item\texttt{updatedScheduleQueueAfterExecute()} - inserts the dequeued event from a
+specific LP's unprocessed queue into the LTSF queue.
+\item\texttt{nextEventToBeScheduledTime()} - returns the time of the event at the
+beginning of the LTSF queue.
+\item\texttt{clearScheduleQueue()} - clears the LTSF queue.
+\item\texttt{setLowestObjectPosition()} - \textbf{not clear on this function}
+\item\texttt{peek()} - retrieves the next event for execution.
+\end{itemize}
 
-\subsection{\textbf{Unprocessed Queue}}
+\subsubsection{\textbf{Unprocessed Queue Functions}}
 
 The following functions require synchronization to access a specific LPs
 unprocessed queue:\par
-\texttt{insert()} - insert an event into a specific LP's unprocessed
-queue.\par
-\texttt{updatedScheduleQueueAfterExecute()} - dequeue the next least
-timestamped event from a specific LP's unprocessed queue.\par
-\texttt{getEvent()} - dequeue and return the least timestamped event in the
-unprocessed queue; insert event into processed queue.\par
-\texttt{getEventIfStraggler()} - same as \texttt{getEvent()} but does not insert
-the event into the processed queue as the getEvent function above does.\par
+\begin{itemize}
+\item\texttt{insert()} - insert an event into a specific LP's unprocessed
+queue.
+\item\texttt{updatedScheduleQueueAfterExecute()} - dequeue the next least
+timestamped event from a specific LP's unprocessed queue.
+\item\texttt{getEvent()} - dequeue and return the least timestamped event in the
+unprocessed queue; insert event into processed queue.
+\item\texttt{getEventIfStraggler()} - same as \texttt{getEvent()} but does not insert
+the event into the processed queue as the getEvent function above does.\
 %need to verify
-\texttt{peekEvent()} - return a reference to the next event in the LP's
-unprocessed queue.\par
-\texttt{peekEventCoastForward()} - same as \texttt{peekEvent()}.\par
-\texttt{handleAntiMessage()} - delete an event in a specific LP's unprocessed queue
-for which the LP received an anti-message.\par 
-\texttt{ofcPurge()} - removes all events from the unprocessed queue; used for
-optimistic fossil collection, which is beyond the scope of this study.\par
-\texttt{peekEventLockUnprocessed()} - peek the first event of a specif LP's
-unprocessed queue, but leave the queue locked.\par
-\texttt{getMinEventTime()} - get the timestamp of the first event in a specific
-LP's unprocessed queue.\par
+\item\texttt{peekEvent()} - return a reference to the next event in the LP's
+unprocessed queue.
+\item\texttt{peekEventCoastForward()} - same as \texttt{peekEvent()}.
+\item\texttt{handleAntiMessage()} - delete an event in a specific LP's unprocessed queue
+for which the LP received an anti-message.
+\item\texttt{ofcPurge()} - removes all events from the unprocessed queue; used for
+optimistic fossil collection, which is beyond the scope of this study.
+\item\texttt{peekEventLockUnprocessed()} - peek the first event of a specif LP's
+unprocessed queue, but leave the queue locked.
+\item\texttt{getMinEventTime()} - get the timestamp of the first event in a specific
+LP's unprocessed queue.
+\end{itemize}
 
-\subsection{\textbf{Processed Queue}}
+\subsubsection{\textbf{Processed Queue Functions}}
 
 The following functions require synchronization to access a specific LPs
 processed queue:\par
-\texttt{getEvent()} - insert the dequeued event from a specific LP's unprocessed
-queue into that LP's processed queue.\par
-\texttt{getEventWhileRollback()} - same as getEvent(), except the unprocessed
-queue is already locked.\par %need to verify
-\texttt{rollback()} - traverse a specifi LP's entire processed queue and remove
+\begin{itemize}
+\item\texttt{getEvent()} - insert the dequeued event from a specific LP's unprocessed
+queue into that LP's processed queue.
+\item\texttt{getEventWhileRollback()} - same as getEvent(), except the unprocessed
+queue is already locked.%need to verify
+\item\texttt{rollback()} - traverse a specific LP's entire processed queue and remove
 any events with a timestamp greater than or equal to the rollback time; the
-removed events are placed in the LP's unprocessed queue.\par 
-\texttt{fossilCollect()} - remove events satisfying a certain criteria from a
-specific LP's processed queue.\par
-\texttt{ofcPurge()} - same as the ofcPurge() function for the unprocessed
-queue.\par 
+removed events are placed in the LP's unprocessed queue.
+\item\texttt{fossilCollect()} - remove events satisfying a certain criteria from a
+specific LP's processed queue.
+\item\texttt{ofcPurge()} - same as the ofcPurge() function for the unprocessed
+queue.
+\end{itemize}
+
+\subsection{\textbf{Shared Data Structure Transactional Regions}}
+
+The functions described above perform a variety of memory operations, and any
+thread can execute any critical section at any time.  Based on static analysis,
+there's no way of knowing which threads will access what structure in what way,
+hence the need for synchronization.  But with TSX, functions that do not
+interefere can execute concurrently.  TSX tracks read and write memory
+operations separately in the transaction's read-set and write-set resepctively.
+Transactions only interfere if a data conflict occurs, i.e. a thread attempts
+to write to a memory location in another transaction's read-set, or a thread
+attempts to read a memory location in another transaction's write-set.
+\par
+
+For example, one worker thread calls \texttt{nextEventToBeScheduleTime} to get
+the timestamp of the event at the head of the LTSF queue.  There
+is a possibility that a different worker thread is currently updating the LTSF
+queue or will attempt to update the LTSF queue with the first worker thread is
+in the middle of executing \texttt{nextEventToBeScheduleTime}.  This scenario
+necessitates sycnhronization.  However, instead of the second worker thread
+writing to the LTSF queue, it also calls \texttt{nextEventToBeScheduleTime}.
+Both are read operations and do not interfere with each other.  TSX recognizes
+this scenario and allows the worker threads to execute concurrently, whereas
+locks force one worker thread to wait until the other is done with the LTSF
+queue.  
+\par
+
+Several similar scenarios can arise during simulation execution. While there are
+too many possible scenarious to identify specifically where TSX can be
+beneficial, the potential to expose concurrency through dynamic synchronization
+is too great to be dismissed. Note, there is also no guarantee that TSX will
+work 100\% of the time; there are several runtime events that can cause
+transcations to abort, as well as physical limitations.  
+\par
+
+%something about write and the data structures used to implemnet the queues
+
+%The process of scheduling requires a significant amount of write operations to
+%the queues listed above.  As long as executing threads do not write to an entire
+%queue, there is a good chance that the write operations will not interfere.  TSX
+%dynamically determines if the write operations are performed on different memory
+%locations and allows the threads to execute concurrently.  The data structures
+%used to implement the respective queues is a significant factor in determining
+%if two or more threads perform conflicting memory operations on the same
+%structure.  
+%
+%For example, a worker thread needs to read traverse the queue to add a future
+%event to the very end of the queue.  Another worker thread 
+%the C++ STL multiset is a self-balancing binary search
+%tree.  Traverising the tree 
+%
+%Several similar scenarios can arise during simulation execution, which
+%is why WARPED can greatly benefit from TSX enabled synchronization.
 
 \newpage
 \section{\textbf{Experimental Analysis}}
