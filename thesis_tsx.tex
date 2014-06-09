@@ -876,9 +876,9 @@ transaction's write-set \cite{intel_prog_ref}.
 
 \newpage
 %need a different name for this section
-\section{\textbf{The Problem Space}}
+\section{\textbf{Parallel Discrete Event Simulation and Warped}}
 
-\subsection{\textbf{Parallel Discrete Event Simulation Background}}
+\subsection{\textbf{Background}}
 
 Discrete Event Simulation (DES) models a system's state changes at discrete
 points in time.  In general, simulators consist of the following data structures
@@ -1136,7 +1136,8 @@ In the original scheduling scheme, the worker thread would insert the next event
 into the same LTSF it had just scheduled from as seen in Figure
 ~\ref{workerThreadAlgorithm}.  In this implementation, the worker thread inserts
 the next event into a different LTSF queue, based on a circularly incremented
-counter.
+counter.  The number of LTSF queues is specified in a configuration file, and
+has no restrictions as in the static assignment.
 
 \linespread{1.0}
 \begin{figure}
@@ -1333,7 +1334,7 @@ processes to model transmission of the disease among individual entities.\par
 
 The first part of this study compares the performance of the original WARPED
 pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
-1 retry, 4) RTM with 4 retries, and 5) RTM with 9 retries.  It should be noted
+1 retry, 4) RTM with 9 retries, and 5) RTM with 19 retries.  It should be noted
 that the original implementation of the WARPED pending event set only allows for
 a number of worker threads that is evenly divisible by the number of worker
 threads due to the way in which LP's are partitioned to LTSF queues.  These
@@ -1398,25 +1399,6 @@ Furthermore, it would appear that utilizing more than one LTSF queue is no
 longer producing consistent or desirable results. It was also observed that the
 number of rollbacks was non-trivial for these simulations.  These poor
 performance could be attributed to recent changes made to the WARPED kernel.\par
-
-\subsubsection{\textbf{Continuous Thread Migration}}
-
-Based on the less than desirable results above, a roaming thread migration
-technique was implemented to alleviate contention on the LTSF queues.  It
-distributes threads that attempt to access the same LTSF queue to separate LTSF
-queues.  Pseudo-code for this implementation can be seen in Figure
-~\ref{fig:thread_migration} \(\textbf{TODO:get psuedocode figure}\).  Many
-details are omitted for clarity.\par
-
-\begin{figure}[H]
-    \centering
-    \graphicspath{ {./data/} }
-    \caption{\textbf{Generalized event execution loop for migration worker
-    threads}}
-    \label{fig:thread_migration}
-\end{figure}
-
-\subsubsection{\textbf{Thread Migration for X Events}}
 
 \newpage
 \section{\textbf{Conclusions}}
