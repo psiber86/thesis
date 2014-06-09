@@ -500,7 +500,7 @@ section discusses some of the implementation details of TSX as well as how the
 programmer utilizes TSX.
 \par
 
-\subsubsection{\textbf{Hardware Lock Elision (HLE)}}
+\subsubsection{\textbf{Hardware Lock Elision (HLE)}}\label{sec:hle}
 
 \indent 
 The Hardware Lock Elision (HLE) interface is a legacy-compatible
@@ -567,7 +567,7 @@ interface does nothing for multi-threaded applications on legacy hardware, it
 does allow for easier cross-platform code deployment.
 \par
 
-\subsubsection{\textbf{Restricted Transactional Memory (RTM)}}
+\subsubsection{\textbf{Restricted Transactional Memory (RTM)}}\label{sec:rtm}
 
 \indent 
 The Restricted Transactional Memory (RTM) interface introduces four new
@@ -1314,6 +1314,87 @@ transactions to abort, as well as physical limitations.
 
 \subsection{\textbf{TSX Implementation}}
 
+This section discusses how both TSX interfaces were implemented in WARPED.
+
+\subsubsection{\textbf{Hardware Lock Elision (HLE)}}
+
+The generic algorithm presented in Figure ~\ref{fig:hle_interface} in section
+~\ref{sec:hle} only works for locks with a binary value, i.e. the lock is free
+or not free.  The WARPED locking mechanism assigns the thread number to the lock
+value to indicate which thread currently holds the lock.  To comply with this
+implementation, custom HLE lock acquire and lock release functions were
+implemented.  GCC inline assembly functions were developed appending the
+appropriate HLE prefixes to a lock cmpxchg instruction. 
+
+\subsubsection{\textbf{Restricted Transactional Memory (RTM)}}
+
+As previously explained in section ~\ref{sec:rtm}, RTM allows the programmer to
+specify an abort path to be executed upon a transactional abort.  This allows
+better tuning of RTM performance.  The RTM algorithm implemented in WARPED
+includes a retry algorithm described below in Figure ~\ref{rtm_retry}. Instead
+of immediately retrying transactional execution, the algorithm decides when and
+if the transaction should be retried based on the condition of the abort.  If
+the transaction was explicitly aborted for reasons other than another thread
+owning the lock, do not retry transactional execution.  The programmer used the
+\texttt{\_xabort()} function to explicitly abort the transaction. If the lock
+was not free upon entering the transaction, wait until it is free to retry
+transactional execution.  If a data conflict occurred, wait an arbitrary amount
+of time before retrying.  This offsets the execution of the conflicting threads
+in hopes that the conflicting memory operations will be performed at different
+times on the next retry.
+\par
+
+The RTM retry limit is specified at compile time.  Each data structure maintains
+its own retry limit initially set to the global limit.  A backoff algorithm is
+used to reduce the retry limit for a specific data structure.  If the
+transactions for this data structure abort more often than not, the retry limit
+is reduced.
+\par
+
+Furthermore, if transactions for the data structure consistently abort for an
+extended period of time with no successfull commits, transactional execution is
+not attempted for the remainder of the simulation.  
+\par
+
+\linespread{1.0}
+\begin{figure}
+\begin{verbatim}
+while retry count is less than retry limit
+    status = _xbegin()
+
+    if status == XBEGIN
+        if lock is free
+            execute transactional region
+        else
+            _xabort
+
+    update abort stats
+
+    if transaction will not succeed on retry or 
+        _xabort was called due to reasons other than the lock not being free
+
+        break
+
+    else if _xabort was used because the lock was not free
+
+        wait until the lock becomes free to retry
+
+    else if a data conflict occurred
+        
+        wait an arbitrary amount of time before retrying
+
+    increment retry count
+end loop
+
+acquire lock
+
+execute critical section
+
+\end{verbatim}
+\linespread{2.0}
+\caption{\textbf{RTM Retry Algorithm}}\label{rtm_retry}
+\end{figure}
+
 \newpage
 \section{\textbf{Experimental Analysis}}
 
@@ -1322,13 +1403,22 @@ using conventional synchronization mechanisms, Hardware Lock Elision, and
 Restricted Transactional memory.  All simulations were performed on a system
 with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  Average execution
 time and standard deviation were calculated from a set of 10 trials for each
-simulation configuration.\par
+simulation configuration.
+\par
 
 The simulation model used to obtain the following results is an epidemic
 model.  It consists of 110998 geographically distributed people in 119 separate
 locations requiring a total of 119 LPs.  The epidemic is modeled by reaction processes
 to model progression of the disease within an individual entity, and diffusion
-processes to model transmission of the disease among individual entities.\par
+processes to model transmission of the disease among individual entities.
+\par
+
+\subsection{\textbf{Static Thread Assignment}}
+
+
+
+
+
 
 \subsection{\textbf{Lock Contention}}
 
