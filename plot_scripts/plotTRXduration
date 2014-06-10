@@ -11,13 +11,12 @@ else
     echo "set term pngcairo dashed" > "$filename.gpi"
     echo "set output \"$filename.png\"" >> "$filename.gpi"
     echo "set key left top" >> "$filename.gpi"
-    echo "set logscale x 2" >> "$filename.gpi"
+    echo "set logscale x" >> "$filename.gpi"
+    echo "set xrange [1000:1000000]" >> "$filename.gpi"
     echo "set style line 1 lt 1 lc 1 lw 1" >> "$filename.gpi"
-    echo "set style line 2 lt 1 lc 3 lw 1" >> "$filename.gpi"
-    echo "set xlabel 'Number of Cache Lines Accessed'" >> "$filename.gpi"
+    echo "set xlabel 'Number of Write Operations'" >> "$filename.gpi"
     echo "set ylabel 'Abort Rate'" >> "$filename.gpi"
-    echo "plot \"<(sed -n '2,19p' $1)\" using 1:2 title 'write-set' with lp ls 1, \\" >> "$filename.gpi"
-    echo "\"<(sed -n '20,37p' $1)\" using 1:2 title 'read-set' with lp ls 2" >> "$filename.gpi"
+    echo "plot \"<(sed -n '19,47p' $1)\" using 1:2 notitle with lp ls 1" >> "$filename.gpi"
 
     # perform actual plotting
     gnuplot "$filename.gpi"
