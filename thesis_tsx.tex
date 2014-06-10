@@ -716,7 +716,7 @@ represent strictly write operations.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[totalheight=0.50\textheight,keepaspectratio]{trx_size}
+    \includegraphics[totalheight=0.50\textheight,keepaspectratio]{trxSize_singleThread}
     \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single
     thread on one core}}
     \label{fig:trx_size}
@@ -753,7 +753,7 @@ increases.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_size_ht}
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trxSize_hyperthreaded}
     \caption{\textbf{TSX RTM abort rate versus cache line accesses for two 
     threads on hyper-threaded core}}
     \label{fig:trx_size_ht}
@@ -788,7 +788,7 @@ number of operations performed within the transaction.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trx_duration}
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trxDuration}
     \caption{\textbf{TSX RTM abort rate versus number of operations performed
     during transaction}}
     \label{fig:trx_duration}
@@ -1494,9 +1494,122 @@ be evenly divisible by the number of worker threads.
 
 \subsubsection{\textbf{Continuous Thread Migration}}
 
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \hline
+        \midrule
+            1 &121.4532  &105.2221 &123.2083  &124.1073 &124.1445 \\ 
+            2 &122.5693  &105.7831 &123.6679  &129.8969 &134.2494 \\
+    \end{tabular}
+    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
+    \label{tab:contThrMig_2threadsXschq}
+\end{table}
 
-\subsubsection{\textbf{Brief Thread Migration}}
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-3thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 3 Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_3threads}
+\end{figure}
 
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 4 Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_4threads}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-5thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 5 Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_5threads}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 6 Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_6threads}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-7thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 7 Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_7threads}
+\end{figure}
+
+\subsubsection{\textbf{Event Limited Thread Migration}}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \hline
+        \midrule
+            1 &121.2448  &105.6107 &124.1983  &123.6149 &123.0078 \\ 
+            2 &117.6654  &102.0753 &121.0667  &137.9824 &154.3929 \\
+    \end{tabular}
+    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
+    \label{tab:xThrMig_2threadsXschq}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \hline
+        \midrule
+            1 &92.36592  &74.22306 &93.23531  &92.67724 &92.6402 \\ 
+            3 &88.91337  &70.67712 &89.53974  &107.369  &126.557 \\
+    \end{tabular}
+    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF Queues}}
+    \label{tab:xThrMig_3threadsXschq}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 4 Worker Threads}}
+    \label{fig:xThrMig_timeVSschq_4threads}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \hline
+        \midrule
+            1 &69.30301  &54.40232 &70.85832  &70.46488 &70.4784 \\ 
+            5 &95.31338  &77.55966 &93.71796  &85.63724 &76.2384 \\
+    \end{tabular}
+    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF Queues}}
+    \label{tab:xThrMig_5threadsXschq}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 6 Worker Threads}}
+    \label{fig:xThrMig_timeVSschq_6threads}
+\end{figure}
 
 
 
