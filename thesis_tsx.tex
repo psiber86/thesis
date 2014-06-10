@@ -1,554 +1,396 @@
-\documentclass[a4paper]{article}
-\usepackage{fancyhdr}
-\usepackage[includeheadfoot,left=1in, right=0.5in, top=0.5in, bottom=0.5in]{geometry}
-\usepackage{lastpage}
-\usepackage{extramarks}
-\usepackage[usenames,dvipsnames]{color}
+\documentclass[11pt]{book}
+
+\usepackage{fullpage}
 \usepackage{graphicx}
-\usepackage{listings}
-\usepackage{courier}
-\usepackage{tikz}
-\usepackage{color}
-\usepackage{float}
+\usepackage{cite}
+\usepackage{times}
 \usepackage{url}
-\usepackage{subfigure}
-\usepackage{varwidth}
-\usepackage{caption}
-\usepackage{multirow}
-\usepackage[pdfborder={0 0 0}]{hyperref}
-\usepackage[compact,small]{titlesec}
-\usepackage{microtype}
-\usepackage{verbatim}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{ifthen}
+\usepackage{listings}
+\usepackage[section]{placeins}
+\usepackage{xtab}
+\usepackage{url}
 \usepackage{booktabs}
-\usepackage{indentfirst}
-\usepackage{enumitem}
-\usepackage{pdfpages}
-\usepackage{alltt}
-\usepackage{enumerate}
 
-%\captionsetup[sub]{labelsep=newline}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{4}  
+\renewcommand{\topfraction}{0.5}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.7}
 
-% line spacing
-\linespread{2.0}
-
-\def\labelitemi{--}
-
-% bold item
-\let\origitem\item
-\renewcommand{\item}{\normalfont\origitem}
-\newcommand{\bolditem}{\small\bfseries\origitem}
-
-% tilde
-%\newcommand{\small_tilde}{\raise.17ex\hbox{$\scriptstyle\sim$}}
-
-% indent item
-\newcommand{\indentitem}{\setlength\itemindent{24pt}}
-
-% perfect tilde
-\newcommand{\tildep}{\raise.17ex\hbox{$\scriptstyle\sim$}}
-
-\parskip = 0.5\baselineskip
-\setlength{\belowcaptionskip}{-\baselineskip}
-
-\captionsetup{font=scriptsize}
-\captionsetup{labelfont=bf}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{3pt}
 
 \pagestyle{fancy}
-\rhead{\fancyplain{}{\rightmark }}
-\lhead{\fancyplain{}{\leftmark }}
-\rfoot{Page\ \thepage\ of \protect\pageref{LastPage}}
-\cfoot{}
-\renewcommand\headrulewidth{0.4pt}
-\renewcommand\footrulewidth{0.4pt}
-
-% make verbatim text small
-\makeatletter
-\g@addto@macro\@verbatim\small
-\makeatother
-
-%\setlength\parindent{0pt} % Removes all indentation from paragraphs
-\setlength\parindent{24pt}
-
-\definecolor{sh_comment}{rgb}{0.12, 0.38, 0.18 } %adjusted, in Eclipse: {0.25, 0.42, 0.30 } = #3F6A4D
-\definecolor{sh_keyword}{rgb}{0.37, 0.08, 0.25}  % #5F1441
-\definecolor{sh_string}{rgb}{0.06, 0.10, 0.98} % #101AF9
-
-%\sectionfont{\centering}
-\lstset{
-    language=vhdl,
-    xleftmargin=.25in,
-    xrightmargin=.25in,
-    numbers=left,
-    numberstyle=\tiny,
-    frame=tb,
-    showstringspaces=false,
-    captionpos=b,
-    stringstyle=\color{sh_string},
-    keywordstyle = \color{sh_keyword}\bfseries,
-    commentstyle=\color{sh_comment}\itshape,
-    basicstyle=\small\sffamily,
-    %numbersep=-5pt,
-    belowskip=\baselineskip,
-    aboveskip=\baselineskip
-}
-\usepackage{authblk}
-
-\title{
-    \vspace{2in}
-    \textbf{Experiments with Hardware-based Transactional Memory in Parallel
-    Simulation \\}
-    \vspace{2in}
-}
-
-\author{Joshua Hay}
-
-\affil{hayja@mail.uc.edu}
-    \vspace{10pt}
-    
-\affil{(513) 607-4929}
-    \vspace{2.0in}
-
-\titleformat*{\section}{\large\normalfont}
+\setboolean{@twoside}{false} 
+\setlength{\headsep}{25pt}
+\setlength{\headheight}{14pt}
 
 \begin{document}
 
-%\includepdf{}
-\maketitle
 \thispagestyle{empty}
-\newpage
-\thispagestyle{empty}
-\parskip = 0.2\baselineskip
-\newpage
-\thispagestyle{empty}
-\section*{\textbf{Abstract}}
 
-Transactional memory is a concurrency control mechanism that dynamically
-determines when threads may execute critical sections concurrently.  It does so
-by tracking memory accesses performed within a transactional region, or critical
-section, and detecting when memory operations conflict.  Transactional memory
-provides the performance of fine-grained locking mechanisms with the simplicity
-of coarse-grained locking mechanisms.
-\par
+\doublespacing
 
-Parallel Discrete Event Simulation is a problem space that has been studied for
-many years, but still suffers from significant lock contention.  The pending
-event set is a crucial element to PDES, and its management is critical to
-simulation performance.  This is especially true for optimistically
-synchronized PDES, such as those implementing the Time Warp protocol.  Rather
-than prevent causality errors, events are continually scheduled and executed
-until a causality error is detected.  
-\par
+\vspace*{0.5in}
 
-Researchers at the University of Cincinnati have been studying the Time Warp
-mechanism in their PDES implementation, WARPED.  The WARPED pending event set is
-maintained as a two level structure.  Each logical process maintains its own
-sorted pending event set, while a global least-time-stamped first (LTSF) queue is
-populated with the first event in each LP's local pending event set.  Worker
-threads schedule events from this LTSF, resulting in non-trivial contention.
-\par
+\begin{center}
+\LARGE{\textbf{Experiments with Hardware-based Transactional Memory in Parallel Simulation}}
 
-This thesis explores the use of transactional memory as an alternative to
-conventional synchronization mechanisms for the WARPED pending event set.
-Specifically, Intel's hardware transactional memory, TSX, is used, which
-consists of two interfaces, Hardware Lock Elision and Restricted Transactional
-Memory.  In conjunction with transactional memory, other solutions to contention
-are explored such as the use of multiple LTSF queues, and the migration of
-threads to different LTSF queues.  The latter is an attempt to distribute worker
-threads that try to access the same LTSF queue.  Each configuration is compared
-with conventional locking mechanisms to evaluate the performance of WARPED with
-reduced contention for the pending event set.
-\par
+\vspace*{0.4in}
+
+  {\large A thesis submitted to the\\[0.20in]
+    Division of Research and Advanced Studies\\
+    of the University of Cincinnati\\[0.20in]
+    in partial fulfillment of the\\
+    requirements for the degree of\\[0.20in]
+    {\bf MASTER OF SCIENCE}\\[0.20in]
+    in the School of Electric and Computing Systems\\
+    of the College of Engineering and Applied Sciences\\[0.20in]
+    August xx, 2010\\[0.20in]
+    by\\[0.20in]
+    {\bf Joshua Hay}\\
+    BSxx, University of Cincinnati, 20xx\\}
+  \vspace{0.5in}
+  {\large Thesis Advisor and Committee Chair:  Dr. Philip A. Wilsey}
+\end{center}
+
+\clearpage
+
+\setcounter{page}{1}
+\pagenumbering{roman}
+\clearpage
+
+\chapter*{Abstract} 
+
+Transactional memory is a concurrency control mechanism that dynamically determines when
+threads may safely execute critical sections of code.  It does so by tracking memory
+accesses performed within a transactional region, or critical section, and detecting when
+memory operations conflict with other threads.  Transactional memory provides the
+performance of fine-grained locking mechanisms with the simplicity of coarse-grained
+locking mechanisms.
+
+Parallel Discrete Event Simulation is a problem space that has been studied for many
+years, but still suffers from significant lock contention on SMP platforms.  The pending
+event set is a crucial element to PDES, and its management is critical to simulation
+performance.  This is especially true for optimistically synchronized PDES, such as those
+implementing the Time Warp protocol.  Rather than prevent causality errors, events are
+continually scheduled and executed until a causality error is detected.
+
+This thesis explores the use of transactional memory as an alternative to conventional
+synchronization mechanisms for managing the pending event set in a time warp synchronized
+parallel simulator.  In particular, this thesis examines the use of Intel's hardware
+transactional memory, TSX, to manage shared access to the pending event set by the
+simulation threads.  In conjunction with transactional memory, other solutions to
+contention are explored such as the use of multiple queues to hold the pending event set
+and the binding of threads to these multiple queues.  The latter is an attempt to
+distribute worker threads that attempt to access the same pending event queue.  Each
+configuration is compared with conventional locking mechanisms to evaluate the performance
+of each in \textsc{warped} to reduce contention for the pending event set.
+
+\chapter*{Acknowledgments} 
+
+%% put your acknowledgements here.
 
 
-\newpage
-\thispagestyle{empty}
-\section*{\textbf{Acknowledgments}}
-\newpage
-\thispagestyle{empty}
-\tableofcontents
-\newpage
-\thispagestyle{empty}
-\listoffigures
-\listoftables
-\parskip = 0.5\baselineskip
-\newpage
+%% these three lines will cause latex to automatically generate these entries
+%% for you....nice.  you can comment them out if, for example, your thesis does
+%% not contain any tables.
+\tableofcontents \markright{ }
+\listoffigures \markright{ }
+\listoftables \markright{ }
 
-\section{\textbf{Introduction}}
+\clearpage
+\pagenumbering{arabic} \setcounter{page}{1}
 
-\indent 
-The advent of multi-core processors introduced a new avenue for increased
-software performance and scalability through multi-threaded programming.
-However, this avenue came with a toll: the need for synchronization mechanisms
-between multiple threads of execution, especially during the execution of
-critical sections.  By definition, a critical section is a segment of code
-accessing a shared resource that can only be executed by one thread at any given
-time \cite{os_concepts}.  For example, a multi-threaded application is designed
-to operate on a shared two-dimensional array.  For the sake of simplicity, the
-programmer uses coarse-grained locking mechanisms to control access to the
-critical section, e.g. a single atomic lock for the entire grid.  The critical
-section reads a single element, performs a calculation, and updates the element.  Once
-a thread enters the critical section, it locks all other threads out of the
-entire grid until it has completed its task, thus forcing the threads to
-essentially execute sequentially upon entering the critical section.  This
-results in lock contention, and consequently negatively impacts performance, as
-threads must now wait for the currently executing thread to relinquish access to
-the shared resource.  Programmers can employ more fine-grained locking
-mechanisms to expose concurrency, such as locking individual rows or even
-individual elements in the previous example.  However, this approach is vastly more
-complicated and error prone \cite{sle_rajwar}; this approach requires the
-programmer to maintain a separate lock for each row or each element respectively.
-Unfortunately, programmers are limited to using static information to determine
-when threads must execute a critical section sequentially regardless of whether
-coarse-grained or fine-grained locking is used.
-\par
+\chapter{Introduction}\label{intro} 
 
-\indent
+The advent of multi-core processors introduced a new avenue for increased software
+performance and scalability through multi-threaded programming.  However, this avenue came
+with a toll: the need for synchronization mechanisms between multiple threads of
+execution, especially during the execution of critical sections.  By definition, a
+critical section is a segment of code accessing a shared resource that can only be
+executed by one thread at any given time \cite{os_concepts}.  For example, a
+multi-threaded application is designed to operate on a shared two-dimensional array.  For
+the sake of simplicity, the programmer uses coarse-grained locking mechanisms to control
+access to the critical section, e.g. a single atomic lock for the entire grid.  The
+critical section reads a single element, performs a calculation, and updates the element.
+Once a thread enters the critical section, it locks all other threads out of the entire
+grid until it has completed its task, thus forcing the threads to essentially execute
+sequentially upon entering the critical section.  This results in lock contention, and
+consequently negatively impacts performance, as threads must now wait for the currently
+executing thread to relinquish access to the shared resource.  Programmers can employ more
+fine-grained locking mechanisms to expose concurrency, such as locking individual rows or
+even individual elements in the previous example.  However, this approach is vastly more
+complicated and error prone \cite{sle_rajwar}; this approach requires the programmer to
+maintain a separate lock for each row or each element respectively.  Unfortunately,
+programmers are limited to using static information to determine when threads must execute
+a critical section sequentially regardless of whether coarse-grained or fine-grained
+locking is used.
+
 However, untapped concurrency could be exposed if the determination to execute
-sequentially was made dynamically \cite{intel_prog_ref}.  In the previous
-example, a scenario arises where one thread will access one element of the two
-dimensional array, while another thread will access a element in an entirely
-different row.  The programmer only knows that any thread can access any given
-element at any given time, and thus locks all elements when one thread is executing.
-However, transactional memory systems can dynamically determine when such a
-scenario arises and allow both threads to execute concurrently.
-\par
+sequentially was made dynamically \cite{intel_prog_ref}.  In the previous example, a
+scenario arises where one thread will access one element of the two dimensional array,
+while another thread will access a element in an entirely different row.  The programmer
+only knows that any thread can access any given element at any given time, and thus locks
+all elements when one thread is executing.  However, transactional memory systems can
+dynamically determine when such a scenario arises and allow both threads to execute
+concurrently.
 
-\indent
-Transactional memory (TM) is a concurrency control mechanism that attempts to
-eliminate the static sequential execution of a critical section by dynamically
-determining when accesses to shared resources can be safely executed
-concurrently \cite{sle_rajwar}.  In the previous example, the programmer
-identifies the critical section as a transactional region; these terms will be
-used interchangeably.  As threads enter the transactional region, they attempt
-to transactionally execute the critical section concurrently.  The TM system
-records memory accesses as the transactions execute and finds that the
-transactions operate on independent regions of the data structure, i.e. there
-are no conflicting memory accesses.  Instead of being forced to execute
-sequentially by the programmer, the threads are allowed to safely execute the
-critical section concurrently by the TM system.  Transactional memory is
-analogous to traffic roundabouts whereas conventional synchronization mechanisms
-are analogous to conventional traffic lights \cite{neuling_vid}.
-\par
+Transactional memory (TM) is a concurrency control mechanism that attempts to eliminate
+the static sequential execution of a critical section by dynamically determining when
+accesses to shared resources can be safely executed concurrently \cite{sle_rajwar}.  In
+the previous example, the programmer identifies the critical section as a transactional
+region; these terms will be used interchangeably.  As threads enter the transactional
+region, they attempt to transactionally execute the critical section concurrently.  The TM
+system records memory accesses as the transactions execute and finds that the transactions
+operate on independent regions of the data structure, i.e. there are no conflicting memory
+accesses.  Instead of being forced to execute sequentially by the programmer, the threads
+are allowed to safely execute the critical section concurrently by the TM system.
+Transactional memory is analogous to traffic roundabouts whereas conventional
+synchronization mechanisms are analogous to conventional traffic lights
+\cite{neuling_vid}.
 
-\indent 
-Transactional memory operates on the same principles as database
-transactions \cite{tm_2nd}.  The processor atomically commits \textit{all}
-memory operations of a successful transaction or discards \textit{all} memory
-operations if the transaction should fail.  In order for a transaction to execute
-successfully, it must be executed in isolation, i.e. without conflicting with
-other tranasctions/threads memory operations.  This is the key principle that
-allows transactional memory to expose untapped concurrency in multi-threaded
-applications.
-\par 
+Transactional memory operates on the same principles as database transactions
+\cite{tm_2nd}.  The processor atomically commits \textit{all} memory operations of a
+successful transaction or discards \textit{all} memory operations if the transaction
+should fail.  In order for a transaction to execute successfully, it must be executed in
+isolation, i.e. without conflicting with other tranasctions/threads memory operations.
+This is the key principle that allows transactional memory to expose untapped concurrency
+in multi-threaded applications.
 
-\indent 
-One problem space that could benefit from transactional memory is that of
-Parallel Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES)
-applications, a physical system is modeled as a collection of logical processes
-representing the physical processes of the system.  The system being modeled can
-only change state at discrete points in simulated time and only changes state
-upon execution of an event \cite{fujimoto}.  Large simulations, such as those in
-economics, engineering, and military tactics, require enormous resources and
-computational time, making it infeasible to execute them on sequential machines.
-The necessity to perform such large simulations has sparked considerable
-interest in the parallelization of these simulations.  In PDES, the events of a
-logical process are executed concurrently.  To further exploit concurrency,
-optimistic PDES aggressively schedules events instead of strictly enforcing
-causal ordering of event execution \cite{fujimoto,dickman_thesis}, meaning
-events will continue to be scheduled regardless of order until an error is
-\textit{detected}.  More importantly, the events must be retrieved from a global
-pending event set by one of multiple execution threads, resulting in non-trivial
-contention for this structure.  A key challenge area in PDES is the need for
-contention-free pending event set management solutions \cite{dickman}; this will
-be the primary focus of this research. Transactional memory can help alleviate
-contention for this shared structure and expose untapped concurrency in the
-simulation's execution.
-\par
+One problem space that could benefit from transactional memory is that of Parallel
+Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES) applications, a
+physical system is modeled as a collection of logical processes representing the physical
+processes of the system.  The system being modeled can only change state at discrete
+points in simulated time and only changes state upon execution of an event
+\cite{fujimoto}.  Large simulations, such as those in economics, engineering, and military
+tactics, require enormous resources and computational time, making it infeasible to
+execute them on sequential machines.  The necessity to perform such large simulations has
+sparked considerable interest in the parallelization of these simulations.  In PDES, the
+events of a logical process are executed concurrently.  To further exploit concurrency,
+optimistic PDES aggressively schedules events instead of strictly enforcing causal
+ordering of event execution \cite{fujimoto,dickman_thesis}, meaning events will continue
+to be scheduled regardless of order until an error is \textit{detected}.  More
+importantly, the events must be retrieved from a global pending event set by one of
+multiple execution threads, resulting in non-trivial contention for this structure.  A key
+challenge area in PDES is the need for contention-free pending event set management
+solutions \cite{dickman}; this will be the primary focus of this research. Transactional
+memory can help alleviate contention for this shared structure and expose untapped
+concurrency in the simulation's execution.
 
-\indent
-Researchers at the University of Cincinnati have developed a PDES kernel called
-WARPED, using the optimistic Time Warp synchronization protocol.  In WARPED,
-events to be scheduled are sorted into a global Least-Time-Stamp-First (LTSF)
-queue.  When a worker thread schedules an event, it locks the LTSF queue and
-retrieves the event from the head of the queue.  Thus, the LTSF becomes the
-primary source of contention in the WARPED kernel. 
-\par
+Researchers at the University of Cincinnati have developed a PDES kernel called \textsc{warped},
+using the optimistic Time Warp synchronization protocol.  In \textsc{warped}, events to be
+scheduled are sorted into a global Least-Time-Stamp-First (LTSF) queue.  When a worker
+thread schedules an event, it locks the LTSF queue and retrieves the event from the head
+of the queue.  Thus, the LTSF becomes the primary source of contention in the \textsc{warped}
+kernel.
 
-\subsection{\textbf{Research Statement}}
+\section{Research Statement}
 
-\indent 
-The goal of this thesis is to explore the use of transactional memory in
-a parallel discrete event simulator, specifically, WARPED: a Time
-Warp synchronized Parallel Discrete Event Simulation application.
-\par
+The goal of this thesis is to explore the use of transactional memory in a parallel
+discrete event simulator, specifically, \textsc{warped}: a Time Warp synchronized Parallel Discrete
+Event Simulation application.
 
-\indent
-The primary objective of this research is to \textit{modify the WARPED pending event set
-    locking mechanisms to utilize the underlying hardware support for
-    transactional memory on Intel's Hardware Transactional Memory (HTM)
-supported Haswell platform}.  The principal hypothesis is that making the
-aforementioned modifications will exposed untapped concurrency 
-during simulation execution, thereby improving the performance of WARPED on the
-Haswell platform.
-\par
+The primary objective of this research is to \textit{modify the \textsc{warped} pending event set
+  locking mechanisms to utilize the underlying hardware support for transactional memory
+  on Intel's Hardware Transactional Memory (HTM) supported Haswell platform}.  The
+principal hypothesis is that making the aforementioned modifications will exposed untapped
+concurrency during simulation execution, thereby improving the performance of \textsc{warped} on
+the Haswell platform.
 
-\indent
-Due to the wide availability of Intel's HTM supported platforms, it was
-selected as the focus of this research.  Intel's HTM implementation is aptly
-named Transactional Synchronization Extensions (TSX).  This naming will be used
-to refer to Intel's HTM implementation for the remainder of this study.
-\par
+Due to the wide availability of Intel's HTM supported platforms, it was selected as the
+focus of this research.  Intel's HTM implementation is aptly named Transactional
+Synchronization Extensions (TSX).  This naming will be used to refer to Intel's HTM
+implementation for the remainder of this study.
 
-\indent 
-While WARPED uses many shared data structures, the focus of this thesis
-is on the pending event set.  It is the primary bottleneck in PDES applications,
-and hence the primary motivation for this study.  However, two other 
-\par
+While \textsc{warped} uses many shared data structures, the focus of this thesis is on the pending
+event set.  It is the primary bottleneck in PDES applications, and hence the primary
+motivation for this study.  However, two other
 
-\subsection{\textbf{Thesis Overview}}
+\section{Thesis Overview}
 
 The remainder of this thesis is organized as follows:
-\par
 
-\indent 
-Chapter 2 provides a general overview of transactional memory.  It gives
-some examples of other TM implementations and discusses why they do not work as
-well as TSX.  It provides examples of related studies.  Finally, it provides an
-overview of how TSX works and how it is implemented in software.
-\par
+Chapter 2 provides a general overview of transactional memory.  It gives some examples of
+other TM implementations and discusses why they do not work as well as TSX.  It provides
+examples of related studies.  Finally, it provides an overview of how TSX works and how it
+is implemented in software.
 
-\indent
-Chapter 3 discusses practical considerations for the programmer when programming
-TSX enabled multi-threaded applications.  It discusses optimizations to ensure
-TSX performs optimally, as well as physical limitations of the hardware.
-\par
+Chapter 3 discusses practical considerations for the programmer when programming TSX
+enabled multi-threaded applications.  It discusses optimizations to ensure TSX performs
+optimally, as well as physical limitations of the hardware.
 
-\indent
-Chapter 4 provides a background of the PDES problem space.  It introduces
-WARPED and some of the implementation details relevant to this study. Previous
-studies with the WARPED pending event set are also briefly discussed.
-\par
+Chapter 4 provides a background of the PDES problem space.  It introduces \textsc{warped} and some
+of the implementation details relevant to this study. Previous studies with the \textsc{warped}
+pending event set are also briefly discussed.
 
-\indent
-Chapter 5 provides and discusses the experimental results of this research for
-several different simulation configurations.
-\par
+Chapter 5 provides and discusses the experimental results of this research for several
+different simulation configurations.
 
-\indent
-Chapter 6 discusses the accomplishments of this research.  It also briefly
-discusses some areas of future research.
-\par
+Chapter 6 discusses the accomplishments of this research.  It also briefly discusses some
+areas of future research.
 
-\newpage
 
-\section{\textbf{Background}}
+\chapter{Background}
 
-\indent 
-This section provides a high level explanation of how transactional
-memory operates.  It then introduces other implementations, as well as reasons
-why they were not explored in this study.  Next, it provides some examples of
-related studies with transactional memory, specifically the implementation used
-in this study. Finally, it provides an overview of Intel's implementation,
-Transactional Synchronization Extensions (TSX) and how the programmer can
-develop TSX enabled multi-threaded applications.
-\par
+This section provides a high level explanation of how transactional memory operates.  It
+then introduces other implementations, as well as reasons why they were not explored in
+this study.  Next, it provides some examples of related studies with transactional memory,
+specifically the implementation used in this study. Finally, it provides an overview of
+Intel's implementation, Transactional Synchronization Extensions (TSX) and how the
+programmer can develop TSX enabled multi-threaded applications.
 
-\subsection{\textbf{Transactional Memory Overview}}
+\section{Transactional Memory Overview}
 
-\indent
-Transactional memory (TM) is a concurrency control mechanism that dynamically
-determines when two or more threads can safely execute critical section
-concurrently \cite{sle_rajwar}.  The programmer identifies a transactional
-region, typically a critical section.  As threads enter the transactional region,
-the underlying processor core attempts to execute transactionally. As it does
-so, it tracks the memory accesses within the transactional region to determine
-whether or not two or more threads conflict with one another, i.e. if any memory
-accesses conflict with one another.  If the threads do not conflict with one
-another, the transactions can safely execute concurrently.  If they do conflict,
-the process must abort the transaction and execute the critical section
-non-transactionally, i.e.  sequentially with conventional synchronization
-mechanisms. 
-\par
+Transactional memory (TM) is a concurrency control mechanism that dynamically determines
+when two or more threads can safely execute critical section concurrently
+\cite{sle_rajwar}.  The programmer identifies a transactional region, typically a critical
+section.  As threads enter the transactional region, the underlying processor core
+attempts to execute transactionally. As it does so, it tracks the memory accesses within
+the transactional region to determine whether or not two or more threads conflict with one
+another, i.e. if any memory accesses conflict with one another.  If the threads do not
+conflict with one another, the transactions can safely execute concurrently.  If they do
+conflict, the process must abort the transaction and execute the critical section
+non-transactionally, i.e.  sequentially with conventional synchronization mechanisms.
 
-\indent 
-As previously mentioned, a transaction builds a set of memory addresses it has
-read from and a set of memory addresses it has written to, referred to as the
-read-set and write-set respectively \cite{intel_prog_ref} as it executes.  Note
-that These memory operations are buffered until the transaction completes.  If
-the  memory operations within the local transaction do not conflict with any
-memory operations within any other thread's execution path, the transaction can
-safely complete execution.  Upon completion, the transaction will atomically
-commit all of the buffered memory operations, henceforth referred to simply as a
-commit.
-\par
+As previously mentioned, a transaction builds a set of memory addresses it has read from
+and a set of memory addresses it has written to, referred to as the read-set and write-set
+respectively \cite{intel_prog_ref} as it executes.  Note that These memory operations are
+buffered until the transaction completes.  If the memory operations within the local
+transaction do not conflict with any memory operations within any other thread's execution
+path, the transaction can safely complete execution.  Upon completion, the transaction
+will atomically commit all of the buffered memory operations, henceforth referred to
+simply as a commit.
 
-\indent 
-However, if any memory operation within the local transaction happens to  
-conflict with any memory operation within any other thread's execution path, the
-transaction cannot safely continue execution.  This is referred to as a data
-conflict and only occurs if: 1) another thread attempts to read a location that
-is part of the local transaction's write-set, or 2) another thread attempts to
-read a location that is part of the local transaction's write-set
-\cite{intel_prog_ref}.  Once a data conflict is detected, the transactions will
+However, if any memory operation within the local transaction happens to conflict with any
+memory operation within any other thread's execution path, the transaction cannot safely
+continue execution.  This is referred to as a data conflict and only occurs if: 1) another
+thread attempts to read a location that is part of the local transaction's write-set, or
+2) another thread attempts to read a location that is part of the local transaction's
+write-set \cite{intel_prog_ref}.  Once a data conflict is detected, the transactions will
 abort execution, henceforth referred to simply as an abort.
-\par
 
-\indent
 Revisiting the example from before, the programmer uses transactional memory
-synchronization mechanisms to access the two dimensional array.  Recall that any
-thread can access any element at any given time.  One thread enters the
-transactional region and begins transactional execution.  It adds the element's 
-memory location to its read-set.  At the same time, another thread enters the
-transactional region; however, it accesses a different element.  As the first
-thread continues execution, it adds the element's memory location to its write-set.
-The second thread adds its element's memory location to its read-set at the same
-time.  However, because the memory location is not part of the first thread's
-read-set, the threads continue executing concurrently.  No memory conflicts are
+synchronization mechanisms to access the two dimensional array.  Recall that any thread
+can access any element at any given time.  One thread enters the transactional region and
+begins transactional execution.  It adds the element's memory location to its read-set.
+At the same time, another thread enters the transactional region; however, it accesses a
+different element.  As the first thread continues execution, it adds the element's memory
+location to its write-set.  The second thread adds its element's memory location to its
+read-set at the same time.  However, because the memory location is not part of the first
+thread's read-set, the threads continue executing concurrently.  No memory conflicts are
 detected in this case and the transactions execute successfully and commit.
-\par
 
-\indent
 \textbf{EXAMPLE OF ABORT}
-\par
 
-\indent 
-TM operates on the principles of database transactions.  A transaction
-is a series of actions with four key attributes: 1) atomicity, 2) consistency,
-3) isolation, and 4) durability \cite{tm_2nd}.  The two key attributes for TM
-are atomicity and isolation; consistency and durability must hold for all
-multi-threaded operations in multi-threaded applications.  If atomicity and
-isolation be can guaranteed for all memory operations performed within a
-critical section, that "critical section" can be executed concurrently
+TM operates on the principles of database transactions.  A transaction is a series of
+actions with four key attributes: 1) atomicity, 2) consistency, 3) isolation, and 4)
+durability \cite{tm_2nd}.  The two key attributes for TM are atomicity and isolation;
+consistency and durability must hold for all multi-threaded operations in multi-threaded
+applications.  If atomicity and isolation be can guaranteed for all memory operations
+performed within a critical section, that "critical section" can be executed concurrently
 \cite{sle_rajwar}.
-\par 
 
-\indent 
-In the case of a commit, the transaction has ensured that its memory
-operations are executed in isolation from other threads and that \textit{all} of its
-memory operations are committed, thus satisfying the isolation and
-atomicity principles.  Note that only at this time will the memory operations
-performed within the transaction become visible to other threads; another
-property of transactions is the appearance of instantaneousness.  In the case
-of an abort due to a data conflict, it is clear that the isolation principle has
-been violated.  It should be noted that transactions can abort for a variety of
-reasons depending on the implementation \cite{intel_opt_man,chung_amd}, but the
-primary cause is data conflicts.  Upon abort, all memory operations are
-discarded as all memory operations must be committed or none can be committed.
-\par
+In the case of a commit, the transaction has ensured that its memory operations are
+executed in isolation from other threads and that \textit{all} of its memory operations
+are committed, thus satisfying the isolation and atomicity principles.  Note that only at
+this time will the memory operations performed within the transaction become visible to
+other threads; another property of transactions is the appearance of instantaneousness.
+In the case of an abort due to a data conflict, it is clear that the isolation principle
+has been violated.  It should be noted that transactions can abort for a variety of
+reasons depending on the implementation \cite{intel_opt_man,chung_amd}, but the primary
+cause is data conflicts.  Upon abort, all memory operations are discarded as all memory
+operations must be committed or none can be committed.
 
-\subsection{\textbf{Related Studies}}
+\section{Related Studies}
 
-\indent 
-There have been many implementations of TM systems since its conception, mostly
-in software.  Software Transactional Memory (STM) offers better portability but
-at the cost of performance.  Gajinov et al. performed a study with STM by
-developing a parallel version of the Quake multi-player game server from the
-ground up using OpenMP parallelizations pragmas and atomic blocks
-\cite{quake_stm}.  Their results showed that the overhead required for STM
-resulted in execution times that were 4 to 6 times longer than the sequential
-version of the server.  STM in general has been found to result in significant
-slowdown \cite{stm_cascaval}.  Although STM is more widely available than HTM,
-this study dismissed it as a potential solution due to the reasons discussed
-above.
-\par
+There have been many implementations of TM systems since its conception, mostly in
+software.  Software Transactional Memory (STM) offers better portability but at the cost
+of performance.  Gajinov et al. performed a study with STM by developing a parallel
+version of the Quake multi-player game server from the ground up using OpenMP
+parallelizations pragmas and atomic blocks \cite{quake_stm}.  Their results showed that
+the overhead required for STM resulted in execution times that were 4 to 6 times longer
+than the sequential version of the server.  STM in general has been found to result in
+significant slowdown \cite{stm_cascaval}.  Although STM is more widely available than HTM,
+this study dismissed it as a potential solution due to the reasons discussed above.
 
-\indent 
-Hardware Transactional Memory (HTM) provides the physical resources
-necessary to implement transactional memory effectively.  Many chip manufacturers
-have added, or at least sought to add, support for HTM in recent years.  IBM
-released one of the first commercially available HTM systems in their Blue
-Gene/Q machine \cite{blue_wang}.  Even though they found that this
-implementation was an improvement over STM, it still incurred significant
-overhead.  AMD's Advanced Synchronization Facility and Sun's Rock processor
-included support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not
-released any news regarding future releases and Sun's Rock processor was
-canceled after Sun was acquired by Oracle.
-\par
+Hardware Transactional Memory (HTM) provides the physical resources necessary to implement
+transactional memory effectively.  Many chip manufacturers have added, or at least sought
+to add, support for HTM in recent years.  IBM released one of the first commercially
+available HTM systems in their Blue Gene/Q machine \cite{blue_wang}.  Even though they
+found that this implementation was an improvement over STM, it still incurred significant
+overhead.  AMD's Advanced Synchronization Facility and Sun's Rock processor included
+support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not released any news
+regarding future releases and Sun's Rock processor was canceled after Sun was acquired by
+Oracle.
 
-\indent 
-With the release of Intel's Haswell generation processors, Intel's
-Transactional Synchronization Extensions (TSX) is the most widely commercially
-available HTM system.  Numerous studies have already been done with TSX,
-primarily evaluating its performance capabilities.  Chitters et al. modified
-Google's write optimized persistent key-value store, LevelDB, to use TSX based
-synchronization instead of a global mutex.  Their implementation shower 20-25\%
-increased throughput for write-only workloads and increased throughput for 50\%
-read / 50\% write workloads \cite{chitters_tsx}.  Wang et al. studied the
-performance scalability of a concurrent skip-list using TSX Restricted
-Transactional Memory (RTM).  They compared the TSX implementation to a
-fine-grain locking implementation and a lock-free implementation, and found that
-the performance was comparable to the lock-free implementation without the added
-complexity \cite{wang_tsx}.  Yoo et al. evaluated the performance of TSX using
-high-performance computing (HPC) workloads, as well as in a user-level TCP/IP
-stack.  They measured an average speed up of 1.41x and 1.31x respectively
-\cite{yoo_tsx}.  The decision to use Intel's TSX for this research was based on
-its wide availability and the performance improvements observed in other
-studies.
-\par
+With the release of Intel's Haswell generation processors, Intel's Transactional
+Synchronization Extensions (TSX) is the most widely commercially available HTM system.
+Numerous studies have already been done with TSX, primarily evaluating its performance
+capabilities.  Chitters et al. modified Google's write optimized persistent key-value
+store, LevelDB, to use TSX based synchronization instead of a global mutex.  Their
+implementation shower 20-25\% increased throughput for write-only workloads and increased
+throughput for 50\% read / 50\% write workloads \cite{chitters_tsx}.  Wang et al. studied
+the performance scalability of a concurrent skip-list using TSX Restricted Transactional
+Memory (RTM).  They compared the TSX implementation to a fine-grain locking implementation
+and a lock-free implementation, and found that the performance was comparable to the
+lock-free implementation without the added complexity \cite{wang_tsx}.  Yoo et
+al. evaluated the performance of TSX using high-performance computing (HPC) workloads, as
+well as in a user-level TCP/IP stack.  They measured an average speed up of 1.41x and
+1.31x respectively \cite{yoo_tsx}.  The decision to use Intel's TSX for this research was
+based on its wide availability and the performance improvements observed in other studies.
 
-\subsection{\textbf{Transactional Synchronization Extensions (TSX)}}
+\section{Transactional Synchronization Extensions (TSX)}
 
-\indent
-Intel's Transactional Synchronization Extensions (TSX) is an extension
-to the x86 instruction set architecture that adds support for HTM.  TSX operates
-in the L1 cache using the cache coherence protocol \cite{intel_opt_man}.  It is
-a best effort implementation, meaning it does not guarantee transactions will
-commit \cite{intel_prog_ref}.  TSX has two interfaces: 1) Hardware Lock Elision
-(HLE), and 2) Restricted Transactional Memory (RTM).  While both operate on the
-same principles of transactional memory, they have subtle differences.  This
-section discusses some of the implementation details of TSX as well as how the
-programmer utilizes TSX.
-\par
+Intel's Transactional Synchronization Extensions (TSX) is an extension to the x86
+instruction set architecture that adds support for HTM.  TSX operates in the L1 cache
+using the cache coherence protocol \cite{intel_opt_man}.  It is a best effort
+implementation, meaning it does not guarantee transactions will commit
+\cite{intel_prog_ref}.  TSX has two interfaces: 1) Hardware Lock Elision (HLE), and 2)
+Restricted Transactional Memory (RTM).  While both operate on the same principles of
+transactional memory, they have subtle differences.  This section discusses some of the
+implementation details of TSX as well as how the programmer utilizes TSX.
 
-\subsubsection{\textbf{Hardware Lock Elision (HLE)}}\label{sec:hle}
+\subsection{Hardware Lock Elision (HLE)}\label{sec:hle}
 
-\indent 
-The Hardware Lock Elision (HLE) interface is a legacy-compatible
-interface introducing two instruction prefixes: 1) XACQUIRE and 2) XRELEASE.
-XACQUIRE is placed before the locking instruction to mark the beginning of a
-transaction.  XRELEASE is placed before the unlocking instruction to mark the
-end of a transaction.
-\par
+The Hardware Lock Elision (HLE) interface is a legacy-compatible interface introducing two
+instruction prefixes: 1) XACQUIRE and 2) XRELEASE.  XACQUIRE is placed before the locking
+instruction to mark the beginning of a transaction.  XRELEASE is placed before the
+unlocking instruction to mark the end of a transaction.
 
-\indent 
-These prefixes tell the processor to elide the write operation to the lock
-variable during lock acquisition/release.  When the processor encounters an
-XACQUIRE prefixed lock instruction, it transitions to transactional execution.
-Specifically, it adds the lock variable to the transaction's read-set instead of
-issuing any write requests to the lock \cite{intel_prog_ref}.  To other threads,
-the lock will appear to be free, thus allowing those threads to enter the
-critical section and execute concurrently.  All transactions can execute
-concurrently as long as no transaction aborts and explicitly writes to the lock
-variable.  If that were to happen, a data conflict technically occurs - one
-transaction writes to a memory location that is part of another transaction's
-read-set.
-\par
+These prefixes tell the processor to elide the write operation to the lock variable during
+lock acquisition/release.  When the processor encounters an XACQUIRE prefixed lock
+instruction, it transitions to transactional execution.  Specifically, it adds the lock
+variable to the transaction's read-set instead of issuing any write requests to the lock
+\cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus allowing
+those threads to enter the critical section and execute concurrently.  All transactions
+can execute concurrently as long as no transaction aborts and explicitly writes to the
+lock variable.  If that were to happen, a data conflict technically occurs - one
+transaction writes to a memory location that is part of another transaction's read-set.
 
-\indent 
-The XRELEASE prefix is placed before the instruction used to release the
-lock.  It also attempts to elide the write associated with the lock release
-instruction.  If the lock release instruction attempts to restore the lock to the
-value it had prior to the XACQUIRE prefixed locking instruction, the write
-operation on the lock is elided \cite{intel_prog_ref}.  It is at this time that
-the processor attempts to commit the transaction.
-\par
+The XRELEASE prefix is placed before the instruction used to release the lock.  It also
+attempts to elide the write associated with the lock release instruction.  If the lock
+release instruction attempts to restore the lock to the value it had prior to the XACQUIRE
+prefixed locking instruction, the write operation on the lock is elided
+\cite{intel_prog_ref}.  It is at this time that the processor attempts to commit the
+transaction.
 
-\indent 
-However, if the transaction aborts for any reason, the region will be
-re-executed non-transactionally.  If the processor encounters an abort
-condition, it will discard all memory operations performed within the
-transaction, return to the locking instruction, and resume execution without
-lock elision, i.e. the write operation will be performed on the lock variable.
-This guarantees forward progress for the application \cite{intel_prog_ref}.
-\par
+However, if the transaction aborts for any reason, the region will be re-executed
+non-transactionally.  If the processor encounters an abort condition, it will discard all
+memory operations performed within the transaction, return to the locking instruction, and
+resume execution without lock elision, i.e. the write operation will be performed on the
+lock variable.  This guarantees forward progress for the application
+\cite{intel_prog_ref}.
 
-\indent 
 A general implementation for the HLE software interface is shown in Figure
-~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory
-model parameters in the locking function intrinsic.  GCC 4.8 and above includes
-support for the \_\_ATOMIC\_HLE\_ACQUIRE and \_\_ATOMIC\_HLE\_RELEASE memory
-models \cite{gcc}.
-\par
+~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory model
+parameters in the locking function intrinsic.  GCC 4.8 and above includes support for the
+\_\_ATOMIC\_HLE\_ACQUIRE and \_\_ATOMIC\_HLE\_RELEASE memory models \cite{gcc}.
 
 \begin{figure}[H]
     \centering
@@ -558,70 +400,54 @@ models \cite{gcc}.
     \label{fig:hle_interface}
 \end{figure}
 
-\indent
-HLE is legacy compatible.  Code utilizing the HLE interface can be executed on
-legacy hardware, but the HLE prefixes will be ignored \cite{intel_prog_ref},
-i.e. the processor will always perform the write operation on the locking
-variable and execute the critical section non-transactionally.  While this
-interface does nothing for multi-threaded applications on legacy hardware, it
-does allow for easier cross-platform code deployment.
-\par
+HLE is legacy compatible.  Code utilizing the HLE interface can be executed on legacy
+hardware, but the HLE prefixes will be ignored \cite{intel_prog_ref}, \emph{i.e.,} the
+processor will always perform the write operation on the locking variable and execute the
+critical section non-transactionally.  While this interface does nothing for
+multi-threaded applications on legacy hardware, it does allow for easier cross-platform
+code deployment.
 
-\subsubsection{\textbf{Restricted Transactional Memory (RTM)}}\label{sec:rtm}
+\subsection{Restricted Transactional Memory (RTM)}\label{sec:rtm}
 
-\indent 
-The Restricted Transactional Memory (RTM) interface introduces four new
-instructions: 1) XBEGIN, 2) XEND, 3) XABORT, and 4) XTEST.  XBEGIN marks the
-start of a transaction, while XEND makes the end of a transaction.  XABORT is
-used by the programmer to manually abort a transaction.  XTEST can be used to
-test if the processor is executing transactionally or non-transactionally.
-\par
+The Restricted Transactional Memory (RTM) interface introduces four new instructions: 1)
+XBEGIN, 2) XEND, 3) XABORT, and 4) XTEST.  XBEGIN marks the start of a transaction, while
+XEND makes the end of a transaction.  XABORT is used by the programmer to manually abort a
+transaction.  XTEST can be used to test if the processor is executing transactionally or
+non-transactionally.
 
-\indent 
-The XBEGIN instruction transitions the processor into transactional
-execution \cite{intel_prog_ref}.  Note that the XBEGIN instruction does not even
-read the locking variable as HLE does.  Therefore, the programmer should
-manually add the locking variable to the transaction's read-set by checking if
-the lock is free at the start of the transaction.  If it is free, the
-transaction can execute safely.  Once execution reaches the XEND instruction,
-the processor will attempt to atomically commit the transaction.
-\par
+The XBEGIN instruction transitions the processor into transactional execution
+\cite{intel_prog_ref}.  Note that the XBEGIN instruction does not even read the locking
+variable as HLE does.  Therefore, the programmer should manually add the locking variable
+to the transaction's read-set by checking if the lock is free at the start of the
+transaction.  If it is free, the transaction can execute safely.  Once execution reaches
+the XEND instruction, the processor will attempt to atomically commit the transaction.
 
-\indent
-As previously mentioned, the transaction can abort for many reasons.
-One case specific to RTM occurs when the lock is not free upon entering the
-transaction.  In this case, the programmer uses the XABORT instruction to
-explicitly abort the transaction.  But no matter the reason for the abort,
-execution jumps to the fallback instruction address \cite{intel_prog_ref}.  This
-address is an operand of the XBEGIN instruction.
-\par
+As previously mentioned, the transaction can abort for many reasons.  One case specific to
+RTM occurs when the lock is not free upon entering the transaction.  In this case, the
+programmer uses the XABORT instruction to explicitly abort the transaction.  But no matter
+the reason for the abort, execution jumps to the fallback instruction address
+\cite{intel_prog_ref}.  This address is an operand of the XBEGIN instruction.
 
-\indent
-It is this fallback path that makes RTM a much more flexible interface
-than HLE because it is entirely at the discretion of the programmer.  Even so,
-the programmer must still provide an abort path that guarantees forward progress
-\cite{intel_prog_ref}.  Therefore, the abort path should use explicit
-synchronization, e.g. acquire the lock, to ensure forward progress. However, the
-programmer can use this abort path to tune the performance of RTM enabled
-applications.  For instance, a retry routine can be used to specify how many
-times the processor should attempt to enter transactional execution before using
-explicit synchronization.  Furthermore, the EAX register reports information
-about the condition of an abort \cite{intel_prog_ref}, such as whether or not
-the abort was caused by the XABORT instruction, a data conflict, etc.  The
-programmer can use this information to make more informed decisions regarding
-reattempting transactional execution.
-\par
+It is this fallback path that makes RTM a much more flexible interface than HLE because it
+is entirely at the discretion of the programmer.  Even so, the programmer must still
+provide an abort path that guarantees forward progress \cite{intel_prog_ref}.  Therefore,
+the abort path should use explicit synchronization, e.g. acquire the lock, to ensure
+forward progress. However, the programmer can use this abort path to tune the performance
+of RTM enabled applications.  For instance, a retry routine can be used to specify how
+many times the processor should attempt to enter transactional execution before using
+explicit synchronization.  Furthermore, the EAX register reports information about the
+condition of an abort \cite{intel_prog_ref}, such as whether or not the abort was caused
+by the XABORT instruction, a data conflict, etc.  The programmer can use this information
+to make more informed decisions regarding reattempting transactional execution.
 
-\indent 
 The general algorithm for the RTM software interface is shown in Figure
-~\ref{fig:rtm_interface}.  The programmer moves the existing locking mechanism
-inside an else clause of the xbegin if statement, which will determine if the
-processor transitions to transactional execution or takes the abort path.  As
-previously mentioned, the processor will also return to this point should the
-transaction abort in the middle of execution. Moving the locking mechanism into
-the RTM abort path ensures that the abort path ultimately uses explicit
-synchronization and guarantees forward progress.  GCC 4.8 and above includes
-support for the \_xbegin, \_xabort, and \_xend intrinsics \cite{gcc}.
+~\ref{fig:rtm_interface}.  The programmer moves the existing locking mechanism inside an
+else clause of the xbegin if statement, which will determine if the processor transitions
+to transactional execution or takes the abort path.  As previously mentioned, the
+processor will also return to this point should the transaction abort in the middle of
+execution. Moving the locking mechanism into the RTM abort path ensures that the abort
+path ultimately uses explicit synchronization and guarantees forward progress.  GCC 4.8
+and above includes support for the \_xbegin, \_xabort, and \_xend intrinsics \cite{gcc}.
 
 \begin{figure}[H]
     \centering
@@ -631,19 +457,15 @@ support for the \_xbegin, \_xabort, and \_xend intrinsics \cite{gcc}.
     \label{fig:rtm_interface}
 \end{figure}
 
-\indent 
-While RTM is a much more flexible interface than HLE, it can only be
-used on supported Haswell platforms.  If a legacy device attempts to execute one
-of the RTM instructions, it will throw a General Protection Fault.  It should
-be noted that execution of the XEND instruction outside of a transaction
-will result in a General Protection Fault as well \cite{intel_opt_man}.
-\par
+While RTM is a much more flexible interface than HLE, it can only be used on supported
+Haswell platforms.  If a legacy device attempts to execute one of the RTM instructions, it
+will throw a General Protection Fault.  It should be noted that execution of the XEND
+instruction outside of a transaction will result in a General Protection Fault as well
+\cite{intel_opt_man}.
 
-\newpage
-\section{\textbf{Practical Programming with TSX}}
+\chapter{Practical Programming with TSX}
 
-\indent 
-Before implementing TSX in the WARPED simulation kernel, a more in depth
+Before implementing TSX in the \textsc{warped} simulation kernel, a more in depth
 evaluation of its capabilities needed to be performed.  One of the disadvantages
 of HTM is the physical limitations of the hardware.  This section evaluates
 practical programming techniques to consider when using TSX to ensure optimal
@@ -652,66 +474,51 @@ constraints.  All benchmarks were run on a system with an Intel i7-4770 running
 at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way, set associative L1 cache
 and a 256 L2 cache.  Each cache line is 64 bytes.  This information was verified
 using common Unix commands.
-\par
 
-\subsection{\textbf{Memory Organization}}
+\section{Memory Organization}
 
-\indent 
 TSX maintains a read-set and a write-set with the granularity of a cache line
-\cite{intel_prog_ref}.  During transactional execution, TSX constructs a
-record of memory addresses read from and a record of memory addresses written
-to.  A data conflict occurs if another thread tries to read an address in the
-write-set or tries to write an address in the read-set.  This definition can be
-expanded to state that \textit{a data conflict occurs if: 1) another thread attempts to
-read a memory address that occupies the same cache line as a memory address to
-be written, or 2) another thread attempts to write a memory address that
-occupies the same cache line as a memory address that has been read from.}
-\par
+\cite{intel_prog_ref}.  During transactional execution, TSX constructs a record of memory
+addresses read from and a record of memory addresses written to.  A data conflict occurs
+if another thread tries to read an address in the write-set or tries to write an address
+in the read-set.  This definition can be expanded to state that \textit{a data conflict
+  occurs if: 1) another thread attempts to read a memory address that occupies the same
+  cache line as a memory address to be written, or 2) another thread attempts to write a
+  memory address that occupies the same cache line as a memory address that has been read
+  from.}
 
-\indent 
-Therefore, aborts can be caused by data occupying the same cache line,
-especially false sharing, i.e. the occupation of the same cache line by
-unrelated data \cite{intel_opt_man}.  To mitigate the effects of shared
-cache line data conflicts, the programmer must be conscientious of how data is
-organized in memory.  For instance, the data in the previously discussed
-benchmarks is optimally organized by allocating individual elements to 64 bytes,
-i.e. a single cache line.
-\par
+Therefore, aborts can be caused by data occupying the same cache line, especially false
+sharing, i.e. the occupation of the same cache line by unrelated data
+\cite{intel_opt_man}.  To mitigate the effects of shared cache line data conflicts, the
+programmer must be conscientious of how data is organized in memory.  For instance, the
+data in the previously discussed benchmarks is optimally organized by allocating
+individual elements to 64 bytes, \emph{i.e.,} a single cache line.
 
-\indent 
-Furthermore, data elements should be aligned to cache line boundaries
-to ensure that each element is limited to exactly one cache line.  If a data
-element crosses a cache line boundary, the probability of shared cache line data
-conflicts increases as the data access now has to check against two cache lines.  
-\par
+Furthermore, data elements should be aligned to cache line boundaries to ensure that each
+element is limited to exactly one cache line.  If a data element crosses a cache line
+boundary, the probability of shared cache line data conflicts increases as the data access
+now has to check against two cache lines.
 
-\subsection{\textbf{Transaction Size}}
+\section{Transaction Size}
 
-\indent
-TSX maintains a transaction read-set and write-set in the L1 cache
-\cite{intel_opt_man}.  The size of these memory sets is therefore limited by
-the size of the L1 cache.  Hyper-threading further restricts the size of the
-transaction data sets because the L1 cache is shared between two threads on the
-same core \cite{intel_opt_man}.  Based on granularity of the read-set and write-set stated
-above, transaction size is defined as the number of cache lines accessed within
-a transaction.  
-\par 
+TSX maintains a transaction read-set and write-set in the L1 cache \cite{intel_opt_man}.
+The size of these memory sets is therefore limited by the size of the L1 cache.
+Hyper-threading further restricts the size of the transaction data sets because the L1
+cache is shared between two threads on the same core \cite{intel_opt_man}.  Based on
+granularity of the read-set and write-set stated above, transaction size is defined as the
+number of cache lines accessed within a transaction.
 
-\indent
 A set of benchmarks was developed to access a shared array of custom structures. Each
-structure is allocated to occupy an entire cache line, i.e. 64 bytes, and
-aligned to the nearest cache line boundary using the GCC align attribute.  This
-ensures that memory is optimally organized as previously mentioned.  Benchmarks
-were run with varying transaction sizes and number of threads.
-\par
+structure is allocated to occupy an entire cache line, i.e. 64 bytes, and aligned to the
+nearest cache line boundary using the GCC align attribute.  This ensures that memory is
+optimally organized as previously mentioned.  Benchmarks were run with varying transaction
+sizes and number of threads.
 
-\indent
-The first benchmark was run with a single thread to avoid data conflicts.  Figure
-~\ref{fig:trx_size} shows the abort rate, i.e. \# aborts / \# operations, as the
-number of cache lines accessed within the transaction increases.  The read-set
-data points represent strictly read operations while the write-set data points
-represent strictly write operations.
-\par 
+The first benchmark was run with a single thread to avoid data conflicts.
+Figure~\ref{fig:trx_size} shows the abort rate, i.e. \# aborts / \# operations, as the
+number of cache lines accessed within the transaction increases.  The read-set data points
+represent strictly read operations while the write-set data points represent strictly
+write operations.
 
 \begin{figure}[H]
     \centering
@@ -722,33 +529,25 @@ represent strictly write operations.
     \label{fig:trx_size}
 \end{figure}
 
-\indent
-It is clear that transactions abort 100\% of the time once the thread tries to
-write to 512 or more cache lines within the transaction.  This is consistent
-with the size of the L1 cache, 32KB of 64 bytes caches lines equates to 512
-cache lines; it is unrealistic to expect that no other process will use the
-cache while the transaction is executing and thus the transaction cannot occupy
-the cache in its entirety.  Furthermore, the cache is split into 64 8-way sets;
-if memory is not organized properly, the total write-set size will be reduced.
-\par
+It is clear that transactions abort 100\% of the time once the thread tries to write to
+512 or more cache lines within the transaction.  This is consistent with the size of the
+L1 cache, 32KB of 64 bytes caches lines equates to 512 cache lines; it is unrealistic to
+expect that no other process will use the cache while the transaction is executing and
+thus the transaction cannot occupy the cache in its entirety.  Furthermore, the cache is
+split into 64 8-way sets; if memory is not organized properly, the total write-set size
+will be reduced.
 
-\indent 
-However, it is evident that the same size limitations do not hold for
-the read-set size.  While eviction of a cache line containing a write-set address will
-always cause a transactional abort, eviction of a cache line containing a
-read-set address may not cause an immediate transactional abort; these cache
-lines may be tracked by a second-level structure in the L2 cache
-\cite{intel_opt_man}.
-\par
+However, it is evident that the same size limitations do not hold for the read-set size.
+While eviction of a cache line containing a write-set address will always cause a
+transactional abort, eviction of a cache line containing a read-set address may not cause
+an immediate transactional abort; these cache lines may be tracked by a second-level
+structure in the L2 cache \cite{intel_opt_man}.
 
-\indent 
-The second benchmark is run with two threads on the same core to
-evaluate the effects of hyper-threading on TSX.  Each thread accesses the same
-number of cache lines, but at different memory locations to prevent any data
-conflicts. Figure ~\ref{fig:trx_size_ht} shows the abort rate for one 
-of the threads as the number of cache lines accessed within each transaction
-increases.
-\par
+The second benchmark is run with two threads on the same core to evaluate the effects of
+hyper-threading on TSX.  Each thread accesses the same number of cache lines, but at
+different memory locations to prevent any data conflicts. Figure ~\ref{fig:trx_size_ht}
+shows the abort rate for one of the threads as the number of cache lines accessed within
+each transaction increases.
 
 \begin{figure}[H]
     \centering
@@ -759,31 +558,23 @@ increases.
     \label{fig:trx_size_ht}
 \end{figure}
 
-\indent 
-It is evident that the write-set is strictly limited to half of the L1
-cache.  However, the probability of an abort is non-trivial for any write-set
-size between 32 and 128 cache lines.  It is also evident that the read-set size
-is limited to a similar size as the write-set on a hyper-threaded core.
-\par
+It is evident that the write-set is strictly limited to half of the L1 cache.  However,
+the probability of an abort is non-trivial for any write-set size between 32 and 128 cache
+lines.  It is also evident that the read-set size is limited to a similar size as the
+write-set on a hyper-threaded core.
 
-\subsection{\textbf{Transaction Duration}}
+\section{Transaction Duration}
 
-\indent 
-Transaction aborts can be caused by a number of run-time events
-\cite{intel_prog_ref}, including but not limited to: interrupts, page faults,
-I/O operations, context switches, illegal instructions, etc.  This is due to the
-inability of the processor to save the transactional state information
-\cite{schwahn}.
-\par
+Transaction aborts can be caused by a number of run-time events \cite{intel_prog_ref},
+including but not limited to: interrupts, page faults, I/O operations, context switches,
+illegal instructions, etc.  This is due to the inability of the processor to save the
+transactional state information \cite{schwahn}.
 
-\indent
-To evaluate how long a transaction can safely execute for, a third
-benchmark was developed to perform 100 to 1000000 increment operations on a
-single element.  This benchmark was executed with a single thread to minimize
-the possibility of data conflicts. Figure ~\ref{fig:trx_duration} shows the
-transaction abort rate as the duration of the transaction is increased, i.e. the
-number of operations performed within the transaction.
-\par
+To evaluate how long a transaction can safely execute for, a third benchmark was developed
+to perform 100 to 1000000 increment operations on a single element.  This benchmark was
+executed with a single thread to minimize the possibility of data conflicts. Figure
+~\ref{fig:trx_duration} shows the transaction abort rate as the duration of the
+transaction is increased, i.e. the number of operations performed within the transaction.
 
 \begin{figure}[H]
     \centering
@@ -794,42 +585,39 @@ number of operations performed within the transaction.
     \label{fig:trx_duration}
 \end{figure}
 
-\indent 
-It is clear that the longer a transaction executes, the higher the probability
-is that it will abort.  Practical applications will perform a varying number of
-operations that take varying amounts of time.  This benchmark simply
-demonstrates that shorter transactions are more likely to succeed than longer
-transactions.
-\par
+It is clear that the longer a transaction executes, the higher the probability is that it
+will abort.  Practical applications will perform a varying number of operations that take
+varying amounts of time.  This benchmark simply demonstrates that shorter transactions are
+more likely to succeed than longer transactions.
 
-\subsection{\textbf{Synchronization Latency}}
+\section{Synchronization Latency}
 % not sure if this is relevant at all or if this is an adequate test
 
-\indent
-Conventional synchronization mechanisms have varying latencies, therefore TSX
-most likely also has varying latencies.  While it is incredibly difficult to
-obtain accurate measurements, the goal of this benchmark is to compare the TSX
-latencies to conventional synchronization mechanism latencies.  To be clear,
-this benchmark merely demonstrates how long TSX synchronization mechanisms take
-to enter transactional regions relative to how long conventional synchronization
-mechanisms take to enter a critical section.
-\par
+Conventional synchronization mechanisms have varying latencies, therefore TSX most likely
+also has varying latencies.  While it is incredibly difficult to obtain accurate
+measurements, the goal of this benchmark is to compare the TSX latencies to conventional
+synchronization mechanism latencies.  To be clear, this benchmark merely demonstrates how
+long TSX synchronization mechanisms take to enter transactional regions relative to how
+long conventional synchronization mechanisms take to enter a critical section.
 
-\indent
 Each synchronization mechanism is used to perform a simple increment operation.
 The thread calls the locking function, increments, and calls the release
 function the data 100000 times.  The execution time of the entire loop is
 measured using the gettimeofday functionality in Linux.  The locking/release
 functions use one of the following depending on the configuration: 
-\indent1) no synchronization 
-\indent2) an atomic compare and exchange lock
-\indent3) a mutex lock
-\indent4) HLE
-\indent5) RTM
+
+\begin{enumerate}
+  \item no synchronization 
+  \item an atomic compare and exchange lock
+  \item a mutex lock
+  \item HLE
+  \item RTM
+\end{enumerate}
+
 The results are shown in Figure ~\ref{fig:tsx_latency}.  Clearly the HLE and RTM
-mechanisms take longer to actually complete the synchronization process.  This
-can most likely be attributed to the extra actions the hardware must perform to
-initiate transactional execution.
+mechanisms take longer to actually complete the synchronization process.  This can most
+likely be attributed to the extra actions the hardware must perform to initiate
+transactional execution.
 
 %need to make image cleaner
 \begin{figure}[H]
@@ -840,62 +628,52 @@ initiate transactional execution.
     \label{fig:tsx_latency}
 \end{figure}
 
-\subsection{\textbf{Nesting Transactions}}
+\section{Nesting Transactions}
 
-\indent
-When developing larger TSX enabled multi-threaded applications, it is
-possible for critical sections to be nested within one another.  TSX supports
-nested transactions for both HLE and RTM regions, as well as a combination of
-the two.  When the processor encounters an XACQUIRE instruction prefix or an 
-XBEGIN instruction, it increments a nesting count.  Note that the processor
-transitions to transactional execution when the nesting count goes from 0 to 1
-\cite{intel_prog_ref}.  When the processor encounters an XRELEASE instruction
-prefix or an XEND instruction, the nesting count is decremented.  Once the
-nesting count returns to 0, the processor attempts to commit the transactions as
+When developing larger TSX enabled multi-threaded applications, it is possible for
+critical sections to be nested within one another.  TSX supports nested transactions for
+both HLE and RTM regions, as well as a combination of the two.  When the processor
+encounters an XACQUIRE instruction prefix or an XBEGIN instruction, it increments a
+nesting count.  Note that the processor transitions to transactional execution when the
+nesting count goes from 0 to 1 \cite{intel_prog_ref}.  When the processor encounters an
+XRELEASE instruction prefix or an XEND instruction, the nesting count is decremented.
+Once the nesting count returns to 0, the processor attempts to commit the transactions as
 one monolithic transaction \cite{intel_prog_ref}.
-\par
 
-\indent
-The total nesting depth is still limited by the physical resources of
-the hardware.  If the nesting count exceeds this implementation specific limit,
-the transaction may abort.  Upon abort, the processor transitions to
-non-transactional execution as if the first lock instruction was executed
-without elision \cite{intel_prog_ref}.
-\par
+The total nesting depth is still limited by the physical resources of the hardware.  If
+the nesting count exceeds this implementation specific limit, the transaction may abort.
+Upon abort, the processor transitions to non-transactional execution as if the first lock
+instruction was executed without elision \cite{intel_prog_ref}.
 
-\indent
-Scenarios may arise where different locks may be nested within the same
-critical section.  For instance, one critical section may reside within a
-separate critical section.  While this is not a concern for RTM regions, it can
-become a concern for HLE regions, as the processor can only track a fixed number
-of HLE prefixed locks.  However, any HLE prefixed locks executed after this
-implementation specific limit has been reached will simply execute without
-elision; consequently, the secondary lock variable will be added to the
+Scenarios may arise where different locks may be nested within the same critical section.
+For instance, one critical section may reside within a separate critical section.  While
+this is not a concern for RTM regions, it can become a concern for HLE regions, as the
+processor can only track a fixed number of HLE prefixed locks.  However, any HLE prefixed
+locks executed after this implementation specific limit has been reached will simply
+execute without elision; consequently, the secondary lock variable will be added to the
 transaction's write-set \cite{intel_prog_ref}.
-\par
 
-\newpage
 %need a different name for this section
-\section{\textbf{Parallel Discrete Event Simulation and Warped}}
+\chapter{Parallel Discrete Event Simulation and Warped}
 
-\subsection{\textbf{Background}}
+\section{Background}
 
-Discrete Event Simulation (DES) models a system's state changes at discrete
-points in time.  In general, simulators consist of the following data structures
-\cite{fujimoto}:\par
+Discrete Event Simulation (DES) models a system's state changes at discrete points in
+time.  In general, simulators consist of the following data structures \cite{fujimoto}:
+
 \begin{itemize}
-\item\textbf{Pending Event Set:} contains events that have been scheduled, but not
-processed.  Events are retrieved from this structure to be executed.
-\item\textbf{Clock:} denotes how far the simulation has progressed.
-\item\textbf{State:} describes the state of the system.
+  \item\textbf{Pending Event Set:} contains events that have been scheduled, but not
+    processed.  Events are retrieved from this structure to be executed.
+  \item\textbf{Clock:} denotes how far the simulation has progressed.
+  \item\textbf{State:} describes the state of the system.
 \end{itemize}
-The state of the simulation can only change upon execution of an event.
-During the execution of an event, the simulation: 1) retrieves the least 
-time-stamped event from the pending event set, 2) Processes the event, 3) Updates
-the LP's state, and 4) inserts generated events into the pending event set.
-\par
 
-\indent
+\noindent
+The state of the simulation can only change upon execution of an event.  During the
+execution of an event, the simulation: 1) retrieves the least time-stamped event from the
+pending event set, 2) Processes the event, 3) Updates the LP's state, and 4) inserts
+generated events into the pending event set.
+
 Physical processes are represented by Logical Processes (LPs) in the simulation
 \cite{des_misra}.  For example, in an epidemic simulation, LPs represent
 geographical locations containing a subset of the total population.  The LPs
@@ -906,47 +684,42 @@ diseased individual within a location, the diffusion of a disease within a
 geographical location, etc. \cite{epidemic}. To effectively model epidemics, a
 significant population size and number of locations needs to be simulated.  It
 becomes infeasible to perform this simulation on a sequential machine.  
-\par
 
-The need for such large simulations has energized research in Parallel Discrete
-Event Simulation (PDES).  Events from separate LPs are executed concurrently by
-one of \textit{N} threads.  Each LPs' events execute in chronological
-order to ensure local causality constraints are met \cite{fujimoto}.  However,
-PDES is susceptible to other causality errors, optimistically synchronized PDES
-being the most susceptible.  Optimistic approaches, such as the Time Warp
-protocol which is used in the WARPED simulation kernel, detect rather than
-prevent causal errors.  This allows for increased concurrency as events are
-continually executed until a causal error is detected.  In contrast,
-conservative approaches do not execute events until the system has determined it
-is safe to do so \cite{fujimoto}.
-\par
+The need for such large simulations has energized research in Parallel Discrete Event
+Simulation (PDES).  Events from separate LPs are executed concurrently by one of
+\textit{N} threads.  Each LPs' events execute in chronological order to ensure local
+causality constraints are met \cite{fujimoto}.  However, PDES is susceptible to other
+causality errors, optimistically synchronized PDES being the most susceptible.  Optimistic
+approaches, such as the Time Warp protocol which is used in the \textsc{warped} simulation kernel,
+detect rather than prevent causal errors.  This allows for increased concurrency as events
+are continually executed until a causal error is detected.  In contrast, conservative
+approaches do not execute events until the system has determined it is safe to do so
+\cite{fujimoto}.
 
 One of the most well-known optimistic protocols is the Time Warp mechanism
-\cite{fujimoto}.  In addition to the standard DES data structures, each LP in a
-simulation implementing the Time Warp protocol consists of the following data
-structures:\par 
+\cite{fujimoto}.  In addition to the standard DES data structures, each LP in a simulation
+implementing the Time Warp protocol consists of the following data structures:
+
 \begin{itemize}
-\item\textbf{Unprocessed Queue:} contains events that have been scheduled, but have
-yet to be executed.  This structure acts as the pending event set for the
-LP. 
-\item\textbf{Processed Queue:} records previously executed events.
-\item\textbf{Output Queue:} contains event messages sent to other LPs.
+  \item \textbf{Unprocessed Queue:} contains events that have been scheduled, but have yet
+    to be executed.  This structure acts as the pending event set for the LP.
+  \item\textbf{Processed Queue:} records previously executed events.
+  \item\textbf{Output Queue:} contains event messages sent to other LPs.
 \end{itemize}
 
-In Time Warp, a causality error occurs if an event message is
-received containing an event time-stamp smaller than the time-stamp of the
-previously executed event.  Such an event is known as a straggler event.  When a
-straggler event is received by an LP, that LP must undo all effects of all
-events executed with a time-stamp greater than that of the straggler event,
-henceforth referred to as a rollback.  During a rollback, prematurely executed
-events are removed from the processed queue and reinserted into the unprocessed
-queue after the straggler event,  For every event message in the output queue
-with an event time-stamp greater than that of the straggler event, an
-anti-message is generated.  Anti-messages are sent to the associated LP of that
-event and remove the prematurely generated event from the LP's queue.  Figure
-~\ref{fig:rollback_stragglerrecvd} shows the scheduling state of the LP as a
-straggler event is received.  Figure ~\ref{fig:rollback_processed} shows the
-scheduling state of the LP after the rollback is processed \cite{dickman}.
+In Time Warp, a causality error occurs if an event message is received containing an event
+time-stamp smaller than the time-stamp of the previously executed event.  Such an event is
+known as a straggler event.  When a straggler event is received by an LP, that LP must
+undo all effects of all events executed with a time-stamp greater than that of the
+straggler event, henceforth referred to as a rollback.  During a rollback, prematurely
+executed events are removed from the processed queue and reinserted into the unprocessed
+queue after the straggler event, For every event message in the output queue with an event
+time-stamp greater than that of the straggler event, an anti-message is generated.
+Anti-messages are sent to the associated LP of that event and remove the prematurely
+generated event from the LP's queue.  Figure~\ref{fig:rollback_stragglerrecvd} shows the
+scheduling state of the LP as a straggler event is received.
+Figure~\ref{fig:rollback_processed} shows the scheduling state of the LP after the
+rollback is processed \cite{dickman}.
 
 \begin{figure}[H]
     \centering
@@ -964,66 +737,58 @@ scheduling state of the LP after the rollback is processed \cite{dickman}.
     \label{fig:rollback_processed}
 \end{figure}
 
-While rollbacks are a problem in themselves, rollbacks represent another issue
-relevant to this study; the need to access the pending event set.  When a
-rollback modifies an LP's local pending event set, the global pending event set
-must be updated as well.  Any access to the global pending event set is a
-possible point of contention as only one thread can access this structure at a
-time.  The implementation and management of the pending event set is crucial to
-the overall performance of PDES \cite{twpes}.  
+While rollbacks are a problem in themselves, rollbacks represent another issue relevant to
+this study; the need to access the pending event set.  When a rollback modifies an LP's
+local pending event set, the global pending event set must be updated as well.  Any access
+to the global pending event set is a possible point of contention as only one thread can
+access this structure at a time.  The implementation and management of the pending event
+set is crucial to the overall performance of PDES \cite{twpes}.
 
-\subsection{\textbf{WARPED and the Pending Event Set}}
+\section{\textsc{warped} and the Pending Event Set}
 
-WARPED is a publicly available Discrete Event Simulation (DES) kernel
-implementing the Time Warp protocol \cite{martin,fujimoto}.  It was recently
-redesigned for parallel execution on multi-core processing nodes
-\cite{muthalagu}.  It has many configuration options and utilizes many different
-algorithms of the Time Warp protocol \cite{fujimoto}.
-\par
+\textsc{warped} is a publicly available Discrete Event Simulation (DES) kernel implementing the
+Time Warp protocol \cite{martin,fujimoto}.  It was recently redesigned for parallel
+execution on multi-core processing nodes \cite{muthalagu}.  It has many configuration
+options and utilizes many different algorithms of the Time Warp protocol \cite{fujimoto}.
 
-The pending event set is maintained as a two-level structure in WARPED
-\cite{dickman}.  Each LP maintains its own event set as a time-stamp ordered
-queue.  As previously mentioned, each LP maintains an unprocessed queue for
-scheduled event to be executed and a processed queue to store processed events.  
-A common Least Time-Stamped First queue is populated with the least time
-stamped event from each LP's unprocessed queue.  As the name suggests, the LTSF
-queue is automatically sorted in increasing time-stamp order so that worker
-threads can simply retrieve an event from he head of the queue.  This guarantees
-the worker thread retrieves the least time-stamped event without having to
-search through the queue,  The LTSF queue is also referred to as the schedule
-queue in warped; these terms will be used interchangeably.
-\par
+The pending event set is maintained as a two-level structure in \textsc{warped} \cite{dickman}.
+Each LP maintains its own event set as a time-stamp ordered queue.  As previously
+mentioned, each LP maintains an unprocessed queue for scheduled event to be executed and a
+processed queue to store processed events.  A common Least Time-Stamped First queue is
+populated with the least time stamped event from each LP's unprocessed queue.  As the name
+suggests, the LTSF queue is automatically sorted in increasing time-stamp order so that
+worker threads can simply retrieve an event from he head of the queue.  This guarantees
+the worker thread retrieves the least time-stamped event without having to search through
+the queue, The LTSF queue is also referred to as the schedule queue in warped; these terms
+will be used interchangeably.
 
 % not sure if i need this yet or not
-\subsubsection{\textbf{Pending Event Set Data Structures}}
+\subsection{Pending Event Set Data Structures}
 
-The implementation of the pending event set is a key factor in the performance
-of the simulation \cite{twpes}.  The WARPED simulation kernel has two fully
-functional implementations: 1) using the STL multi-set data structure, and 2)
-using a splay tree data structure.
+The implementation of the pending event set is a key factor in the performance of the
+simulation \cite{twpes}.  The \textsc{warped} simulation kernel has two fully functional
+implementations: 1) using the STL multi-set data structure, and 2) using a splay tree data
+structure.
 
-\setcounter{secnumdepth}{5}
-\setcounter{tocdepth}{5}
-\paragraph{\textbf{STL Multi-Set}}
+\paragraph{STL Multi-Set}
 
 
-\paragraph{\textbf{Splay Tree}}
+\paragraph{Splay Tree}
 
-\subsubsection{\textbf{Worker Thread Event Execution}}
+\subsection{Worker Thread Event Execution}
 
-A manager thread initiates \textit{n} worker threads at the beginning of the
-simulation.  It can also suspend inactive worker threads if they run out of
-useful work.  When a worker thread is created, or resumes execution after being
-suspended by the manager thread, it attempts to lock the LTSF queue and dequeue
-the least time-stamped event.  If the worker thread successfully retrieved an
-event, it executes that event as specified by the simulation model.  It then
-attempts to lock the unprocessed queue for the LP associated with the executed
-event, and dequeue the next least time-stamped event.  The dequeued event is
-inserted into the LTSF queue, which resorts itself based on the event
+A manager thread initiates \textit{n} worker threads at the beginning of the simulation.
+It can also suspend inactive worker threads if they run out of useful work.  When a worker
+thread is created, or resumes execution after being suspended by the manager thread, it
+attempts to lock the LTSF queue and dequeue the least time-stamped event.  If the worker
+thread successfully retrieved an event, it executes that event as specified by the
+simulation model.  It then attempts to lock the unprocessed queue for the LP associated
+with the executed event, and dequeue the next least time-stamped event.  The dequeued
+event is inserted into the LTSF queue, which resorts itself based on the event
 time-stamps.  An abstract event processing algorithm is shown in Figure
-~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads
-perform many other functions.  The entire pending event set implementation can
-be seen in Figure ~\ref{fig:singleLTSFqueue} \cite{dickman}.
+~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads perform many
+other functions.  The entire pending event set implementation can be seen in Figure
+~\ref{fig:singleLTSFqueue} \cite{dickman}.
 
 %Is it legitimate for me to cite figures and pseudocode or do I need to recreate
 %these?
@@ -1053,9 +818,8 @@ worker_thread()
     unlock LPi queue
   end loop
 \end{verbatim}
-\linespread{2.0}
 \caption{\textbf{Generalized event execution loop for the worker threads.  Many details
-have been omitted for clarity.}}\label{workerThreadAlgorithm}
+    have been omitted for clarity.}}\label{workerThreadAlgorithm}
 \end{figure}
 
 \begin{figure}[H]
@@ -1066,59 +830,52 @@ have been omitted for clarity.}}\label{workerThreadAlgorithm}
     \label{fig:singleLTSFqueue}
 \end{figure}
 
-\subsubsection{\textbf{Contention}}
+\subsection{Contention}
 
-Only one worker thread can access the LTSF queue at a time.  This creates a
-clear point of contention during event scheduling as each thread must first
-retrieve an event from the LTSF queue.  The LTSF queue must also be updated when
-events are inserted into any of the LP pending event sets.  This occurs when new
-events are generated or the simulation encounters a causality error and must
-rollback.
-\par
+Only one worker thread can access the LTSF queue at a time.  This creates a clear point of
+contention during event scheduling as each thread must first retrieve an event from the
+LTSF queue.  The LTSF queue must also be updated when events are inserted into any of the
+LP pending event sets.  This occurs when new events are generated or the simulation
+encounters a causality error and must rollback.
 
-Contention increases with the number of worker threads used to perform the
-simulation.  The initial WARPED implementation execution time was measured and
-analyzed for 1 to 7 worker threads.  These results can be seen in Figure
-~\ref{fig:notsx_profile}.  It is evident that performance begins to plateau once
-the number of worker threads used surpasses four.  This is attributed to the
-increased contention for the LTSF queue; with more threads, each thread has to
-wait longer for access to the LTSF queue.  The multi-core processor trend
-continues to increase the number of simultaneous execution threads available,
-consequently increasing the contention problem.
-\par
+Contention increases with the number of worker threads used to perform the simulation.
+The initial \textsc{warped} implementation execution time was measured and analyzed for 1 to 7
+worker threads.  These results can be seen in Figure ~\ref{fig:notsx_profile}.  It is
+evident that performance begins to plateau once the number of worker threads used
+surpasses four.  This is attributed to the increased contention for the LTSF queue; with
+more threads, each thread has to wait longer for access to the LTSF queue.  The multi-core
+processor trend continues to increase the number of simultaneous execution threads
+available, consequently increasing the contention problem.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{notsx_profile}
-    \caption{\textbf{WARPED Simulation Time versus Worker Thread Count for
+    \caption{\textbf{\textsc{warped} Simulation Time versus Worker Thread Count for
     Epidemic Model}}
     \label{fig:notsx_profile}
 \end{figure}
 
-\subsection{\textbf{Previous Solutions to Contention}}
+\section{Previous Solutions to Contention}
 
-Dickman et al. explored the explored the use of various data structures in the
-WARPED pending event set implementation, specifically, the STL multi-set, splay
-tree, and ladder queue data structures \cite{dickman}.  A secondary focus of
-this study will expand upon the use of splay tree versus STL multi-set data
-structures; at the time of this study, the ladder queue implementation was being
-heavily modified and could not be included in this study.
-\par
+Dickman \emph{et al} explored the explored the use of various data structures in \textsc{warped}
+pending event set implementation, specifically, the STL multi-set, splay tree, and ladder
+queue data structures \cite{dickman}.  A secondary focus of this study will expand upon
+the use of splay tree versus STL multi-set data structures; at the time of this study, the
+ladder queue implementation was being heavily modified and could not be included in this
+study.
 
-Another focus of their study was the utilization of multiple LTSF queues
-\cite{dickman}.  Multiple LTSF queues are created at the beginning of the
-simulation.  Each LP is assigned to a specific LTSF queue as shown in Figure
-~\ref{fig:multipleLTSF}.  In a simulation configured with four LPs, two worker
-threads, and two LTSF queues, two LPs and one thread are assigned to each queue.
-This significantly reduced contention as each thread could access separate LTSF
-queues concurrently.  The initial implementation statically assigned LPs to LTSF
-queues.  This resulted in an unbalanced load distribution, leading to an
-increased number of rollbacks and reduced simulation performance.  This was
-corrected using a load balancing algorithm to dynamically reassign LPs to LTSF
-queues.  This study expands the previous multiple LTSF queue to evaluate if
-contention can be reduced even further with TSX.
-\par
+Another focus of their study was the utilization of multiple LTSF queues \cite{dickman}.
+Multiple LTSF queues are created at the beginning of the simulation.  Each LP is assigned
+to a specific LTSF queue as shown in Figure~\ref{fig:multipleLTSF}.  In a simulation
+configured with four LPs, two worker threads, and two LTSF queues, two LPs and one thread
+are assigned to each queue.  This significantly reduced contention as each thread could
+access separate LTSF queues concurrently.  The initial implementation statically assigned
+LPs to LTSF queues.  This resulted in an unbalanced load distribution, leading to an
+increased number of rollbacks and reduced simulation performance.  This was corrected
+using a load balancing algorithm to dynamically reassign LPs to LTSF queues.  This study
+expands the previous multiple LTSF queue to evaluate if contention can be reduced even
+further with TSX.
 
 \begin{figure}[H]
     \centering
@@ -1128,18 +885,16 @@ contention can be reduced even further with TSX.
     \label{fig:multipleLTSF}
 \end{figure}
 
-\subsection{\textbf{Thread Migration: Another Solution to Contention}}
+\section{Thread Migration: Another Solution to Contention}
 
-Another potential solution to contention is to distribute worker threads that
-try to simultaneously access the same LTSF queue to different LTSF queues.  In
-the original scheduling scheme, worker threads are assigned to a specific LTSF
-queue.  The worker thread would insert the next event into the same LTSF it had
-just scheduled from as seen in Figure ~\ref{workerThreadAlgorithm}.  In this
-implementation, the worker thread inserts the next event into a different LTSF
-queue, based on a circularly incremented counter.  The worker threads are
-dynamically reassigned to LTSF queues. The number of LTSF queues is specified in
-a configuration file, and has no restrictions as in the static assignment.
-\par
+Another potential solution to contention is to distribute worker threads that try to
+simultaneously access the same LTSF queue to different LTSF queues.  In the original
+scheduling scheme, worker threads are assigned to a specific LTSF queue.  The worker
+thread would insert the next event into the same LTSF it had just scheduled from as seen
+in Figure ~\ref{workerThreadAlgorithm}.  In this implementation, the worker thread inserts
+the next event into a different LTSF queue, based on a circularly incremented counter.
+The worker threads are dynamically reassigned to LTSF queues. The number of LTSF queues is
+specified in a configuration file, and has no restrictions as in the static assignment.
 
 \linespread{1.0}
 \begin{figure}
@@ -1170,130 +925,121 @@ worker_thread()
     unlock LPi queue
   end loop
 \end{verbatim}
-\linespread{2.0}
-\caption{\textbf{Generalized event execution loop for migrating worker threads.  Many details
-have been omitted for clarity.}}\label{migratinWorkerThreadAlgorithm}
+\caption{\textbf{Generalized event execution loop for migrating worker threads.  Many
+    details have been omitted for clarity.}}\label{migratinWorkerThreadAlgorithm}
 \end{figure}
 
 It was discovered that this implementation resulted in poor performance on NUMA
-architectures.  Jingjing Wang et al. noticed similar performance degradation,
-which they attributed to poor memory locality due to the movement of LPs to
-different threads \cite{numa}.  To offset these performance hits, a migration
-count was implemented in this scheme.  Instead continuous migration, threads
-would be statically assigned to one LTSF after executing a certain number of
-events.
+architectures.  Jingjing Wang et al. noticed similar performance degradation, which they
+attributed to poor memory locality due to the movement of LPs to different threads
+\cite{numa}.  To offset these performance hits, a migration count was implemented in this
+scheme.  Instead continuous migration, threads would be statically assigned to one LTSF
+after executing a certain number of events.
 
-\newpage
-\section{\textbf{WARPED with TSX}}
+
+\chapter{\textsc{warped} with TSX}
 
 This section analyzes the various critical sections that use the TSX mechanism.
 As previously mentioned, the primary focus of this study is the shared LTSF
 queue.  The per LP unprocessed and processed queues also use the TSX mechanism.
-\par
 
-\subsection{\textbf{Shared Data Structure Critical Sections}}
+\section{Shared Data Structure Critical Sections}
 
 First, it is important to understand the operations performed in a critical
 section.  If a critical section always writes to the entire shared data
 structure, TSX will most likely not be useful.  Functions are only explained in
 terms of the operations pertaining to the specific data structure they operate
 on for the sake of clarity.  
-\par
 
-\subsubsection{\textbf{LTSF Queue Functions}}
+\subsection{LTSF Queue Functions}
 
 The following functions require synchronization to access the LTSF
-queue:\par
+queue:
+
 \begin{itemize}
-\item\texttt{insert()} - insert an event into the LTSF queue if an event was inserted
-at the beginning of a specific LP's unprocessed queue.
-\item\texttt{updatedScheduleQueueAfterExecute()} - inserts the dequeued event from a
-specific LP's unprocessed queue into the LTSF queue.
-\item\texttt{nextEventToBeScheduledTime()} - returns the time of the event at the
-beginning of the LTSF queue.
-\item\texttt{clearScheduleQueue()} - clears the LTSF queue.
-\item\texttt{setLowestObjectPosition()} - \textbf{not clear on this function}
-\item\texttt{peek()} - retrieves the next event for execution.
+  \item\texttt{insert()} - insert an event into the LTSF queue if an event was inserted at
+    the beginning of a specific LP's unprocessed queue.
+  \item\texttt{updatedScheduleQueueAfterExecute()} - inserts the dequeued event from a
+    specific LP's unprocessed queue into the LTSF queue.
+  \item\texttt{nextEventToBeScheduledTime()} - returns the time of the event at the
+    beginning of the LTSF queue.
+  \item\texttt{clearScheduleQueue()} - clears the LTSF queue.
+  \item\texttt{setLowestObjectPosition()} - \textbf{not clear on this function}
+  \item\texttt{peek()} - retrieves the next event for execution.
 \end{itemize}
 
-\subsubsection{\textbf{Unprocessed Queue Functions}}
+\subsection{Unprocessed Queue Functions}
 
 The following functions require synchronization to access a specific LPs
-unprocessed queue:\par
+unprocessed queue:
+
 \begin{itemize}
-\item\texttt{insert()} - insert an event into a specific LP's unprocessed
-queue.
-\item\texttt{updatedScheduleQueueAfterExecute()} - dequeue the next least
-time-stamped event from a specific LP's unprocessed queue.
-\item\texttt{getEvent()} - dequeue and return the least time-stamped event in the
-unprocessed queue; insert event into processed queue.
-\item\texttt{getEventIfStraggler()} - same as \texttt{getEvent()} but does not insert
-the event into the processed queue as the getEvent function above does.\
+  \item\texttt{insert()} - insert an event into a specific LP's unprocessed queue.
+  \item\texttt{updatedScheduleQueueAfterExecute()} - dequeue the next least time-stamped
+    event from a specific LP's unprocessed queue.
+  \item\texttt{getEvent()} - dequeue and return the least time-stamped event in the
+    unprocessed queue; insert event into processed queue.
+  \item\texttt{getEventIfStraggler()} - same as \texttt{getEvent()} but does not insert
+    the event into the processed queue as the getEvent function above does.
 %need to verify
-\item\texttt{peekEvent()} - return a reference to the next event in the LP's
-unprocessed queue.
-\item\texttt{peekEventCoastForward()} - same as \texttt{peekEvent()}.
-\item\texttt{handleAntiMessage()} - delete an event in a specific LP's unprocessed queue
-for which the LP received an anti-message.
-\item\texttt{ofcPurge()} - removes all events from the unprocessed queue; used for
-optimistic fossil collection, which is beyond the scope of this study.
-\item\texttt{peekEventLockUnprocessed()} - peek the first event of a specif LP's
-unprocessed queue, but leave the queue locked.
-\item\texttt{getMinEventTime()} - get the time-stamp of the first event in a specific
-LP's unprocessed queue.
+  \item\texttt{peekEvent()} - return a reference to the next event in the LP's unprocessed
+    queue.
+  \item\texttt{peekEventCoastForward()} - same as \texttt{peekEvent()}.
+  \item\texttt{handleAntiMessage()} - delete an event in a specific LP's unprocessed queue
+    for which the LP received an anti-message.
+  \item\texttt{ofcPurge()} - removes all events from the unprocessed queue; used for
+    optimistic fossil collection, which is beyond the scope of this study.
+  \item\texttt{peekEventLockUnprocessed()} - peek the first event of a specif LP's
+    unprocessed queue, but leave the queue locked.
+  \item\texttt{getMinEventTime()} - get the time-stamp of the first event in a specific
+    LP's unprocessed queue.
 \end{itemize}
 
-\subsubsection{\textbf{Processed Queue Functions}}
+\subsection{Processed Queue Functions}
 
 The following functions require synchronization to access a specific LPs
-processed queue:\par
+processed queue:
+
 \begin{itemize}
-\item\texttt{getEvent()} - insert the dequeued event from a specific LP's unprocessed
-queue into that LP's processed queue.
-\item\texttt{getEventWhileRollback()} - same as getEvent(), except the unprocessed
-queue is already locked.%need to verify
-\item\texttt{rollback()} - traverse a specific LP's entire processed queue and remove
-any events with a time-stamp greater than or equal to the rollback time; the
-removed events are placed in the LP's unprocessed queue.
-\item\texttt{fossilCollect()} - remove events satisfying a certain criteria from a
-specific LP's processed queue.
-\item\texttt{ofcPurge()} - same as the ofcPurge() function for the unprocessed
-queue.
+  \item\texttt{getEvent()} - insert the dequeued event from a specific LP's unprocessed
+    queue into that LP's processed queue.
+  \item\texttt{getEventWhileRollback()} - same as getEvent(), except the unprocessed queue
+    is already locked.%need to verify
+  \item\texttt{rollback()} - traverse a specific LP's entire processed queue and remove
+    any events with a time-stamp greater than or equal to the rollback time; the removed
+    events are placed in the LP's unprocessed queue.
+  \item\texttt{fossilCollect()} - remove events satisfying a certain criteria from a
+    specific LP's processed queue.
+  \item\texttt{ofcPurge()} - same as the ofcPurge() function for the unprocessed queue.
 \end{itemize}
 
-\subsection{\textbf{Shared Data Structure Transactional Regions}}
+\section{Shared Data Structure Transactional Regions}
 
-The functions described above perform a variety of memory operations, and any
-thread can execute any critical section at any time.  Based on static analysis,
-there's no way of knowing which threads will access what structure in what way,
-hence the need for synchronization.  But with TSX, functions that do not
-interfere can execute concurrently.  TSX tracks read and write memory
-operations separately in the transaction's read-set and write-set respectively.
-Transactions only interfere if a data conflict occurs, i.e. a thread attempts
-to write to a memory location in another transaction's read-set, or a thread
-attempts to read a memory location in another transaction's write-set.
-\par
+The functions described above perform a variety of memory operations, and any thread can
+execute any critical section at any time.  Based on static analysis, there's no way of
+knowing which threads will access what structure in what way, hence the need for
+synchronization.  But with TSX, functions that do not interfere can execute concurrently.
+TSX tracks read and write memory operations separately in the transaction's read-set and
+write-set respectively.  Transactions only interfere if a data conflict occurs, i.e. a
+thread attempts to write to a memory location in another transaction's read-set, or a
+thread attempts to read a memory location in another transaction's write-set.
 
-For example, one worker thread calls \texttt{nextEventToBeScheduleTime} to get
-the time-stamp of the event at the head of the LTSF queue.  There
-is a possibility that a different worker thread is currently updating the LTSF
-queue or will attempt to update the LTSF queue with the first worker thread is
-in the middle of executing \texttt{nextEventToBeScheduleTime}.  This scenario
-necessitates synchronization.  However, instead of the second worker thread
-writing to the LTSF queue, it also calls \texttt{nextEventToBeScheduleTime}.
-Both are read operations and do not interfere with each other.  TSX recognizes
-this scenario and allows the worker threads to execute concurrently, whereas
-locks force one worker thread to wait until the other is done with the LTSF
-queue.  
-\par
+For example, one worker thread calls \texttt{nextEventToBeScheduleTime} to get the
+time-stamp of the event at the head of the LTSF queue.  There is a possibility that a
+different worker thread is currently updating the LTSF queue or will attempt to update the
+LTSF queue with the first worker thread is in the middle of executing
+\texttt{nextEventToBeScheduleTime}.  This scenario necessitates synchronization.  However,
+instead of the second worker thread writing to the LTSF queue, it also calls
+\texttt{nextEventToBeScheduleTime}.  Both are read operations and do not interfere with
+each other.  TSX recognizes this scenario and allows the worker threads to execute
+concurrently, whereas locks force one worker thread to wait until the other is done with
+the LTSF queue.
 
-Several similar scenarios can arise during simulation execution. While there are
-too many possible scenarios to identify specifically where TSX can be
-beneficial, the potential to expose concurrency through dynamic synchronization
-is too great to be dismissed. Note, there is also no guarantee that TSX will
-work 100\% of the time; there are several run-time events that can cause
-transactions to abort, as well as physical limitations.  
-\par
+Several similar scenarios can arise during simulation execution. While there are too many
+possible scenarios to identify specifically where TSX can be beneficial, the potential to
+expose concurrency through dynamic synchronization is too great to be dismissed. Note,
+there is also no guarantee that TSX will work 100\% of the time; there are several
+run-time events that can cause transactions to abort, as well as physical limitations.
 
 %something about write and the data structures used to implemnet the queues
 
@@ -1312,53 +1058,45 @@ transactions to abort, as well as physical limitations.
 %tree.  Traverising the tree 
 %
 %Several similar scenarios can arise during simulation execution, which
-%is why WARPED can greatly benefit from TSX enabled synchronization.
+%is why \textsc{warped} can greatly benefit from TSX enabled synchronization.
 
-\subsection{\textbf{TSX Implementation}}
+\section{TSX Implementation}
 
-This section discusses how both TSX interfaces were implemented in WARPED.
+This section discusses how both TSX interfaces were implemented in \textsc{warped}.
 
-\subsubsection{\textbf{Hardware Lock Elision (HLE)}}
+\subsection{Hardware Lock Elision (HLE)}
 
-The generic algorithm presented in Figure ~\ref{fig:hle_interface} in section
-~\ref{sec:hle} only works for locks with a binary value, i.e. the lock is free
-or not free.  The WARPED locking mechanism assigns the thread number to the lock
-value to indicate which thread currently holds the lock.  To comply with this
-implementation, custom HLE lock acquire and lock release functions were
-implemented.  GCC inline assembly functions were developed appending the
-appropriate HLE prefixes to a lock cmpxchg instruction. 
+The generic algorithm presented in Figure~\ref{fig:hle_interface} in Section~\ref{sec:hle}
+only works for locks with a binary value, i.e. the lock is free or not free.  The \textsc{warped}
+locking mechanism assigns the thread number to the lock value to indicate which thread
+currently holds the lock.  To comply with this implementation, custom HLE lock acquire and
+lock release functions were implemented.  GCC inline assembly functions were developed
+appending the appropriate HLE prefixes to a lock cmpxchg instruction.
 
-\subsubsection{\textbf{Restricted Transactional Memory (RTM)}}
+\subsection{Restricted Transactional Memory (RTM)}
 
-As previously explained in section ~\ref{sec:rtm}, RTM allows the programmer to
-specify an abort path to be executed upon a transactional abort.  This allows
-better tuning of RTM performance.  The RTM algorithm implemented in WARPED
-includes a retry algorithm described below in Figure ~\ref{rtm_retry}. Instead
-of immediately retrying transactional execution, the algorithm decides when and
-if the transaction should be retried based on the condition of the abort.  If
-the transaction was explicitly aborted for reasons other than another thread
-owning the lock, do not retry transactional execution.  The programmer used the
-\texttt{\_xabort()} function to explicitly abort the transaction. If the lock
-was not free upon entering the transaction, wait until it is free to retry
-transactional execution.  If a data conflict occurred, wait an arbitrary amount
-of time before retrying.  This offsets the execution of the conflicting threads
-in hopes that the conflicting memory operations will be performed at different
-times on the next retry.
-\par
+As previously explained in Section~\ref{sec:rtm}, RTM allows the programmer to specify an
+abort path to be executed upon a transactional abort.  This allows better tuning of RTM
+performance.  The RTM algorithm implemented in \textsc{warped} includes a retry algorithm described
+below in Figure ~\ref{rtm_retry}. Instead of immediately retrying transactional execution,
+the algorithm decides when and if the transaction should be retried based on the condition
+of the abort.  If the transaction was explicitly aborted for reasons other than another
+thread owning the lock, do not retry transactional execution.  The programmer used the
+\texttt{\_xabort()} function to explicitly abort the transaction. If the lock was not free
+upon entering the transaction, wait until it is free to retry transactional execution.  If
+a data conflict occurred, wait an arbitrary amount of time before retrying.  This offsets
+the execution of the conflicting threads in hopes that the conflicting memory operations
+will be performed at different times on the next retry.
 
-The RTM retry limit is specified at compile time.  Each data structure maintains
-its own retry limit initially set to the global limit.  A backoff algorithm is
-used to reduce the retry limit for a specific data structure.  If the
-transactions for this data structure abort more often than not, the retry limit
-is reduced.
-\par
+The RTM retry limit is specified at compile time.  Each data structure maintains its own
+retry limit initially set to the global limit.  A backoff algorithm is used to reduce the
+retry limit for a specific data structure.  If the transactions for this data structure
+abort more often than not, the retry limit is reduced.
 
-Furthermore, if transactions for the data structure consistently abort for an
-extended period of time with no successfull commits, transactional execution is
-not attempted for the remainder of the simulation.  
-\par
+Furthermore, if transactions for the data structure consistently abort for an extended
+period of time with no successfull commits, transactional execution is not attempted for
+the remainder of the simulation.
 
-\linespread{1.0}
 \begin{figure}
 \begin{verbatim}
 while retry count is less than retry limit
@@ -1393,33 +1131,29 @@ acquire lock
 execute critical section
 
 \end{verbatim}
-\linespread{2.0}
 \caption{\textbf{RTM Retry Algorithm}}\label{rtm_retry}
 \end{figure}
 
-\newpage
-\section{\textbf{Experimental Analysis}}
 
-This study compares the performance of the WARPED simulation kernel
-using conventional synchronization mechanisms, Hardware Lock Elision, and
-Restricted Transactional memory.  All simulations were performed on a system
-with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  Average execution
-time and standard deviation were calculated from a set of 10 trials for each
-simulation configuration.
-\par
+\chapter{Experimental Analysis}
 
-The simulation model used to obtain the following results is an epidemic
-model.  It consists of 110998 geographically distributed people in 119 separate
-locations requiring a total of 119 LPs.  The epidemic is modeled by reaction processes
-to model progression of the disease within an individual entity, and diffusion
-processes to model transmission of the disease among individual entities.
-\par
+This study compares the performance of the \textsc{warped} simulation kernel using conventional
+synchronization mechanisms, Hardware Lock Elision, and Restricted Transactional memory.
+All simulations were performed on a system with an Intel i7-4770 running at 3.4 GHz with
+32GB of RAM.  Average execution time and standard deviation were calculated from a set of
+10 trials for each simulation configuration.
 
-\subsection{\textbf{Static Thread Assignment}}
+The simulation model used to obtain the following results is an epidemic model.  It
+consists of 110998 geographically distributed people in 119 separate locations requiring a
+total of 119 LPs.  The epidemic is modeled by reaction processes to model progression of
+the disease within an individual entity, and diffusion processes to model transmission of
+the disease among individual entities.
 
-In the original WARPED implementation, threads are statically assigned to an
-LTSF queue.  Contention will clearly be a problem is the simulation only
-schedules from one LTSF queue as every worker thread is assigned to that queue.
+\section{Static Thread Assignment}
+
+In the original \textsc{warped} implementation, threads are statically assigned to an LTSF queue.
+Contention will clearly be a problem is the simulation only schedules from one LTSF queue
+as every worker thread is assigned to that queue.
 
 \begin{figure}[H]
     \centering
@@ -1430,8 +1164,8 @@ schedules from one LTSF queue as every worker thread is assigned to that queue.
 \end{figure}
 
 %TODO: something about multiple LTSF queues
-Data is limited for static thread migration as the number of LTSF queues has to
-be evenly divisible by the number of worker threads.
+Data is limited for static thread migration as the number of LTSF queues has to be evenly
+divisible by the number of worker threads.
 
 \begin{table}[H]
     \centering
@@ -1490,9 +1224,9 @@ be evenly divisible by the number of worker threads.
     \label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
 
-\subsection{\textbf{Dynamic Thread Assignment}}
+\section{Dynamic Thread Assignment}
 
-\subsubsection{\textbf{Continuous Thread Migration}}
+\subsection{Continuous Thread Migration}
 
 \begin{table}[H]
     \centering
@@ -1552,7 +1286,7 @@ be evenly divisible by the number of worker threads.
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
-\subsubsection{\textbf{Event Limited Thread Migration}}
+\subsection{Event Limited Thread Migration}
 
 \begin{table}[H]
     \centering
@@ -1615,12 +1349,12 @@ be evenly divisible by the number of worker threads.
 
 
 
-%\subsection{\textbf{Lock Contention}}
+%\section{Lock Contention}}
 %
-%The first part of this study compares the performance of the original WARPED
+%The first part of this study compares the performance of the original \textsc{warped}
 %pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
 %1 retry, 4) RTM with 9 retries, and 5) RTM with 19 retries.  It should be noted
-%that the original implementation of the WARPED pending event set only allows for
+%that the original implementation of the \textsc{warped} pending event set only allows for
 %a number of worker threads that is evenly divisible by the number of worker
 %threads due to the way in which LP's are partitioned to LTSF queues.  These
 %results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
@@ -1683,10 +1417,10 @@ be evenly divisible by the number of worker threads.
 %Furthermore, it would appear that utilizing more than one LTSF queue is no
 %longer producing consistent or desirable results. It was also observed that the
 %number of rollbacks was non-trivial for these simulations.  These poor
-%performance could be attributed to recent changes made to the WARPED kernel.\par
+%performance could be attributed to recent changes made to the \textsc{warped} kernel.\par
 %
-\newpage
-\section{\textbf{Conclusions}}
+
+\chapter{Conclusions}
 
 
 
