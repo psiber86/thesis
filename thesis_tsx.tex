@@ -114,89 +114,98 @@ performance and scalability through multi-threaded programming.  However, this a
 with a toll: the need for synchronization mechanisms between multiple threads of
 execution, especially during the execution of critical sections.  By definition, a
 critical section is a segment of code accessing a shared resource that can only be
-executed by one thread at any given time \cite{os_concepts}.  For example, a
-multi-threaded application is designed to operate on a shared two-dimensional array.  For
-the sake of simplicity, the programmer uses coarse-grained locking mechanisms to control
-access to the critical section, e.g. a single atomic lock for the entire grid.  The
-critical section reads a single element, performs a calculation, and updates the element.
-Once a thread enters the critical section, it locks all other threads out of the entire
-grid until it has completed its task, thus forcing the threads to essentially execute
-sequentially upon entering the critical section.  This results in lock contention, and
-consequently negatively impacts performance, as threads must now wait for the currently
-executing thread to relinquish access to the shared resource.  Programmers can employ more
-fine-grained locking mechanisms to expose concurrency, such as locking individual rows or
-even individual elements in the previous example.  However, this approach is vastly more
-complicated and error prone \cite{sle_rajwar}; this approach requires the programmer to
-maintain a separate lock for each row or each element respectively.  Unfortunately,
-programmers are limited to using static information to determine when threads must execute
-a critical section sequentially regardless of whether coarse-grained or fine-grained
-locking is used.
+executed by one thread at any given time \cite{os_concepts}.  For example, consider a
+multi-threaded application that is designed to operate on a shared two-dimensional array.
+For the sake of simplicity, the programmer uses coarse-grained locking mechanisms to
+control access to the critical section, \emph{e.g.,} a single atomic lock for the entire
+array.  The critical section reads a single element, performs a calculation, and updates
+the element of the array.  Once a thread enters the critical section, it locks all other
+threads out of the entire array until it has completed its task, thus forcing the
+collection threads to essentially execute sequentially through the critical section even
+when they are accessing completely independent subparts of the array.  This results in
+lock contention, and consequently negatively impacts performance, as threads must now wait
+for the currently executing thread to relinquish access to the shared resource.
+Programmers can employ more fine-grained locking mechanisms to expose concurrency, such as
+locking individual rows or even individual elements in the previous example.  However,
+this approach is vastly more complicated and error prone \cite{sle_rajwar}; this approach
+requires the programmer to define and maintain a separate lock for each row or each
+element.  Unfortunately, programmers are limited to using static information to 
+determine when threads must execute a critical section sequentially regardless of whether
+coarse-grained or fine-grained locking is used.
 
-However, untapped concurrency could be exposed if the determination to execute
-sequentially was made dynamically \cite{intel_prog_ref}.  In the previous example, a
-scenario arises where one thread will access one element of the two dimensional array,
-while another thread will access a element in an entirely different row.  The programmer
-only knows that any thread can access any given element at any given time, and thus locks
-all elements when one thread is executing.  However, transactional memory systems can
-dynamically determine when such a scenario arises and allow both threads to execute
-concurrently.
+%%JOSH this organization is not perfect; you describe the use of transactional memory
+%%before defining transactional memory.  consider swapping the next two paragraphs and
+%%rewrite as necessary to facilitate flow of the discussion....alternatively simply take
+%%the idea from the first sentence and meld it with the above paragraph and delete the
+%%remainder (or move it lower in the prose)....
+
+Untapped concurrency can be exposed if the determination to protect critical regions are
+able to be made dynamically \cite{intel_prog_ref}.  In the previous example, a scenario
+arises where one thread will access one element of the two dimensional array, while
+another thread will access a element in an entirely different row.  The programmer only
+knows that any thread can access any given element at any given time, and thus locks all
+elements when one thread is executing.  However, transactional memory systems
+\cite{sle_rajwar} can dynamically determine when such a scenario arises and allow multiple
+threads to execute concurrently when no conflict occurs.
 
 Transactional memory (TM) is a concurrency control mechanism that attempts to eliminate
 the static sequential execution of a critical section by dynamically determining when
-accesses to shared resources can be safely executed concurrently \cite{sle_rajwar}.  In
-the previous example, the programmer identifies the critical section as a transactional
-region; these terms will be used interchangeably.  As threads enter the transactional
-region, they attempt to transactionally execute the critical section concurrently.  The TM
-system records memory accesses as the transactions execute and finds that the transactions
-operate on independent regions of the data structure, i.e. there are no conflicting memory
-accesses.  Instead of being forced to execute sequentially by the programmer, the threads
-are allowed to safely execute the critical section concurrently by the TM system.
-Transactional memory is analogous to traffic roundabouts whereas conventional
-synchronization mechanisms are analogous to conventional traffic lights
-\cite{neuling_vid}.
+accesses to shared resources can be safely accessed \cite{sle_rajwar}.  In the previous
+example, instead of using locks, the programmer identifies the critical section as a
+transactional region (these terms, critical region and transaction, will be used
+interchangeably hereafter).  As the threads enter the transactional region, they attempt
+to transactionally execute the critical section .  The TM system records memory accesses
+as the transactions execute and finds that the transactions operate on independent regions
+of the data structure, \emph{i.e.,} there are no conflicting memory accesses.  Instead of
+being forced to execute sequentially by the programmer, the threads are allowed to
+concurrently and safely execute the critical section.  Transactional memory is analogous
+to traffic roundabouts whereas conventional synchronization mechanisms are analogous to
+conventional traffic lights \cite{neuling_vid}.
 
 Transactional memory operates on the same principles as database transactions
-\cite{tm_2nd}.  The processor atomically commits \textit{all} memory operations of a
-successful transaction or discards \textit{all} memory operations if the transaction
-should fail.  In order for a transaction to execute successfully, it must be executed in
-isolation, i.e. without conflicting with other tranasctions/threads memory operations.
-This is the key principle that allows transactional memory to expose untapped concurrency
-in multi-threaded applications.
+\cite{tm_2nd}.  The processor atomically commits \emph{all} memory operations of a
+successful transaction or discards \emph{all} memory operations if the transaction should
+fail (a collision to the updates by the multiple threads occurs).  In order for a
+transaction to execute successfully, it must be executed in isolation, \emph{i.e.,}
+without conflicting with other tranasctions/threads memory operations.  This is the key
+principle that allows transactional memory to expose untapped concurrency in
+multi-threaded applications.
 
 One problem space that could benefit from transactional memory is that of Parallel
 Discrete Event Simulation (PDES).  In Discrete Event Simulation (DES) applications, a
-physical system is modeled as a collection of logical processes representing the physical
-processes of the system.  The system being modeled can only change state at discrete
-points in simulated time and only changes state upon execution of an event
+physical system is modeled as a collection of Logical Processes (LPs) representing the
+physical processes of the system.  The system being modeled can only change state at
+discrete points in simulated time and only changes state upon execution of an event
 \cite{fujimoto}.  Large simulations, such as those in economics, engineering, and military
 tactics, require enormous resources and computational time, making it infeasible to
 execute them on sequential machines.  The necessity to perform such large simulations has
 sparked considerable interest in the parallelization of these simulations.  In PDES, the
-events of a logical process are executed concurrently.  To further exploit concurrency,
-optimistic PDES aggressively schedules events instead of strictly enforcing causal
-ordering of event execution \cite{fujimoto,dickman_thesis}, meaning events will continue
-to be scheduled regardless of order until an error is \textit{detected}.  More
-importantly, the events must be retrieved from a global pending event set by one of
-multiple execution threads, resulting in non-trivial contention for this structure.  A key
-challenge area in PDES is the need for contention-free pending event set management
-solutions \cite{dickman}; this will be the primary focus of this research. Transactional
-memory can help alleviate contention for this shared structure and expose untapped
-concurrency in the simulation's execution.
+events of the LPs are executed concurrently.  To further exploit concurrency, optimistic
+PDES aggressively schedules events instead of strictly enforcing causal ordering of event
+execution \cite{fujimoto,dickman_thesis}.  This means that events will continue to be
+scheduled without strict enforcement of their causal order until a causal violation is
+\emph{detected}.  More importantly, the events must be retrieved from a global (and
+shared) pending event set by one of multiple execution threads, resulting in non-trivial
+contention for this structure.  A key challenge area in PDES is the need for
+contention-free pending event set management solutions \cite{dickman}; this will be the
+primary focus of this research.  Transactional memory can help alleviate contention for
+this shared structure and expose untapped concurrency in the simulation's execution.
 
-Researchers at the University of Cincinnati have developed a PDES kernel called \textsc{warped},
-using the optimistic Time Warp synchronization protocol.  In \textsc{warped}, events to be
-scheduled are sorted into a global Least-Time-Stamp-First (LTSF) queue.  When a worker
-thread schedules an event, it locks the LTSF queue and retrieves the event from the head
-of the queue.  Thus, the LTSF becomes the primary source of contention in the \textsc{warped}
-kernel.
+Researchers at the University of Cincinnati have developed a PDES kernel called
+\textsc{warped}, that implements the optimistic Time Warp synchronization protocol
+\cite{jefferson-85,fujimoto}.  In \textsc{warped}, events to be scheduled are sorted into
+a global Least-Time-Stamp-First (LTSF) queue.  When a worker thread schedules an event, it
+locks the LTSF queue and retrieves the event from the head of the queue.  Thus, the LTSF
+becomes the primary source of contention in the \textsc{warped} kernel.
 
 \section{Research Statement}
 
 The goal of this thesis is to explore the use of transactional memory in a parallel
-discrete event simulator, specifically, \textsc{warped}: a Time Warp synchronized Parallel Discrete
-Event Simulation application.
+discrete event simulator.  In particular, experiments with transactional memory to manage
+access to the pending event set data structures of the \textsc{warped} parallel discrete
+event simulation enging are examined.
 
-The primary objective of this research is to \textit{modify the \textsc{warped} pending event set
+The primary objective of this research is to \emph{modify the \textsc{warped} pending event set
   locking mechanisms to utilize the underlying hardware support for transactional memory
   on Intel's Hardware Transactional Memory (HTM) supported Haswell platform}.  The
 principal hypothesis is that making the aforementioned modifications will exposed untapped
@@ -208,9 +217,9 @@ focus of this research.  Intel's HTM implementation is aptly named Transactional
 Synchronization Extensions (TSX).  This naming will be used to refer to Intel's HTM
 implementation for the remainder of this study.
 
-While \textsc{warped} uses many shared data structures, the focus of this thesis is on the pending
-event set.  It is the primary bottleneck in PDES applications, and hence the primary
-motivation for this study.  However, two other
+While \textsc{warped} uses many shared data structures, the focus of this thesis is on the
+pending event set.  It is the primary bottleneck in PDES applications, and hence the
+primary motivation for this study.
 
 \section{Thesis Overview}
 
@@ -225,9 +234,9 @@ Chapter 3 discusses practical considerations for the programmer when programming
 enabled multi-threaded applications.  It discusses optimizations to ensure TSX performs
 optimally, as well as physical limitations of the hardware.
 
-Chapter 4 provides a background of the PDES problem space.  It introduces \textsc{warped} and some
-of the implementation details relevant to this study. Previous studies with the \textsc{warped}
-pending event set are also briefly discussed.
+Chapter 4 provides a background of the PDES problem space.  It introduces \textsc{warped}
+and some of the implementation details relevant to this study.  Previous studies with the
+\textsc{warped} pending event set are also briefly discussed.
 
 Chapter 5 provides and discusses the experimental results of this research for several
 different simulation configurations.
@@ -241,22 +250,23 @@ areas of future research.
 This section provides a high level explanation of how transactional memory operates.  It
 then introduces other implementations, as well as reasons why they were not explored in
 this study.  Next, it provides some examples of related studies with transactional memory,
-specifically the implementation used in this study. Finally, it provides an overview of
+specifically the implementation used in this study.  Finally, it provides an overview of
 Intel's implementation, Transactional Synchronization Extensions (TSX) and how the
 programmer can develop TSX enabled multi-threaded applications.
 
 \section{Transactional Memory Overview}
 
 Transactional memory (TM) is a concurrency control mechanism that dynamically determines
-when two or more threads can safely execute critical section concurrently
-\cite{sle_rajwar}.  The programmer identifies a transactional region, typically a critical
-section.  As threads enter the transactional region, the underlying processor core
-attempts to execute transactionally. As it does so, it tracks the memory accesses within
-the transactional region to determine whether or not two or more threads conflict with one
-another, i.e. if any memory accesses conflict with one another.  If the threads do not
+when two or more threads can safely execute critical section \cite{sle_rajwar}.  The
+programmer identifies a transactional region, typically a critical section.  As threads
+enter the transactional region, the underlying processor core attempts to execute
+transactionally. As it does so, it tracks the memory accesses within the transactional
+region to determine whether or not two or more threads conflict with one another,
+\emph{i.e.,} if any memory accesses conflict with one another.  If the threads do not
 conflict with one another, the transactions can safely execute concurrently.  If they do
 conflict, the process must abort the transaction and execute the critical section
-non-transactionally, i.e.  sequentially with conventional synchronization mechanisms.
+non-transactionally, \emph{i.e.,} sequentially with conventional synchronization
+mechanisms.
 
 As previously mentioned, a transaction builds a set of memory addresses it has read from
 and a set of memory addresses it has written to, referred to as the read-set and write-set
@@ -297,7 +307,7 @@ performed within a critical section, that "critical section" can be executed con
 \cite{sle_rajwar}.
 
 In the case of a commit, the transaction has ensured that its memory operations are
-executed in isolation from other threads and that \textit{all} of its memory operations
+executed in isolation from other threads and that \emph{all} of its memory operations
 are committed, thus satisfying the isolation and atomicity principles.  Note that only at
 this time will the memory operations performed within the transaction become visible to
 other threads; another property of transactions is the appearance of instantaneousness.
@@ -383,7 +393,7 @@ transaction.
 However, if the transaction aborts for any reason, the region will be re-executed
 non-transactionally.  If the processor encounters an abort condition, it will discard all
 memory operations performed within the transaction, return to the locking instruction, and
-resume execution without lock elision, i.e. the write operation will be performed on the
+resume execution without lock elision, \emph{i.e.,} the write operation will be performed on the
 lock variable.  This guarantees forward progress for the application
 \cite{intel_prog_ref}.
 
@@ -431,14 +441,15 @@ the reason for the abort, execution jumps to the fallback instruction address
 It is this fallback path that makes RTM a much more flexible interface than HLE because it
 is entirely at the discretion of the programmer.  Even so, the programmer must still
 provide an abort path that guarantees forward progress \cite{intel_prog_ref}.  Therefore,
-the abort path should use explicit synchronization, e.g. acquire the lock, to ensure
-forward progress. However, the programmer can use this abort path to tune the performance
-of RTM enabled applications.  For instance, a retry routine can be used to specify how
-many times the processor should attempt to enter transactional execution before using
-explicit synchronization.  Furthermore, the EAX register reports information about the
-condition of an abort \cite{intel_prog_ref}, such as whether or not the abort was caused
-by the XABORT instruction, a data conflict, etc.  The programmer can use this information
-to make more informed decisions regarding reattempting transactional execution.
+the abort path should use explicit synchronization, \emph{e.g.,} acquire the lock, to
+ensure forward progress. However, the programmer can use this abort path to tune the
+performance of RTM enabled applications.  For instance, a retry routine can be used to
+specify how many times the processor should attempt to enter transactional execution
+before using explicit synchronization.  Furthermore, the EAX register reports information
+about the condition of an abort \cite{intel_prog_ref}, such as whether or not the abort
+was caused by the XABORT instruction, a data conflict, etc.  The programmer can use this
+information to make more informed decisions regarding reattempting transactional
+execution.
 
 The general algorithm for the RTM software interface is shown in Figure
 ~\ref{fig:rtm_interface}.  The programmer moves the existing locking mechanism inside an
@@ -481,14 +492,14 @@ TSX maintains a read-set and a write-set with the granularity of a cache line
 \cite{intel_prog_ref}.  During transactional execution, TSX constructs a record of memory
 addresses read from and a record of memory addresses written to.  A data conflict occurs
 if another thread tries to read an address in the write-set or tries to write an address
-in the read-set.  This definition can be expanded to state that \textit{a data conflict
+in the read-set.  This definition can be expanded to state that \emph{a data conflict
   occurs if: 1) another thread attempts to read a memory address that occupies the same
   cache line as a memory address to be written, or 2) another thread attempts to write a
   memory address that occupies the same cache line as a memory address that has been read
   from.}
 
 Therefore, aborts can be caused by data occupying the same cache line, especially false
-sharing, i.e. the occupation of the same cache line by unrelated data
+sharing, \emph{i.e.,} the occupation of the same cache line by unrelated data
 \cite{intel_opt_man}.  To mitigate the effects of shared cache line data conflicts, the
 programmer must be conscientious of how data is organized in memory.  For instance, the
 data in the previously discussed benchmarks is optimally organized by allocating
@@ -509,13 +520,13 @@ granularity of the read-set and write-set stated above, transaction size is defi
 number of cache lines accessed within a transaction.
 
 A set of benchmarks was developed to access a shared array of custom structures. Each
-structure is allocated to occupy an entire cache line, i.e. 64 bytes, and aligned to the
+structure is allocated to occupy an entire cache line, \emph{i.e.,} 64 bytes, and aligned to the
 nearest cache line boundary using the GCC align attribute.  This ensures that memory is
 optimally organized as previously mentioned.  Benchmarks were run with varying transaction
 sizes and number of threads.
 
 The first benchmark was run with a single thread to avoid data conflicts.
-Figure~\ref{fig:trx_size} shows the abort rate, i.e. \# aborts / \# operations, as the
+Figure~\ref{fig:trx_size} shows the abort rate, \emph{i.e.,} \# aborts / \# operations, as the
 number of cache lines accessed within the transaction increases.  The read-set data points
 represent strictly read operations while the write-set data points represent strictly
 write operations.
@@ -574,7 +585,7 @@ To evaluate how long a transaction can safely execute for, a third benchmark was
 to perform 100 to 1000000 increment operations on a single element.  This benchmark was
 executed with a single thread to minimize the possibility of data conflicts. Figure
 ~\ref{fig:trx_duration} shows the transaction abort rate as the duration of the
-transaction is increased, i.e. the number of operations performed within the transaction.
+transaction is increased, \emph{i.e.,} the number of operations performed within the transaction.
 
 \begin{figure}[H]
     \centering
@@ -687,7 +698,7 @@ becomes infeasible to perform this simulation on a sequential machine.
 
 The need for such large simulations has energized research in Parallel Discrete Event
 Simulation (PDES).  Events from separate LPs are executed concurrently by one of
-\textit{N} threads.  Each LPs' events execute in chronological order to ensure local
+\emph{N} threads.  Each LPs' events execute in chronological order to ensure local
 causality constraints are met \cite{fujimoto}.  However, PDES is susceptible to other
 causality errors, optimistically synchronized PDES being the most susceptible.  Optimistic
 approaches, such as the Time Warp protocol which is used in the \textsc{warped} simulation kernel,
@@ -777,7 +788,7 @@ structure.
 
 \subsection{Worker Thread Event Execution}
 
-A manager thread initiates \textit{n} worker threads at the beginning of the simulation.
+A manager thread initiates \emph{n} worker threads at the beginning of the simulation.
 It can also suspend inactive worker threads if they run out of useful work.  When a worker
 thread is created, or resumes execution after being suspended by the manager thread, it
 attempts to lock the LTSF queue and dequeue the least time-stamped event.  If the worker
@@ -1020,7 +1031,7 @@ execute any critical section at any time.  Based on static analysis, there's no 
 knowing which threads will access what structure in what way, hence the need for
 synchronization.  But with TSX, functions that do not interfere can execute concurrently.
 TSX tracks read and write memory operations separately in the transaction's read-set and
-write-set respectively.  Transactions only interfere if a data conflict occurs, i.e. a
+write-set respectively.  Transactions only interfere if a data conflict occurs, \emph{i.e.,} a
 thread attempts to write to a memory location in another transaction's read-set, or a
 thread attempts to read a memory location in another transaction's write-set.
 
@@ -1067,11 +1078,11 @@ This section discusses how both TSX interfaces were implemented in \textsc{warpe
 \subsection{Hardware Lock Elision (HLE)}
 
 The generic algorithm presented in Figure~\ref{fig:hle_interface} in Section~\ref{sec:hle}
-only works for locks with a binary value, i.e. the lock is free or not free.  The \textsc{warped}
-locking mechanism assigns the thread number to the lock value to indicate which thread
-currently holds the lock.  To comply with this implementation, custom HLE lock acquire and
-lock release functions were implemented.  GCC inline assembly functions were developed
-appending the appropriate HLE prefixes to a lock cmpxchg instruction.
+only works for locks with a binary value, \emph{i.e.,} the lock is free or not free.  The
+\textsc{warped} locking mechanism assigns the thread number to the lock value to indicate
+which thread currently holds the lock.  To comply with this implementation, custom HLE
+lock acquire and lock release functions were implemented.  GCC inline assembly functions
+were developed appending the appropriate HLE prefixes to a lock cmpxchg instruction.
 
 \subsection{Restricted Transactional Memory (RTM)}
 
