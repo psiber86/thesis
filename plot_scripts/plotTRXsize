@@ -1,0 +1,89 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "usage: ./plot4viewer </path/to/data/file> <atomic|mutex> [ladderqueue]"
+else
+    filename=$(basename "$1")
+    title=$(echo "$filename" | sed 's/.*-\(.*\)$/\1/g')
+
+    if [ $2 == "atomic" ]; then
+        oneschq_lower=3
+        oneschq_upper=9
+        twoschq_lower=12
+        twoschq_upper=15
+        secplot="tsx-hle"
+    elif [ $2 == "mutex" ]; then
+        if [ $# == 3 ] && [ $3 == "ladderqueue" ]; then
+            oneschq_lower=12 
+            oneschq_upper=18
+        else 
+            oneschq_lower=17 
+            oneschq_upper=23
+        fi
+        twoschq_lower=25
+        twoschq_upper=28
+        secplot="tsx-rtm-1retry"
+    fi
+
+    # write gnuplot.gpi file for 1schQ 
+    echo "set term pngcairo dashed" > "$1-1schQ.gpi"
+    echo "set output \"$1-$2-1schQ.png\"" >> "$1-1schQ.gpi"
+    echo "set key right top" >> "$1-1schQ.gpi"
+    echo "set xrange [2:7]" >> "$1-1schQ.gpi"
+    echo "set style line 1 lt 1 lc 1 lw 1" >> "$1-1schQ.gpi"
+    echo "set style line 2 lt 2 lc 3 lw 1" >> "$1-1schQ.gpi"
+    echo "set style line 3 lt 3 lc 8 lw 1" >> "$1-1schQ.gpi"
+    echo "set style line 4 lt 4 lc 3 lw 1" >> "$1-1schQ.gpi"
+    echo "set style line 5 lt 5 lc 3 lw 1" >> "$1-1schQ.gpi"
+    echo "set style line 6 lt 6 lc 3 lw 1" >> "$1-1schQ.gpi"
+    echo "set xlabel 'Number of Worker Threads'" >> "$1-1schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$1-1schQ.gpi"
+    echo "plot \"<(sed -n '$oneschq_lower,${oneschq_upper}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:4:5 title '$secplot' with lines ls 2, \\" >> "$1-1schQ.gpi"
+    echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$1-1schQ.gpi"
+    if [ $2 == "atomic" ]; then
+        echo "'' using 1:6:7 title 'tsx-rtm-1retry' with lines ls 3, \\" >> "$1-1schQ.gpi"
+        echo "'' using 1:6:7 notitle with yerrorbars ls 3 " >> "$1-1schQ.gpi"
+    fi 
+
+    # perform actual plotting
+    gnuplot "$1-1schQ.gpi"
+
+    if [ $# == 3 ] && [ $3 == "ladderqueue" ]; then 
+        echo "only 1 schedule queue for ladderqueue"
+    else
+        # write gnuplot.gpi file for 2schQ 
+        echo "set term pngcairo dashed" > "$1-2schQ.gpi"
+        echo "set output \"$1-$2-2schQ.png\"" >> "$1-2schQ.gpi"
+        echo "set key right top" >> "$1-2schQ.gpi"
+        echo "set xrange [2:6]" >> "$1-2schQ.gpi"
+        echo "set style line 1 lt 1 lc 1 lw 1" >> "$1-2schQ.gpi"
+        echo "set style line 2 lt 2 lc 3 lw 1" >> "$1-2schQ.gpi"
+        echo "set style line 3 lt 3 lc 8 lw 1" >> "$1-2schQ.gpi"
+        echo "set style line 4 lt 4 lc 3 lw 1" >> "$1-2schQ.gpi"
+        echo "set style line 5 lt 5 lc 3 lw 1" >> "$1-2schQ.gpi"
+        echo "set style line 6 lt 6 lc 3 lw 1" >> "$1-2schQ.gpi"
+        echo "set xlabel 'Number of Threads'" >> "$1-2schQ.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$1-2schQ.gpi"
+        echo "plot \"<(sed -n '$twoschq_lower,${twoschq_upper}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$1-2schQ.gpi"
+        echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$1-2schQ.gpi"
+        
+        echo "'' using 1:4:5 title '$secplot' with lines ls 2, \\" >> "$1-2schQ.gpi"
+        echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\" >> "$1-2schQ.gpi"
+        if [ $2 == "atomic" ]; then
+            echo "'' using 1:6:7 title 'tsx-rtm-1retry' with lines ls 3, \\" >> "$1-2schQ.gpi"
+            echo "'' using 1:6:7 notitle with yerrorbars ls 3" >> "$1-2schQ.gpi"
+        fi
+
+        # perform actual plotting
+        gnuplot "$1-2schQ.gpi"
+    fi 
+
+    #send to virtulab.ceas1.uc.edu
+    scp *.png hayja@virtulab.ceas1.uc.edu:/home/hayja/thesis/
+    read -s password
+
+    rm *.gpi
+    rm *.png
+fi
