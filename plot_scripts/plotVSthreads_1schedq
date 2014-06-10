@@ -28,9 +28,9 @@ else
     echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-1schQ.gpi"
     echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-1schQ.gpi"
-    echo "'' using 1:8:9 title 'rtm-4retry' with lines ls 4, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-1schQ.gpi"
-    echo "'' using 1:10:11 title 'rtm-9retry' with lines ls 5, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-1schQ.gpi"
 
     # perform actual plotting
