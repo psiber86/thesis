@@ -1131,13 +1131,15 @@ contention can be reduced even further with TSX.
 \subsection{\textbf{Thread Migration: Another Solution to Contention}}
 
 Another potential solution to contention is to distribute worker threads that
-try to simultaneously access the same LTSF queue to different LTSF queues.
-In the original scheduling scheme, the worker thread would insert the next event
-into the same LTSF it had just scheduled from as seen in Figure
-~\ref{workerThreadAlgorithm}.  In this implementation, the worker thread inserts
-the next event into a different LTSF queue, based on a circularly incremented
-counter.  The number of LTSF queues is specified in a configuration file, and
-has no restrictions as in the static assignment.
+try to simultaneously access the same LTSF queue to different LTSF queues.  In
+the original scheduling scheme, worker threads are assigned to a specific LTSF
+queue.  The worker thread would insert the next event into the same LTSF it had
+just scheduled from as seen in Figure ~\ref{workerThreadAlgorithm}.  In this
+implementation, the worker thread inserts the next event into a different LTSF
+queue, based on a circularly incremented counter.  The worker threads are
+dynamically reassigned to LTSF queues. The number of LTSF queues is specified in
+a configuration file, and has no restrictions as in the static assignment.
+\par
 
 \linespread{1.0}
 \begin{figure}
@@ -1415,40 +1417,30 @@ processes to model transmission of the disease among individual entities.
 
 \subsection{\textbf{Static Thread Assignment}}
 
-
-
-
-
-
-\subsection{\textbf{Lock Contention}}
-
-The first part of this study compares the performance of the original WARPED
-pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
-1 retry, 4) RTM with 9 retries, and 5) RTM with 19 retries.  It should be noted
-that the original implementation of the WARPED pending event set only allows for
-a number of worker threads that is evenly divisible by the number of worker
-threads due to the way in which LP's are partitioned to LTSF queues.  These
-results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
-~\ref{tab:noThrMig_2threadsXschq}, ~\ref{tab:noThrMig_4threadsXschq}, and
-~\ref{tab:noThrMig_6threadsXschq}.\par
+In the original WARPED implementation, threads are statically assigned to an
+LTSF queue.  Contention will clearly be a problem is the simulation only
+schedules from one LTSF queue as every worker thread is assigned to that queue.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-summary-multiset-hugeepidemicsim-timeVSthreads-1schQ}
-    \caption{\textbf{Simulation Time as Number of Worker Threads is Increased
-    Using Various Synchronization Mechanisms for 1 STL Multi-set LTSF Queue}}
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSthreads-multiset-1schQ}
+    \caption{\textbf{Simulation Time versus Number of Worker Threads 1 STL Multi-set LTSF Queue}}
     \label{fig:noThrMig_timeVSthreads_1schq}
 \end{figure}
+
+%TODO: something about multiple LTSF queues
+Data is limited for static thread migration as the number of LTSF queues has to
+be evenly divisible by the number of worker threads.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
         \hline
         \midrule
-            1 &115.1073 &107.93   &116.8573 &115.8511 &116.3141 \\ 
-            2 &111.6427 &104.7166 &113.0621 &121.884  &130.4556   
+            1 &121.2255  &105.0569 &123.4132  &124.0336 &122.8344 \\ 
+            2 &118.1558  &101.1242 &120.085   &137.5637 &153.0293 \\
     \end{tabular}
     \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
     \label{tab:noThrMig_2threadsXschq}
@@ -1460,13 +1452,21 @@ results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
         \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
         \hline
         \midrule
-            1 &68.40767  &62.70367 &70.23204  &69.44761 &69.46226 \\ 
-            2 &73.62335  &69.23382 &74.28421  &74.5701  &74.40304 \\
-            4 &100.74668 &97.87896 &100.70637 &98.65185 &97.00871 
+            1 &91.68472 &73.58687 &92.58229  &93.42086 &92.83141 \\ 
+            3 &89.50474 &70.24289 &89.48378  &105.8095 &125.8599 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 4 Worker Threads with X LTSF Queues}}
-    \label{tab:noThrMig_4threadsXschq}
+    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF Queues}}
+    \label{tab:noThrMig_3threadsXschq}
 \end{table}
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 4 Worker Threads}}
+    \label{fig:noThrMig_timeVSschq_4threads}
+\end{figure}
 
 \begin{table}[H]
     \centering
@@ -1474,22 +1474,104 @@ results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
         \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
         \hline
         \midrule
-            1 &62.32475 &54.4856  &63.46503 &63.38292 &63.22529 \\  
-            2 &61.03439 &56.03277 &61.72473 &61.38556 &61.23396 \\  
-            3 &65.605   &63.3307  &65.24451 &64.92354 &64.93433 \\  
-            6 &73.50022 &69.54849 &72.83046 &71.01408 &64.13042   
+            1 &69.62144  &54.59489 &70.33108  &70.1835  &70.42886 \\ 
+            5 &93.21429  &76.85048 &93.23045  &84.19164 &76.23965 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 6 Worker Threads with X LTSF Queues}}
-    \label{tab:noThrMig_6threadsXschq}
+    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF Queues}}
+    \label{tab:noThrMig_5threadsXschq}
 \end{table}
 
-It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
-contention is increasing as the number of worker threads increases.
-Furthermore, it would appear that utilizing more than one LTSF queue is no
-longer producing consistent or desirable results. It was also observed that the
-number of rollbacks was non-trivial for these simulations.  These poor
-performance could be attributed to recent changes made to the WARPED kernel.\par
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
+    for 6 Worker Threads}}
+    \label{fig:noThrMig_timeVSschq_6threads}
+\end{figure}
 
+\subsection{\textbf{Dynamic Thread Assignment}}
+
+\subsubsection{\textbf{Continuous Thread Migration}}
+
+
+\subsubsection{\textbf{Brief Thread Migration}}
+
+
+
+
+
+
+%\subsection{\textbf{Lock Contention}}
+%
+%The first part of this study compares the performance of the original WARPED
+%pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
+%1 retry, 4) RTM with 9 retries, and 5) RTM with 19 retries.  It should be noted
+%that the original implementation of the WARPED pending event set only allows for
+%a number of worker threads that is evenly divisible by the number of worker
+%threads due to the way in which LP's are partitioned to LTSF queues.  These
+%results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
+%~\ref{tab:noThrMig_2threadsXschq}, ~\ref{tab:noThrMig_4threadsXschq}, and
+%~\ref{tab:noThrMig_6threadsXschq}.\par
+%
+%\begin{figure}[H]
+%    \centering
+%    \graphicspath{ {./figures/} }
+%    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-summary-multiset-hugeepidemicsim-timeVSthreads-1schQ}
+%    \caption{\textbf{Simulation Time as Number of Worker Threads is Increased
+%    Using Various Synchronization Mechanisms for 1 STL Multi-set LTSF Queue}}
+%    \label{fig:noThrMig_timeVSthreads_1schq}
+%\end{figure}
+%
+%\begin{table}[H]
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+%        \hline
+%        \midrule
+%            1 &115.1073 &107.93   &116.8573 &115.8511 &116.3141 \\ 
+%            2 &111.6427 &104.7166 &113.0621 &121.884  &130.4556   
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
+%    \label{tab:noThrMig_2threadsXschq}
+%\end{table}
+%
+%\begin{table}[H]
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+%        \hline
+%        \midrule
+%            1 &68.40767  &62.70367 &70.23204  &69.44761 &69.46226 \\ 
+%            2 &73.62335  &69.23382 &74.28421  &74.5701  &74.40304 \\
+%            4 &100.74668 &97.87896 &100.70637 &98.65185 &97.00871 
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 4 Worker Threads with X LTSF Queues}}
+%    \label{tab:noThrMig_4threadsXschq}
+%\end{table}
+%
+%\begin{table}[H]
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+%        \hline
+%        \midrule
+%            1 &62.32475 &54.4856  &63.46503 &63.38292 &63.22529 \\  
+%            2 &61.03439 &56.03277 &61.72473 &61.38556 &61.23396 \\  
+%            3 &65.605   &63.3307  &65.24451 &64.92354 &64.93433 \\  
+%            6 &73.50022 &69.54849 &72.83046 &71.01408 &64.13042   
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 6 Worker Threads with X LTSF Queues}}
+%    \label{tab:noThrMig_6threadsXschq}
+%\end{table}
+%
+%It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
+%contention is increasing as the number of worker threads increases.
+%Furthermore, it would appear that utilizing more than one LTSF queue is no
+%longer producing consistent or desirable results. It was also observed that the
+%number of rollbacks was non-trivial for these simulations.  These poor
+%performance could be attributed to recent changes made to the WARPED kernel.\par
+%
 \newpage
 \section{\textbf{Conclusions}}
 
