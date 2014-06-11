@@ -505,7 +505,8 @@ performance.  Custom benchmarks were developed to evaluate these various
 constraints.  All benchmarks were run on a system with an Intel i7-4770 running
 at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way, set associative L1 cache
 and a 256 L2 cache.  Each cache line is 64 bytes.  This information was verified
-using common Unix commands.
+using common Unix commands.  All measurements were performed ten times and
+averaged.
 
 \section{Memory Organization}
 
@@ -533,23 +534,34 @@ now has to check against two cache lines.
 
 \section{Transaction Size}
 
-TSX maintains a transaction read-set and write-set in the L1 cache \cite{intel_opt_man}.
-The size of these memory sets is therefore limited by the size of the L1 cache.
-Hyper-threading further restricts the size of the transaction data sets because the L1
-cache is shared between two threads on the same core \cite{intel_opt_man}.  Based on
-granularity of the read-set and write-set stated above, transaction size is defined as the
-number of cache lines accessed within a transaction.
+TSX maintains a transaction read-set and write-set in the L1 cache
+\cite{intel_opt_man}.  The size of these memory sets is therefore limited by the
+size of the L1 cache.  Hyper-threading further restricts the size of the
+transaction data sets because the L1 cache is shared between two threads on the
+same core \cite{intel_opt_man}.  Based on granularity of the read-set and
+write-set stated above, transaction size is defined as the number of cache lines
+accessed within a transaction.
 
-A set of benchmarks was developed to access a shared array of custom structures. Each
-structure is allocated to occupy an entire cache line, \emph{i.e.,} 64 bytes, and aligned to the
-nearest cache line boundary using the GCC align attribute.  This ensures that memory is
-optimally organized as previously mentioned.  Benchmarks were run with varying transaction
-sizes and number of threads.
+The first two benchmarks evaluate the size restrictions of a transaction's
+read-set and write-set, \emph{i.e.,} how many cache lines can a transaction
+track in each set during transactional execution.  The benchmarks access a
+shared array of custom structures.  Each structure is allocated to occupy an
+entire cache line and aligned to the nearest cache line boundary using the GCC
+align attribute.  This ensures that memory is optimally organized as previously
+discussed.  
 
-The first benchmark was run with a single thread to avoid data conflicts.
-Figure~\ref{fig:trx_size} shows the abort rate, \emph{i.e.,} \# aborts / \# operations, as the
-number of cache lines accessed within the transaction increases.  The read-set data points
-represent strictly read operations while the write-set data points represent strictly
+The objective of the first benchmark is to evaluate the read and write-set sizes
+for a transaction being executed by a single thread on a single core.
+Furthermore, only one thread is used to avoid data conflicts.  The critical
+section performs a certain number of strictly read or strictly write operations
+in the body of a loop.  The loop increments an array index to a limit specified
+by the transaction size being tested, and the body of the loop accesses every
+single element in that range.  This is repeated one hundred times.  The number
+of elements, or cache lines, accessed during the critical section is doubled
+with every iteration of the main test loop.  Figure~\ref{fig:trx_size} shows the
+abort rate, (\# aborts / 100 operations), as the number of cache lines accessed
+within the transaction is increased.  The read-set data points represent
+strictly read operations while the write-set data points represent strictly
 write operations.
 
 \begin{figure}[H]
@@ -565,21 +577,24 @@ It is clear that transactions abort 100\% of the time once the thread tries to w
 512 or more cache lines within the transaction.  This is consistent with the size of the
 L1 cache, 32KB of 64 bytes caches lines equates to 512 cache lines; it is unrealistic to
 expect that no other process will use the cache while the transaction is executing and
-thus the transaction cannot occupy the cache in its entirety.  Furthermore, the cache is
+thus the transaction cannot occupy the cache in its entirety.  Note that the cache is
 split into 64 8-way sets; if memory is not organized properly, the total write-set size
 will be reduced.
 
-However, it is evident that the same size limitations do not hold for the read-set size.
+It is evident that the same size limitations do not hold for the read-set size.
 While eviction of a cache line containing a write-set address will always cause a
 transactional abort, eviction of a cache line containing a read-set address may not cause
 an immediate transactional abort; these cache lines may be tracked by a second-level
 structure in the L2 cache \cite{intel_opt_man}.
 
-The second benchmark is run with two threads on the same core to evaluate the effects of
-hyper-threading on TSX.  Each thread accesses the same number of cache lines, but at
-different memory locations to prevent any data conflicts. Figure ~\ref{fig:trx_size_ht}
-shows the abort rate for one of the threads as the number of cache lines accessed within
-each transaction increases.
+The objective of the second benchmark is to evaluate the read and write-set
+sizes for a transaction being executed by a single thread on a shared core,
+\emph{i.e., a hyper-threaded core}.  This benchmark uses the same procedure as
+above, but with two threads bound to the same core.  Each thread accesses the
+same number of cache lines, but at different memory locations to prevent any
+data conflicts. Figure ~\ref{fig:trx_size_ht} shows the abort rate for one of
+the threads as the number of cache lines accessed within each transaction
+increases.
 
 \begin{figure}[H]
     \centering
@@ -602,11 +617,16 @@ including but not limited to: interrupts, page faults, I/O operations, context s
 illegal instructions, etc.  This is due to the inability of the processor to save the
 transactional state information \cite{schwahn}.
 
-To evaluate how long a transaction can safely execute for, a third benchmark was developed
-to perform 100 to 1000000 increment operations on a single element.  This benchmark was
-executed with a single thread to minimize the possibility of data conflicts. Figure
-~\ref{fig:trx_duration} shows the transaction abort rate as the duration of the
-transaction is increased, \emph{i.e.,} the number of operations performed within the transaction.
+The objective of the third benchmark is to evaluate the running time
+restrictions for a transaction, \emph{i.e.}, how long can a transaction safely
+execute without failing.  The duration of each transaction is increased by
+increasing the number of operations performed within the transaction. The
+critical section performs a certain number of increment operations on a single
+data element in the body of loop.  The loop increments to a limit specified by
+the duration being tested.  The operation count or duration is increased
+logarithmically from 1000 to 1000000 every iteration of the main test loop.
+Figure ~\ref{fig:trx_duration} shows the transaction abort rate as the duration
+of the transaction is increased.
 
 \begin{figure}[H]
     \centering
@@ -617,24 +637,25 @@ transaction is increased, \emph{i.e.,} the number of operations performed within
     \label{fig:trx_duration}
 \end{figure}
 
-It is clear that the longer a transaction executes, the higher the probability is that it
-will abort.  Practical applications will perform a varying number of operations that take
-varying amounts of time.  This benchmark simply demonstrates that shorter transactions are
-more likely to succeed than longer transactions.
+It is clear that the longer a transaction executes, the higher the probability
+is that it will abort.  Practical applications will perform a varying number of
+operations that take varying amounts of time.  This benchmark simply
+demonstrates there is a limit to how long a transaction can be executed.
+Shorter transactions are more likely to succeed than longer transactions.
 
 \section{Synchronization Latency}
 % not sure if this is relevant at all or if this is an adequate test
 
 Conventional synchronization mechanisms have varying latencies, therefore TSX most likely
 also has varying latencies.  While it is incredibly difficult to obtain accurate
-measurements, the goal of this benchmark is to compare the TSX latencies to conventional
-synchronization mechanism latencies.  To be clear, this benchmark merely demonstrates how
-long TSX synchronization mechanisms take to enter transactional regions relative to how
+measurements, the objective of this benchmark is to compare the TSX latencies to conventional
+synchronization mechanism latencies.  This benchmark merely demonstrates how
+long TSX synchronization mechanisms take to enter a transactional region relative to how
 long conventional synchronization mechanisms take to enter a critical section.
 
 Each synchronization mechanism is used to perform a simple increment operation.
-The thread calls the locking function, increments, and calls the release
-function the data 100000 times.  The execution time of the entire loop is
+The thread calls the locking function, increments the data, and calls the release
+function 100000 times.  The execution time of the entire loop is
 measured using the gettimeofday functionality in Linux.  The locking/release
 functions use one of the following depending on the configuration: 
 
@@ -648,7 +669,7 @@ functions use one of the following depending on the configuration:
 
 The results are shown in Figure ~\ref{fig:tsx_latency}.  Clearly the HLE and RTM
 mechanisms take longer to actually complete the synchronization process.  This can most
-likely be attributed to the extra actions the hardware must perform to initiate
+likely be attributed to the extra actions performed by the hardware to initiate
 transactional execution.
 
 %need to make image cleaner
@@ -686,7 +707,7 @@ execute without elision; consequently, the secondary lock variable will be added
 transaction's write-set \cite{intel_prog_ref}.
 
 %need a different name for this section
-\chapter{Parallel Discrete Event Simulation and Warped}
+\chapter{PDES and \textsc{Warped}}
 
 \section{Background}
 
@@ -703,30 +724,32 @@ time.  In general, simulators consist of the following data structures \cite{fuj
 \noindent
 The state of the simulation can only change upon execution of an event.  During the
 execution of an event, the simulation: 1) retrieves the least time-stamped event from the
-pending event set, 2) Processes the event, 3) Updates the LP's state, and 4) inserts
-generated events into the pending event set.
+pending event set, 2) processes the event, 3) updates the LP's state, and 4) if
+necessary, inserts generated events into the pending event set.
 
 Physical processes are represented by Logical Processes (LPs) in the simulation
 \cite{des_misra}.  For example, in an epidemic simulation, LPs represent
-geographical locations containing a subset of the total population.  The LPs
+geographical locations containing a subset of the total population.  The LP's
 state represents the diffusion of the disease within the location and the status
-of the occupants within the location.  Events in this simulation represent the
-arrival or departure of individuals to or from locations, the progression of a
-diseased individual within a location, the diffusion of a disease within a
-geographical location, etc. \cite{epidemic}. To effectively model epidemics, a
-significant population size and number of locations needs to be simulated.  It
-becomes infeasible to perform this simulation on a sequential machine.  
+of the occupants within that location.  Events in this simulation represent the
+arrival or departure of individuals to or from that location, the progression of
+a diseased individual within that location, the diffusion of a disease within
+that location, etc. \cite{epidemic}. To effectively model epidemics, a
+significant population size and number of locations needs to be simulated.  With
+so many LPs, it becomes infeasible to perform this simulation on a sequential
+machine.  
 
-The need for such large simulations has energized research in Parallel Discrete Event
-Simulation (PDES).  Events from separate LPs are executed concurrently by one of
-\emph{N} threads.  Each LPs' events execute in chronological order to ensure local
-causality constraints are met \cite{fujimoto}.  However, PDES is susceptible to other
-causality errors, optimistically synchronized PDES being the most susceptible.  Optimistic
-approaches, such as the Time Warp protocol which is used in the \textsc{warped} simulation kernel,
-detect rather than prevent causal errors.  This allows for increased concurrency as events
-are continually executed until a causal error is detected.  In contrast, conservative
-approaches do not execute events until the system has determined it is safe to do so
-\cite{fujimoto}.
+The need for such large simulations has energized research in Parallel Discrete
+Event Simulation (PDES).  Events from separate LPs are executed concurrently by
+one of \emph{N} threads.  Each LPs' events execute in chronological order to
+ensure local causality constraints are met \cite{fujimoto}.  However, PDES is
+susceptible to other causality errors.  Optimistically synchronized simulators
+are the most susceptible to these causality errors.  While conservatively synchronized
+simulators do not execute events until the system has determined it is safe to
+do so \cite{fujimoto}, optimistic approaches, such as the Time Warp protocol,
+detect rather than prevent causal errors.  This does, however, allow for
+increased concurrency as events are continually executed until a causal error is
+detected. 
 
 One of the most well-known optimistic protocols is the Time Warp mechanism
 \cite{fujimoto}.  In addition to the standard DES data structures, each LP in a simulation
@@ -776,7 +799,7 @@ to the global pending event set is a possible point of contention as only one th
 access this structure at a time.  The implementation and management of the pending event
 set is crucial to the overall performance of PDES \cite{twpes}.
 
-\section{\textsc{warped} and the Pending Event Set}
+\section{The \textsc{warped} Pending Event Set}
 
 \textsc{warped} is a publicly available Discrete Event Simulation (DES) kernel implementing the
 Time Warp protocol \cite{martin,fujimoto}.  It was recently redesigned for parallel
@@ -787,12 +810,13 @@ The pending event set is maintained as a two-level structure in \textsc{warped} 
 Each LP maintains its own event set as a time-stamp ordered queue.  As previously
 mentioned, each LP maintains an unprocessed queue for scheduled event to be executed and a
 processed queue to store processed events.  A common Least Time-Stamped First queue is
-populated with the least time stamped event from each LP's unprocessed queue.  As the name
-suggests, the LTSF queue is automatically sorted in increasing time-stamp order so that
-worker threads can simply retrieve an event from he head of the queue.  This guarantees
-the worker thread retrieves the least time-stamped event without having to search through
-the queue, The LTSF queue is also referred to as the schedule queue in warped; these terms
-will be used interchangeably.
+populated with the least time stamped event from each LP's unprocessed queue.
+As the name suggests, the LTSF queue is automatically sorted in increasing
+time-stamp order so that worker threads can simply retrieve an event from he
+head of the queue.  This guarantees the worker thread retrieves the least
+time-stamped event without having to search through the queue, The LTSF queue is
+also referred to as the schedule queue in \textsc{warped}; these terms will be
+used interchangeably.
 
 % not sure if i need this yet or not
 \subsection{Pending Event Set Data Structures}
