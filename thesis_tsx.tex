@@ -118,7 +118,7 @@ executed by one thread at any given time \cite{os_concepts}.  For example, consi
 multi-threaded application that is designed to operate on a shared two-dimensional array.
 For the sake of simplicity, the programmer uses coarse-grained locking mechanisms to
 control access to the critical section, \emph{e.g.,} a single atomic lock for the entire
-array.  The critical section reads a single element, performs a calculation, and updates
+structure.  The critical section reads a single element, performs a calculation, and updates
 the element of the array.  Once a thread enters the critical section, it locks all other
 threads out of the entire array until it has completed its task, thus forcing the
 collection threads to essentially execute sequentially through the critical section even
@@ -130,7 +130,7 @@ locking individual rows or even individual elements in the previous example.  Ho
 this approach is vastly more complicated and error prone \cite{sle_rajwar}; this approach
 requires the programmer to define and maintain a separate lock for each row or each
 element.  Unfortunately, programmers are limited to using static information to 
-determine when threads must execute a critical section sequentially regardless of whether
+decide when threads must execute a critical section sequentially regardless of whether
 coarse-grained or fine-grained locking is used.
 
 %%JOSH this organization is not perfect; you describe the use of transactional memory
@@ -139,22 +139,24 @@ coarse-grained or fine-grained locking is used.
 %%the idea from the first sentence and meld it with the above paragraph and delete the
 %%remainder (or move it lower in the prose)....
 
-Untapped concurrency can be exposed if the determination to protect critical regions are
-able to be made dynamically \cite{intel_prog_ref}.  In the previous example, a scenario
-arises where one thread will access one element of the two dimensional array, while
-another thread will access a element in an entirely different row.  The programmer only
-knows that any thread can access any given element at any given time, and thus locks all
-elements when one thread is executing.  However, transactional memory systems
-\cite{sle_rajwar} can dynamically determine when such a scenario arises and allow multiple
-threads to execute concurrently when no conflict occurs.
+%%I was going more with a "here is the problem with the conventional approach."
+%%Does it make sense if I rearrange it like this? 
+
+In the previous example, a scenario arises where one thread will access one
+element of the two dimensional array, while another thread will access a element
+in an entirely different row.  The programmer only knows that any thread can
+access any given element at any given time, and thus locks all elements when one
+thread is executing the critical section. Untapped concurrency can be exposed if
+the decision to execute a critical section or wait is made dynamically
+\cite{intel_prog_ref}.  
 
 Transactional memory (TM) is a concurrency control mechanism that attempts to eliminate
 the static sequential execution of a critical section by dynamically determining when
-accesses to shared resources can be safely accessed \cite{sle_rajwar}.  In the previous
+accesses to shared resources can be executed concurrently \cite{sle_rajwar}.  In the previous
 example, instead of using locks, the programmer identifies the critical section as a
 transactional region (these terms, critical region and transaction, will be used
 interchangeably hereafter).  As the threads enter the transactional region, they attempt
-to transactionally execute the critical section .  The TM system records memory accesses
+to transactionally execute the critical section.  The TM system records memory accesses
 as the transactions execute and finds that the transactions operate on independent regions
 of the data structure, \emph{i.e.,} there are no conflicting memory accesses.  Instead of
 being forced to execute sequentially by the programmer, the threads are allowed to
@@ -238,10 +240,14 @@ Chapter 4 provides a background of the PDES problem space.  It introduces \texts
 and some of the implementation details relevant to this study.  Previous studies with the
 \textsc{warped} pending event set are also briefly discussed.
 
-Chapter 5 provides and discusses the experimental results of this research for several
+Chapter 5 discusses how TSX is implemented in \textsc{warped}.  It also provides
+a brief overview of the critical sections utilizing TSX and why TSX will be
+beneficial.
+
+Chapter 6 provides and discusses the experimental results of this research for several
 different simulation configurations.
 
-Chapter 6 discusses the accomplishments of this research.  It also briefly discusses some
+Chapter 7 discusses the accomplishments of this research.  It also briefly discusses some
 areas of future research.
 
 
@@ -296,26 +302,39 @@ read-set at the same time.  However, because the memory location is not part of 
 thread's read-set, the threads continue executing concurrently.  No memory conflicts are
 detected in this case and the transactions execute successfully and commit.
 
-\textbf{EXAMPLE OF ABORT}
+Another thread enters the transactional region.  It begins its read operation on
+a specific element and adds the element memory address to the read-set.
+However, another thread is is already writing to that memory location.   Because
+the memory address is tracked in the second transaction's write-set, a data
+conflict occurs.  The two threads cannot execute concurrently and produce the
+correct output.   Therefore, the transactions must abort.  Typically, the
+threads will retry execute with explicit synchronization.
 
-TM operates on the principles of database transactions.  A transaction is a series of
-actions with four key attributes: 1) atomicity, 2) consistency, 3) isolation, and 4)
-durability \cite{tm_2nd}.  The two key attributes for TM are atomicity and isolation;
-consistency and durability must hold for all multi-threaded operations in multi-threaded
-applications.  If atomicity and isolation be can guaranteed for all memory operations
-performed within a critical section, that "critical section" can be executed concurrently
-\cite{sle_rajwar}.
+By definition, a transaction is a series of actions that appears instantaneous
+and indivisible possessing four key attributes: 1) atomicity, 2) consistency, 3)
+isolation, and 4) durability \cite{tm_2nd}.  TM operates on the principles of
+database transactions.  The two key attributes for TM are atomicity and
+isolation; consistency and durability must hold for all multi-threaded
+operations in multi-threaded applications.  Atomicity is guaranteed if: 1) all
+memory operations performed within the transaction are completed successfully,
+or 2) it appears as if the performed memory operations were never even starred \cite{tm_2nd}. 
+Isolation is guaranteed by tracking memory operations as the
+transactions execute and aborting if any memory operations conflict.  If both
+atomicity and isolation can be guaranteed for all memory operations performed
+within a critical section, that "critical section" can be executed concurrently
+\cite{sle_rajwar}.  
 
-In the case of a commit, the transaction has ensured that its memory operations are
-executed in isolation from other threads and that \emph{all} of its memory operations
-are committed, thus satisfying the isolation and atomicity principles.  Note that only at
-this time will the memory operations performed within the transaction become visible to
-other threads; another property of transactions is the appearance of instantaneousness.
-In the case of an abort due to a data conflict, it is clear that the isolation principle
-has been violated.  It should be noted that transactions can abort for a variety of
-reasons depending on the implementation \cite{intel_opt_man,chung_amd}, but the primary
-cause is data conflicts.  Upon abort, all memory operations are discarded as all memory
-operations must be committed or none can be committed.
+In the case of a commit, the transaction has ensured that its memory operations
+are executed in isolation from other threads and that \emph{all} of its memory
+operations are committed, thus satisfying the isolation and atomicity
+principles.  Note that only at this time will the memory operations performed
+within the transaction become visible to other threads, thus satisfying the
+appearance of instantaneousness.  In the case of an abort due to a data
+conflict, it is clear that the isolation principle has been violated.  It should
+be noted that transactions can abort for a variety of reasons depending on the
+implementation \cite{intel_opt_man,chung_amd}, but the primary cause is data
+conflicts.  Upon abort, all memory operations are discarded to maintain
+atomicity. 
 
 \section{Related Studies}
 
@@ -368,10 +387,11 @@ implementation details of TSX as well as how the programmer utilizes TSX.
 
 \subsection{Hardware Lock Elision (HLE)}\label{sec:hle}
 
-The Hardware Lock Elision (HLE) interface is a legacy-compatible interface introducing two
-instruction prefixes: 1) XACQUIRE and 2) XRELEASE.  XACQUIRE is placed before the locking
-instruction to mark the beginning of a transaction.  XRELEASE is placed before the
-unlocking instruction to mark the end of a transaction.
+The Hardware Lock Elision (HLE) interface is a legacy-compatible interface
+introducing two instruction prefixes: 1) XACQUIRE and 2) XRELEASE.  XACQUIRE is
+placed before a locking instruction to mark the beginning of a transaction.
+XRELEASE is placed before an unlocking instruction to mark the end of a
+transaction.
 
 These prefixes tell the processor to elide the write operation to the lock variable during
 lock acquisition/release.  When the processor encounters an XACQUIRE prefixed lock
@@ -379,7 +399,7 @@ instruction, it transitions to transactional execution.  Specifically, it adds t
 variable to the transaction's read-set instead of issuing any write requests to the lock
 \cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus allowing
 those threads to enter the critical section and execute concurrently.  All transactions
-can execute concurrently as long as no transaction aborts and explicitly writes to the
+can execute concurrently as long as no transactions abort and explicitly write to the
 lock variable.  If that were to happen, a data conflict technically occurs - one
 transaction writes to a memory location that is part of another transaction's read-set.
 
@@ -394,13 +414,12 @@ However, if the transaction aborts for any reason, the region will be re-execute
 non-transactionally.  If the processor encounters an abort condition, it will discard all
 memory operations performed within the transaction, return to the locking instruction, and
 resume execution without lock elision, \emph{i.e.,} the write operation will be performed on the
-lock variable.  This guarantees forward progress for the application
-\cite{intel_prog_ref}.
+lock variable.  This guarantees forward progress \cite{intel_prog_ref}.
 
 A general implementation for the HLE software interface is shown in Figure
 ~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory model
 parameters in the locking function intrinsic.  GCC 4.8 and above includes support for the
-\_\_ATOMIC\_HLE\_ACQUIRE and \_\_ATOMIC\_HLE\_RELEASE memory models \cite{gcc}.
+\texttt{\_\_ATOMIC\_HLE\_ACQUIRE} and \texttt{\_\_ATOMIC\_HLE\_RELEASE} memory models \cite{gcc}.
 
 \begin{figure}[H]
     \centering
@@ -426,11 +445,12 @@ transaction.  XTEST can be used to test if the processor is executing transactio
 non-transactionally.
 
 The XBEGIN instruction transitions the processor into transactional execution
-\cite{intel_prog_ref}.  Note that the XBEGIN instruction does not even read the locking
-variable as HLE does.  Therefore, the programmer should manually add the locking variable
-to the transaction's read-set by checking if the lock is free at the start of the
-transaction.  If it is free, the transaction can execute safely.  Once execution reaches
-the XEND instruction, the processor will attempt to atomically commit the transaction.
+\cite{intel_prog_ref}.  Note that the XBEGIN instruction does not jead the
+locking variable as HLE does.  Therefore, the programmer should manually add the
+locking variable to the transaction's read-set by checking if the lock is free
+at the start of the transaction.  If it is free, the transaction can execute
+safely.  Once execution reaches the XEND instruction, the processor will attempt
+to commit the transaction.
 
 As previously mentioned, the transaction can abort for many reasons.  One case specific to
 RTM occurs when the lock is not free upon entering the transaction.  In this case, the
@@ -458,7 +478,8 @@ to transactional execution or takes the abort path.  As previously mentioned, th
 processor will also return to this point should the transaction abort in the middle of
 execution. Moving the locking mechanism into the RTM abort path ensures that the abort
 path ultimately uses explicit synchronization and guarantees forward progress.  GCC 4.8
-and above includes support for the \_xbegin, \_xabort, and \_xend intrinsics \cite{gcc}.
+and above includes support for the \texttt{\_xbegin}, \texttt{\_xabort}, and
+\texttt{\_xend} intrinsics \cite{gcc}.
 
 \begin{figure}[H]
     \centering
@@ -1432,34 +1453,6 @@ divisible by the number of worker threads.
 %
 
 \chapter{Conclusions}
-
-
-
-
-
-
-%    \begin{figure}[H]
-%        \centering
-%        \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{../../magic/pics/magic_layout_32_bit.png}
-%        \caption{\textbf{32 Bit Layout - Magic}}
-%        \label{fig:gg}
-%    \end{figure}
-
-%\section{\textbf{Work Division}}
-%    \begin{table}[H]
-%        \centering
-%        \begin{tabular}{l | p{8cm}}
-%            \hline
-%            \textbf{Student}   & \textbf{Task} \\ \hline
-%            \midrule
-%                Both        & Modified Pin-out Diagram \\
-%                Both        & Magic Layout \\
-%                Both        & IRSIM \\
-%                Both        & VHDL \\
-%                Both        & Modified Floor Plan
-%        \end{tabular}
-%        \caption{\textbf{Task Assignment}}
-%    \end{table}
 
 \newpage
 \bibliographystyle{abbrv}
