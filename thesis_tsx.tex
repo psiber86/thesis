@@ -262,91 +262,113 @@ programmer can develop TSX enabled multi-threaded applications.
 
 \section{Transactional Memory Overview}
 
+%%JOSH: ok, so you've basically identified hardware transactional memory.  this is not the
+%%same thing as transactional memory.  it is ok to not address software based
+%%transactional memory, but you need to expressly tell the reader that you are excluding
+%%it from the discussion (probably in the introduction to this chapter; in fact, simply
+%%adding a second (and possibly more) paragraph(s) to it to give a brief intro to
+%%transactional memory (hardware and software) and then exclude further discussion of
+%%software based solutions). 
+
 Transactional memory (TM) is a concurrency control mechanism that dynamically determines
-when two or more threads can safely execute critical section \cite{sle_rajwar}.  The
-programmer identifies a transactional region, typically a critical section.  As threads
-enter the transactional region, the underlying processor core attempts to execute
-transactionally. As it does so, it tracks the memory accesses within the transactional
-region to determine whether or not two or more threads conflict with one another,
-\emph{i.e.,} if any memory accesses conflict with one another.  If the threads do not
-conflict with one another, the transactions can safely execute concurrently.  If they do
-conflict, the process must abort the transaction and execute the critical section
-non-transactionally, \emph{i.e.,} sequentially with conventional synchronization
-mechanisms.
+when two or more threads can safely execute a critical section \cite{sle_rajwar}.  The
+programmer identifies a transactional region, typically a critical section, for
+monitoring.  As threads enter the transactional region, the underlying processor core
+attempts to execute transactionally.  As the thread does so, the system tracks the memory
+accesses within the transactional region to determine whether or not two or more threads
+conflict with one another, \emph{i.e.,} if any memory accesses conflict with one another.
+If the threads do not conflict with one another, the transactions can be safely and
+concurrently executed.  If they do conflict, the process must abort the transaction and
+execute the critical section non-transactionally, \emph{i.e.,} by serializing execution of
+the critical section with conventional synchronization mechanisms.
 
-As previously mentioned, a transaction builds a set of memory addresses it has read from
-and a set of memory addresses it has written to, referred to as the read-set and write-set
-respectively \cite{intel_prog_ref} as it executes.  Note that These memory operations are
-buffered until the transaction completes.  If the memory operations within the local
-transaction do not conflict with any memory operations within any other thread's execution
-path, the transaction can safely complete execution.  Upon completion, the transaction
-will atomically commit all of the buffered memory operations, henceforth referred to
-simply as a commit.
+%% JOSH: review this rewritten paragraph and verify/correct it accordingly.
 
-However, if any memory operation within the local transaction happens to conflict with any
-memory operation within any other thread's execution path, the transaction cannot safely
-continue execution.  This is referred to as a data conflict and only occurs if: 1) another
-thread attempts to read a location that is part of the local transaction's write-set, or
-2) another thread attempts to read a location that is part of the local transaction's
+As a transaction is executed, the processor buffers the memory write operations and
+commits them only when the transaction is complete and safe access has been determined.
+Safe access is determined by the processor core by recording the set memory read addresses
+(called the \emph{read-set}) and memory write addresses (called the \emph{write-set}) from
+the instructions in the transaction.  During the time of the transaction memory addresses
+of instructions executed by other concurrently executed threads are also recorded.  If
+there is an intersection of the addresses from the transaction with addresses from any of
+the concurrently executed threads, the transaction aborts (safe access did \emph{not}
+occur).  Upon completing a transaction with safe access, the transaction will atomically
+commit all of the buffered memory operations, henceforth referred to simply as a
+\emph{commit}.
+
+%% JOSH: i am confused by (i) and (ii)  how are they different?  do you mean that another
+%% thread reads OR writes a memory address from the transaction?
+Whenever safe access does not occur, the transaction cannot safely continue execution.
+This is referred to as a \emph{data conflict} and only occurs if: (i) another thread
+attempts to read a location that is part of the local transaction's write-set, or (ii)
+another thread attempts to read a location that is part of the local transaction's
 write-set \cite{intel_prog_ref}.  Once a data conflict is detected, the transactions will
-abort execution, henceforth referred to simply as an abort.
+abort execution, henceforth referred to simply as an \emph{abort}.
 
-Revisiting the example from before, the programmer uses transactional memory
-synchronization mechanisms to access the two dimensional array.  Recall that any thread
-can access any element at any given time.  One thread enters the transactional region and
-begins transactional execution.  It adds the element's memory location to its read-set.
-At the same time, another thread enters the transactional region; however, it accesses a
-different element.  As the first thread continues execution, it adds the element's memory
-location to its write-set.  The second thread adds its element's memory location to its
-read-set at the same time.  However, because the memory location is not part of the first
-thread's read-set, the threads continue executing concurrently.  No memory conflicts are
-detected in this case and the transactions execute successfully and commit.
+Revisiting the example from Chapter \ref{intro}, assume that a programmer uses
+transactional memory synchronization mechanisms to access a shared two dimensional
+array.  Recall that any thread can access any element at any given time.  One thread
+enters the transactional region and begins transactional execution.  It adds the element's
+memory location to its read-set.  At the same time, another thread enters the
+transactional region; however, it accesses a different element.  As the first thread
+continues execution, it adds the element's memory location to its write-set.  The second
+thread adds its element's memory location to its read-set at the same time.  However,
+because the memory location is not part of the first thread's read-set, the threads
+continue executing concurrently.  No memory conflicts are detected in this case and the
+transactions execute successfully and commit.
 
-Another thread enters the transactional region.  It begins its read operation on
-a specific element and adds the element memory address to the read-set.
-However, another thread is is already writing to that memory location.   Because
-the memory address is tracked in the second transaction's write-set, a data
-conflict occurs.  The two threads cannot execute concurrently and produce the
-correct output.   Therefore, the transactions must abort.  Typically, the
-threads will retry execute with explicit synchronization.
+Now, assume that another thread enters the transactional region.  It begins its read
+operation on a specific element and adds the element memory address to the read-set.
+However, another thread is is already writing to that memory location.  Because the memory
+address is tracked in the second transaction's write-set, a data conflict occurs.  The two
+threads cannot execute concurrently and be guaranteed to produce the correct output.
+Therefore, the transactions must abort.  Typically, the threads will retry execution with
+explicit synchronization.  Although, as will be shown later, various retry options are
+possible. 
 
-By definition, a transaction is a series of actions that appears instantaneous
-and indivisible possessing four key attributes: 1) atomicity, 2) consistency, 3)
-isolation, and 4) durability \cite{tm_2nd}.  TM operates on the principles of
-database transactions.  The two key attributes for TM are atomicity and
-isolation; consistency and durability must hold for all multi-threaded
-operations in multi-threaded applications.  Atomicity is guaranteed if: 1) all
-memory operations performed within the transaction are completed successfully,
-or 2) it appears as if the performed memory operations were never even starred \cite{tm_2nd}. 
-Isolation is guaranteed by tracking memory operations as the
-transactions execute and aborting if any memory operations conflict.  If both
-atomicity and isolation can be guaranteed for all memory operations performed
-within a critical section, that "critical section" can be executed concurrently
-\cite{sle_rajwar}.  
+By definition, a transaction is a series of actions that appears instantaneous and
+indivisible possessing four key attributes: (1) atomicity, (2) consistency, (3) isolation,
+and (4) durability \cite{tm_2nd}.  TM operates on the principles of database transactions.
+The two key attributes for TM are atomicity and isolation; consistency and durability must
+hold for all multi-threaded operations in multi-threaded applications.  Atomicity is
+guaranteed if: (1) all memory operations performed within the transaction are completed
+successfully, or (2) it appears as if the performed memory operations were never attempted
+\cite{tm_2nd}.  Isolation is guaranteed by tracking memory operations as the transactions
+execute and aborting if any memory operations conflict.  If both atomicity and isolation
+can be guaranteed for all memory operations performed within a critical section, that
+``critical section'' can be executed concurrently \cite{sle_rajwar}.
 
-In the case of a commit, the transaction has ensured that its memory operations
-are executed in isolation from other threads and that \emph{all} of its memory
-operations are committed, thus satisfying the isolation and atomicity
-principles.  Note that only at this time will the memory operations performed
-within the transaction become visible to other threads, thus satisfying the
-appearance of instantaneousness.  In the case of an abort due to a data
-conflict, it is clear that the isolation principle has been violated.  It should
+In the case of a commit, the transaction has ensured that its memory operations are
+executed in isolation from other threads and that \emph{all} of its memory operations are
+committed, thus satisfying the isolation and atomicity principles.  Note that only at this
+time will the memory operations performed within the transaction become visible to other
+threads, thus satisfying the appearance of instantaneousness.  In the case of an abort due
+to a data conflict, it is clear that the isolation principle has been violated.  It should
 be noted that transactions can abort for a variety of reasons depending on the
-implementation \cite{intel_opt_man,chung_amd}, but the primary cause is data
-conflicts.  Upon abort, all memory operations are discarded to maintain
-atomicity. 
+implementation \cite{intel_opt_man,chung_amd}, but the primary cause is data conflicts.
+Upon abort, all memory operations are discarded to maintain atomicity.
 
 \section{Related Studies}
 
+%% JOSH, your first sentence here should end with a collection of citations to several of
+%% these implementations.  for your second sentence, the reader is asking ``better
+%% portability than what?'' ``cost of performace compared to what?''  
+
+%% JOSH, you also use the term ``sequential'' when i think a better term is ``sequential
+%% execution of threads accessing the critical region'' or ``serial access''.  of course
+%% if the published literature with transactions uses sequential i suppose i could live
+%% with it (although i can't stand it as it reads to me like the program is not executed
+%% in parallel.....not what you really intend to say....
 There have been many implementations of TM systems since its conception, mostly in
-software.  Software Transactional Memory (STM) offers better portability but at the cost
-of performance.  Gajinov et al. performed a study with STM by developing a parallel
-version of the Quake multi-player game server from the ground up using OpenMP
+software \cite{}.  Software Transactional Memory (STM) offers better portability but at
+the cost of performance.  Gajinov \emph{et al} performed a study with STM by developing a
+parallel version of the Quake multi-player game server from the ground up using OpenMP
 parallelizations pragmas and atomic blocks \cite{quake_stm}.  Their results showed that
 the overhead required for STM resulted in execution times that were 4 to 6 times longer
 than the sequential version of the server.  STM in general has been found to result in
 significant slowdown \cite{stm_cascaval}.  Although STM is more widely available than HTM,
-this study dismissed it as a potential solution due to the reasons discussed above.
+this study dismissed it as a potential solution due to the performance reasons discussed
+above.
 
 Hardware Transactional Memory (HTM) provides the physical resources necessary to implement
 transactional memory effectively.  Many chip manufacturers have added, or at least sought
@@ -354,25 +376,27 @@ to add, support for HTM in recent years.  IBM released one of the first commerci
 available HTM systems in their Blue Gene/Q machine \cite{blue_wang}.  Even though they
 found that this implementation was an improvement over STM, it still incurred significant
 overhead.  AMD's Advanced Synchronization Facility and Sun's Rock processor included
-support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not released any news
-regarding future releases and Sun's Rock processor was canceled after Sun was acquired by
-Oracle.
+support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not released any HTM enabled
+processors and Sun's Rock processor was canceled after Sun was acquired by Oracle.
 
 With the release of Intel's Haswell generation processors, Intel's Transactional
-Synchronization Extensions (TSX) is the most widely commercially available HTM system.
-Numerous studies have already been done with TSX, primarily evaluating its performance
-capabilities.  Chitters et al. modified Google's write optimized persistent key-value
-store, LevelDB, to use TSX based synchronization instead of a global mutex.  Their
-implementation shower 20-25\% increased throughput for write-only workloads and increased
-throughput for 50\% read / 50\% write workloads \cite{chitters_tsx}.  Wang et al. studied
-the performance scalability of a concurrent skip-list using TSX Restricted Transactional
-Memory (RTM).  They compared the TSX implementation to a fine-grain locking implementation
-and a lock-free implementation, and found that the performance was comparable to the
-lock-free implementation without the added complexity \cite{wang_tsx}.  Yoo et
-al. evaluated the performance of TSX using high-performance computing (HPC) workloads, as
-well as in a user-level TCP/IP stack.  They measured an average speed up of 1.41x and
-1.31x respectively \cite{yoo_tsx}.  The decision to use Intel's TSX for this research was
-based on its wide availability and the performance improvements observed in other studies.
+Synchronization Extensions (TSX) is the currently the only widely available commercial
+HTM-enabled system.  Numerous studies have already been performed with TSX, primarily
+evaluating its performance capabilities.  Chitters \emph{et al} modified Google's write
+optimized persistent key-value store, LevelDB, to use TSX based synchronization instead of
+a global mutex.  Their implementation shower 20-25\% increased throughput for write-only
+workloads and increased throughput for 50\% read / 50\% write workloads
+\cite{chitters_tsx}.  Wang \emph{et al} studied the performance scalability of a
+concurrent skip-list using TSX Restricted Transactional Memory (RTM).  They compared the
+TSX implementation to a fine-grain locking implementation and a lock-free implementation,
+and found that the performance was comparable to the lock-free implementation without the
+added complexity \cite{wang_tsx}.  Yoo \emph{et al} evaluated the performance of TSX using
+high-performance computing (HPC) workloads, as well as in a user-level TCP/IP stack.  They
+measured an average speed up of 1.41x and 1.31x respectively \cite{yoo_tsx}.  The decision
+to use Intel's TSX for this research was based on its wide availability and the
+performance improvements observed in other studies.
+
+%% PHIL, stopped here....
 
 \section{Transactional Synchronization Extensions (TSX)}
 
@@ -494,6 +518,7 @@ Haswell platforms.  If a legacy device attempts to execute one of the RTM instru
 will throw a General Protection Fault.  It should be noted that execution of the XEND
 instruction outside of a transaction will result in a General Protection Fault as well
 \cite{intel_opt_man}.
+
 
 \chapter{Practical Programming with TSX}
 
