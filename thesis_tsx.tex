@@ -652,7 +652,7 @@ increases.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trxSize_hyperthreaded}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_hyperthreaded}
     \caption{\textbf{TSX RTM abort rate versus cache line accesses for two 
     threads on hyper-threaded core}}
     \label{fig:trx_size_ht}
@@ -684,7 +684,7 @@ of the transaction is increased.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{trxDuration}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{trxDuration}
     \caption{\textbf{TSX RTM abort rate versus number of operations performed
     during transaction}}
     \label{fig:trx_duration}
@@ -729,7 +729,7 @@ transactional execution.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{SyncBM}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{SyncBM}
     \caption{\textbf{Synchronization Latency}}
     \label{fig:tsx_latency}
 \end{figure}
@@ -832,7 +832,7 @@ rollback is processed \cite{dickman}.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{rollback_recv}
+    \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_recv}
     \caption{\textbf{LP at the time of a straggler event is received}}
     \label{fig:rollback_stragglerrecvd}
 \end{figure}
@@ -840,7 +840,7 @@ rollback is processed \cite{dickman}.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{rollback_processed}
+    \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_processed}
     \caption{\textbf{LP after a rollback is processed}}
     \label{fig:rollback_processed}
 \end{figure}
@@ -963,7 +963,7 @@ worker_thread()
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{single_ltsf_queue}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{single_ltsf_queue}
     \caption{\textbf{Pending Event Set Scheduling}}
     \label{fig:singleLTSFqueue}
 \end{figure}
@@ -988,7 +988,7 @@ available, consequently increasing the contention problem.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{notsx_profile}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{notsx_profile}
     \caption{\textbf{\textsc{warped} Simulation Time versus Worker Thread Count for
     Epidemic Model}}
     \label{fig:notsx_profile}
@@ -1018,7 +1018,7 @@ further with TSX.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{multiple_ltsf}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{multiple_ltsf}
     \caption{\textbf{Pending Event Set Scheduling with Multiple LTSF Queues}}
     \label{fig:multipleLTSF}
 \end{figure}
@@ -1264,7 +1264,11 @@ will be performed at different times on the next retry.
 The RTM retry limit is specified at compile time.  Each data structure maintains its own
 retry limit initially set to the global limit.  A backoff algorithm is used to reduce the
 retry limit for a specific data structure.  If the transactions for this data structure
-abort more often than not, the retry limit is reduced.
+abort more often than not, the retry limit is reduced.  If the transaction
+commit rate increases, the retry limit increases up to the inital limit
+specified at compile time.  This ideally reduces the number of transaction
+attempts for an extended period of time.  The retry limit increases if the
+commit rate passes the abort to commit rate ratio threshold
 
 Furthermore, if transactions for the data structure consistently abort for an extended
 period of time with no successfull commits, transactional execution is not attempted for
@@ -1324,39 +1328,49 @@ the disease among individual entities.
 
 \section{Static Thread Assignment}
 
-In the original \textsc{warped} implementation, threads are statically assigned to an LTSF queue.
-Contention will clearly be a problem if the simulation only schedules from one LTSF queue
-as every worker thread is assigned to that queue.
+In the original \textsc{warped} thread scheduling implementation, threads are
+statically assigned to an LTSF queue.  Contention will clearly be a problem if
+the simulation only schedules from one LTSF queue as every worker thread is
+assigned to that queue.
 
 The first part of this study compares the performance of the \textsc{warped}
 pending event set static thread scheduling implementation using one LTSF queue
 synchronized with : 1) atomic locks, 2) HLE, and 3) RTM with 1 retry, 4) RTM
 with 9 retries, and 5) RTM with 19 retries.  These results are shown in Figure
-~\ref{fig:noThrMig_timeVSthreads_1schq}.
-
-It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
-contention is increasing as the number of worker threads increases.
-Furthermore, it would appear that utilizing more than one LTSF queue is no
-longer producing consistent or desirable results. It was also observed that the
-number of rollbacks was non-trivial for these simulations.  These poor
-performance could be attributed to recent changes made to the \textsc{warped} kernel.\par
+~\ref{fig:noThrMig_timeVSthreads_1schq}.  It is clear that using HLE improves
+simulation performance, but still suffers from the same rise in contention as
+the number of worker threads is increased.
+%TODO: discuss RTM results
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSthreads-multiset-1schQ}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSthreads-multiset-1schQ}
     \caption{\textbf{Simulation Time versus Number of Worker Threads 1 STL Multi-set LTSF Queue}}
     \label{fig:noThrMig_timeVSthreads_1schq}
 \end{figure}
 
-%TODO: something about multiple LTSF queues
-Varying schedule queue countdData is limited for static thread migration as the
-number of LTSF queues has to be evenly divisible by the number of worker
-threads.
-It should be noted that the static assignment of worker threads to LTSF 
-queues only allows for a number of worker threads that is evenly
-divisible by the number of worker threads due to the way in which LP's are
-partitioned to LTSF queues.  
+It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
+contention is increasing as the number of worker threads increases, regardless
+of the synchronization mechanism used.  This is somewhat expected as contention
+is still high for the single LTSF queue.  Transactional memory exposes
+concurrency where it can, but some critical sections just cannot be executed
+concurrently.  It should be noted that the performance of HLE does not flatten
+quite as much as the other synchronization mechanisms.
+
+The initial solution to alleviate contention for the LTSF queue is the
+utilization of multiple LTSF queues.  The data for different numbers of schedule
+queues is limited by the necessity to have a number of LTSF queues evenly
+divisble by the number of worker threads.  This is because of the way threads
+are assigned to LTSF queues; if the numbers are not evenly divisible, the
+simulation becomes unbalanced.  LPs assigned to a certain LTSF queue can get far
+ahead or behind of other LPs on LTSF queue resulting in significant rollbacks
+and thus performance degradation.  The various LTSF queue count configuration
+results are shown in Tables ~\ref{noThrMig_2threadsXschq},
+~\ref{noThrMig_3threadsXschq}, ~\ref{noThrMig_5threadsXschq}, and Figures
+~\ref{fig:noThrMig_timeVSschq_4threads} and
+~\ref{fig:noThrMig_timeVSschq_6threads}.
+
 
 \begin{table}[H]
     \centering
@@ -1387,7 +1401,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:noThrMig_timeVSschq_4threads}
@@ -1409,13 +1423,30 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
 
+The only configuration that seems to alleviate contention is two LTSF queues
+with 2 or 6 worker threads.  The other configurations result in increased
+simulation times.  The rollback counts for these configurations were also
+consideraly high.  These poor performance could be attributed to recent changes
+made to the \textsc{warped} kernel.\par
+%TODO: I thought these worked fine, need to think about this one.
+% Could be attributed to the lack of load balancing
+
 \section{Dynamic Thread Assignment}
+
+Another solution to contention is to distribute worker threads that try to
+simultaneously access the same LTSF queue to different LTSF queues.  Worker
+threads are dynmically assigned to LTSF queues rather than statically.  This
+solution implicitly balances the work load between LTSF queues.  Therefore, any
+number of LTSF queues can be used with any number of worker threads.  These
+results are shown in Table ~\ref{tab:contThrMig_2threadsXschq} and Figures
+~\ref{fig:contThrMig_timeVSschq_3threads} through
+~\ref{fig:contThrMig_timeVSschq_7threads}. 
 
 \subsection{Continuous Thread Migration}
 
@@ -1435,7 +1466,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-3thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-3thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 3 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_3threads}
@@ -1444,7 +1475,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_4threads}
@@ -1453,7 +1484,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-5thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-5thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 5 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_5threads}
@@ -1462,7 +1493,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_6threads}
@@ -1471,11 +1502,13 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-7thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-7thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 7 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
+
+
 
 \subsection{Event Limited Thread Migration}
 
@@ -1508,7 +1541,7 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:xThrMig_timeVSschq_4threads}
@@ -1530,15 +1563,11 @@ partitioned to LTSF queues.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:xThrMig_timeVSschq_6threads}
 \end{figure}
-
-%\section{Lock Contention}}
-%
-%
 
 \chapter{Conclusions}
 
