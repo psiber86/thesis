@@ -13,6 +13,7 @@
 \usepackage{xtab}
 \usepackage{url}
 \usepackage{booktabs}
+\usepackage{mathtools}
 
 \setcounter{topnumber}{2}
 \setcounter{bottomnumber}{3}
@@ -870,18 +871,47 @@ time-stamped event without having to search through the queue, The LTSF queue is
 also referred to as the schedule queue in \textsc{warped}; these terms will be
 used interchangeably.
 
-% not sure if i need this yet or not
 \subsection{Pending Event Set Data Structures}
 
-The implementation of the pending event set is a key factor in the performance of the
-simulation \cite{twpes}.  The \textsc{warped} simulation kernel has two fully functional
-implementations: 1) using the STL multi-set data structure, and 2) using a splay tree data
-structure.
+The implementation of the pending event set is a key factor in the performance
+of the simulation \cite{twpes}.  The \textsc{warped} simulation kernel has two
+fully functional implementations: 1) the C++ Standard Template Library (STL)
+multi-set data structure, and 2) the splay tree data structure.  The way in
+which these data structures are accessed and, more importantly, self-adjust will
+be relevant to how effectively TSX can be used to access these structures.
 
-\paragraph{STL Multi-Set}
+\paragraph{STL Multi-set}
 
+The STL multi-set data structure , specifically the sorted STL multi-set data
+structure, is an abstract data structure implemented as a self-balancing,
+red-black binary search tree \cite{redblack}.  Look-up, insertion, and
+deletion operations performed in a red-black tree with \emph{n} elements are
+performed in average O(log n) time.  When insertion or deletion operations are
+performed, the tree is rebalanced by a tree rearrangement algorithm and a
+"painting" algorithm taking average O(1) and O(log n) time respectively. 
+
+The STL multi-set is a self sorting data structure.  The lowest value element
+will be the left most child node of the tree.  To access the least time-stamped
+event at the head of the LTSF queue, multi-set red-black tree must be traversed
+to the left most child node.  Any insertion or removal of events requires the
+red-black tree to rebalance itself.  
 
 \paragraph{Splay Tree}
+
+The splay tree is a self-adjusting binary search tree in which recently accessed
+elements are moved to the root of the tree for quicker access \cite{splaytree}.
+Look-up, insertion, and deletion operations performed in a splay tee with
+\emph{n} elements are performed in average O(log n) time.  When an element is inserted
+or looked up, a splaying operation is to move that element to the root of the
+tree.
+
+When an event is inserted into the LTSF queue, it becomes the root of the splay
+tree.  This is advantageous tf the inserted event is the next least time-stamped
+event; when a worker thread schedules the next event, it just has to look at the
+root of the splay tree.  Furthermore, there are several functions in
+\textsc{warped} that access the least time-stamped event in the pending event
+without removing it.  This moves the event to the root of the splay tree and
+results in quick retrieval when the event is finally removed. 
 
 \subsection{Worker Thread Event Execution}
 
@@ -1149,24 +1179,59 @@ expose concurrency through dynamic synchronization is too great to be dismissed.
 there is also no guarantee that TSX will work 100\% of the time; there are several
 run-time events that can cause transactions to abort, as well as physical limitations.
 
-%something about write and the data structures used to implemnet the queues
+% The next 3-4 paragraphs might be bull shit, I'm not really sure yet.  I
+% wrote this at 5am and just started spewing out thoughts relating TSX to my
+% limited understanding of the multiset and splay tree data structures.
+% I also haven't decided if the results are significant enough to even talk
+% about the different schedule queue implementations.
+The process of scheduling requires a significant amount of write operations to
+the queues listed above.  As long as executing threads do not write to an entire
+queue, there is a good chance that the write operations will not interfere.  TSX
+dynamically determines if the write operations are performed on different memory
+locations and allows the threads to execute concurrently.  The data structures
+used to implement the respective queues is a significant factor in determining
+if two or more threads perform conflicting memory operations on the same
+structure.  Not only is the performance of simulation dependent on the pending
+event set implementation, but the performance of TSX is also dependent on the
+data structures implementing the pending event set.
 
-%The process of scheduling requires a significant amount of write operations to
-%the queues listed above.  As long as executing threads do not write to an entire
-%queue, there is a good chance that the write operations will not interfere.  TSX
-%dynamically determines if the write operations are performed on different memory
-%locations and allows the threads to execute concurrently.  The data structures
-%used to implement the respective queues is a significant factor in determining
-%if two or more threads perform conflicting memory operations on the same
-%structure.  
-%
-%For example, a worker thread needs to read traverse the queue to add a future
-%event to the very end of the queue.  Another worker thread 
-%the C++ STL multiset is a self-balancing binary search
-%tree.  Traverising the tree 
-%
-%Several similar scenarios can arise during simulation execution, which
-%is why \textsc{warped} can greatly benefit from TSX enabled synchronization.
+For example, a worker thread is scheduling the next least time-stamped event
+from the LTSF queue and needs to remove that event from the queue.  In the STL
+multi-set schedule queue implementation, the tree must be traversed to the
+lowest value element, which adds all tree nodes in that path to the transactions
+read-set.  The node is removed, but the STL multi-set must go through the
+process of rebalancing itself before the transaction ends.  Before the multi-set
+can complete the rebalancing process, another worker thread attempts to schedule
+the next least time-stamped event. It traverse the tree to the lowest value
+element and removs it.  This involves a write operation to the parent node of
+the event.  But the node was already addded to the first transaction's read-set.
+A data conflict results and both transactions must abort.
+
+In the splay tree schedule queue implementation, the next least time-stamped event
+is already the root of the splay tree, either because it was just peeked at or
+inserted.  A worker thread enters the transction to
+schedule the event and removes it from the queue.  The parent of the removed
+node then has to be splayed to the root of the splay tree 
+
+.  Before that process is completed, another
+
+thread enters the transactional region to schedule the next least time-stamped
+event.
+
+% example of splay tree operations with TSX
+
+Both of these data structures are some form of binary tree, meaning that few
+nodes are accessed for certain operations.  This is advantageous for TSX as the
+memory locations will not be added to the transaction read-sets thus making it
+less likely for data conflicts to occur.  It is possible, though highly
+unlikely, that either implementation could take the form of a single linked
+list, depending on what order events are inserted in.  For instance, events
+inserted into the multi-set red-black tree in increasing chronological order
+create a singly linked list. This situation poses a threat to TSX if the entire
+list is traversed in a transaction.  Not only because access to any element
+becomes a possible data conflict, but also because of size limitations.  If the
+LTSF queue contains too many events, TSX might not be able to track all the memory
+locations involved in the queue, thus resuling in aborts.
 
 \section{TSX Implementation}
 
@@ -1260,8 +1325,21 @@ the disease among individual entities.
 \section{Static Thread Assignment}
 
 In the original \textsc{warped} implementation, threads are statically assigned to an LTSF queue.
-Contention will clearly be a problem is the simulation only schedules from one LTSF queue
+Contention will clearly be a problem if the simulation only schedules from one LTSF queue
 as every worker thread is assigned to that queue.
+
+The first part of this study compares the performance of the \textsc{warped}
+pending event set static thread scheduling implementation using one LTSF queue
+synchronized with : 1) atomic locks, 2) HLE, and 3) RTM with 1 retry, 4) RTM
+with 9 retries, and 5) RTM with 19 retries.  These results are shown in Figure
+~\ref{fig:noThrMig_timeVSthreads_1schq}.
+
+It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
+contention is increasing as the number of worker threads increases.
+Furthermore, it would appear that utilizing more than one LTSF queue is no
+longer producing consistent or desirable results. It was also observed that the
+number of rollbacks was non-trivial for these simulations.  These poor
+performance could be attributed to recent changes made to the \textsc{warped} kernel.\par
 
 \begin{figure}[H]
     \centering
@@ -1272,8 +1350,13 @@ as every worker thread is assigned to that queue.
 \end{figure}
 
 %TODO: something about multiple LTSF queues
-Data is limited for static thread migration as the number of LTSF queues has to be evenly
-divisible by the number of worker threads.
+Varying schedule queue countdData is limited for static thread migration as the
+number of LTSF queues has to be evenly divisible by the number of worker
+threads.
+It should be noted that the static assignment of worker threads to LTSF 
+queues only allows for a number of worker threads that is evenly
+divisible by the number of worker threads due to the way in which LP's are
+partitioned to LTSF queues.  
 
 \begin{table}[H]
     \centering
@@ -1453,82 +1536,15 @@ divisible by the number of worker threads.
     \label{fig:xThrMig_timeVSschq_6threads}
 \end{figure}
 
-
-
-
-
 %\section{Lock Contention}}
 %
-%The first part of this study compares the performance of the original \textsc{warped}
-%pending event set implementation using: 1) atomic locks, 2) HLE, and 3) RTM with
-%1 retry, 4) RTM with 9 retries, and 5) RTM with 19 retries.  It should be noted
-%that the original implementation of the \textsc{warped} pending event set only allows for
-%a number of worker threads that is evenly divisible by the number of worker
-%threads due to the way in which LP's are partitioned to LTSF queues.  These
-%results are shown in Figures ~\ref{fig:noThrMig_timeVSthreads_1schq} and Tables
-%~\ref{tab:noThrMig_2threadsXschq}, ~\ref{tab:noThrMig_4threadsXschq}, and
-%~\ref{tab:noThrMig_6threadsXschq}.\par
-%
-%\begin{figure}[H]
-%    \centering
-%    \graphicspath{ {./figures/} }
-%    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{noThrMig-summary-multiset-hugeepidemicsim-timeVSthreads-1schQ}
-%    \caption{\textbf{Simulation Time as Number of Worker Threads is Increased
-%    Using Various Synchronization Mechanisms for 1 STL Multi-set LTSF Queue}}
-%    \label{fig:noThrMig_timeVSthreads_1schq}
-%\end{figure}
-%
-%\begin{table}[H]
-%    \centering
-%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
-%        \hline
-%        \midrule
-%            1 &115.1073 &107.93   &116.8573 &115.8511 &116.3141 \\ 
-%            2 &111.6427 &104.7166 &113.0621 &121.884  &130.4556   
-%    \end{tabular}
-%    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
-%    \label{tab:noThrMig_2threadsXschq}
-%\end{table}
-%
-%\begin{table}[H]
-%    \centering
-%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
-%        \hline
-%        \midrule
-%            1 &68.40767  &62.70367 &70.23204  &69.44761 &69.46226 \\ 
-%            2 &73.62335  &69.23382 &74.28421  &74.5701  &74.40304 \\
-%            4 &100.74668 &97.87896 &100.70637 &98.65185 &97.00871 
-%    \end{tabular}
-%    \caption{\textbf{Simulation Times for 4 Worker Threads with X LTSF Queues}}
-%    \label{tab:noThrMig_4threadsXschq}
-%\end{table}
-%
-%\begin{table}[H]
-%    \centering
-%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-%        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
-%        \hline
-%        \midrule
-%            1 &62.32475 &54.4856  &63.46503 &63.38292 &63.22529 \\  
-%            2 &61.03439 &56.03277 &61.72473 &61.38556 &61.23396 \\  
-%            3 &65.605   &63.3307  &65.24451 &64.92354 &64.93433 \\  
-%            6 &73.50022 &69.54849 &72.83046 &71.01408 &64.13042   
-%    \end{tabular}
-%    \caption{\textbf{Simulation Times for 6 Worker Threads with X LTSF Queues}}
-%    \label{tab:noThrMig_6threadsXschq}
-%\end{table}
-%
-%It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
-%contention is increasing as the number of worker threads increases.
-%Furthermore, it would appear that utilizing more than one LTSF queue is no
-%longer producing consistent or desirable results. It was also observed that the
-%number of rollbacks was non-trivial for these simulations.  These poor
-%performance could be attributed to recent changes made to the \textsc{warped} kernel.\par
 %
 
 \chapter{Conclusions}
+
+
+
+
 
 \newpage
 \bibliographystyle{abbrv}
