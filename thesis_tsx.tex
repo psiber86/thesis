@@ -270,40 +270,58 @@ programmer can develop TSX enabled multi-threaded applications.
 %%transactional memory (hardware and software) and then exclude further discussion of
 %%software based solutions). 
 
-Transactional memory (TM) is a concurrency control mechanism that dynamically determines
-when two or more threads can safely execute a critical section \cite{sle_rajwar}.  The
-programmer identifies a transactional region, typically a critical section, for
-monitoring.  As threads enter the transactional region, the underlying processor core
-attempts to execute transactionally.  As the thread does so, the system tracks the memory
-accesses within the transactional region to determine whether or not two or more threads
-conflict with one another, \emph{i.e.,} if any memory accesses conflict with one another.
-If the threads do not conflict with one another, the transactions can be safely and
-concurrently executed.  If they do conflict, the process must abort the transaction and
-execute the critical section non-transactionally, \emph{i.e.,} by serializing execution of
-the critical section with conventional synchronization mechanisms.
+Transactional memory (TM) is a concurrency control mechanism that dynamically
+determines when two or more threads can safely execute a critical section
+\cite{sle_rajwar}.  The programmer identifies a transactional region, typically
+a critical section, for monitoring.  When the transaction executes, the TM
+system, whether it is implemented in hardware or software, tracks memory
+operations performed within the transactional region to determine whether or not
+two or more transactions conflict with one another, \emph{i.e.,} if any memory
+accesses conflict with one another.  If the threads do not conflict with one
+another, the transactions can be safely and concurrently executed.  If they do
+conflict, the process must abort the transaction and execute the critical
+section non-transactionally, \emph{i.e.,} by serializing execution of the
+critical section with conventional synchronization mechanisms.
 
 %% JOSH: review this rewritten paragraph and verify/correct it accordingly.
+%%As a transaction is executed, the processor buffers the memory write operations and
+%%commits them only when the transaction is complete and safe access has been determined.
+%%Safe access is determined by the processor core by recording the set memory read addresses
+%%(called the \emph{read-set}) and memory write addresses (called the \emph{write-set}) from
+%%the instructions in the transaction.  During the time of the transaction memory addresses
+%%of instructions executed by other concurrently executed threads are also recorded.  If
+%%there is an intersection of the addresses from the transaction with addresses from any of
+%%the concurrently executed threads, the transaction aborts (safe access did \emph{not}
+%%occur).  Upon completing a transaction with safe access, the transaction will atomically
+%%commit all of the buffered memory operations, henceforth referred to simply as a
+%%\emph{commit}.
 
-As a transaction is executed, the processor buffers the memory write operations and
-commits them only when the transaction is complete and safe access has been determined.
-Safe access is determined by the processor core by recording the set memory read addresses
-(called the \emph{read-set}) and memory write addresses (called the \emph{write-set}) from
-the instructions in the transaction.  During the time of the transaction memory addresses
-of instructions executed by other concurrently executed threads are also recorded.  If
-there is an intersection of the addresses from the transaction with addresses from any of
-the concurrently executed threads, the transaction aborts (safe access did \emph{not}
-occur).  Upon completing a transaction with safe access, the transaction will atomically
-commit all of the buffered memory operations, henceforth referred to simply as a
-\emph{commit}.
+%%Here's a more general description that can be applied to STM
+As a transaction is executed, the memory operations performed within the
+transaction are buffered, specifically write operations.  Write operations will
+only be fully executed when the transaction is complete and safe access has been
+determined.  Safe access is determined by comparing the set of addresses each
+transaction reads from  (called the \emph{read-set} and the set of addresses
+each transation writes to (called the \emph{write-set}).  Each transaction
+builds its own read-set and write-set as it executes.  The TM system compares the read-sets and
+write-sets of all concurrently executing transactions to determine if any memory
+operations conflict.  If the transaction completes execution and the TM system
+has not detected any conflicting memory operations, the transaction atomically
+commits all of hte buffered memory operations, henceforth referred to simply as
+a \emph{commit}.
 
 %% JOSH: i am confused by (i) and (ii)  how are they different?  do you mean that another
 %% thread reads OR writes a memory address from the transaction?
+%% Whoops, they were exactly the same.  Corrected.
 Whenever safe access does not occur, the transaction cannot safely continue execution.
-This is referred to as a \emph{data conflict} and only occurs if: (i) another thread
-attempts to read a location that is part of the local transaction's write-set, or (ii)
-another thread attempts to read a location that is part of the local transaction's
-write-set \cite{intel_prog_ref}.  Once a data conflict is detected, the transactions will
-abort execution, henceforth referred to simply as an \emph{abort}.
+This is referred to as a \emph{data conflict} and only occurs if: (i) one
+transaction attempts to read a location that is part of another transaction's write-set, 
+or (ii) a transaction attempts to write a location that is part of another transaction's
+read-set \cite{intel_prog_ref}.  Once a memory location is written to by a 
+transaction, it cannot be accessed in any way by any other transaction; any
+access by any other transaction results in a race condition.  If such a
+situation arises, all concurrently executing transactions will abort execution,
+henceforth referred to simply as an \emph{abort}.
 
 Revisiting the example from Chapter \ref{intro}, assume that a programmer uses
 transactional memory synchronization mechanisms to access a shared two dimensional
@@ -359,16 +377,25 @@ Upon abort, all memory operations are discarded to maintain atomicity.
 %% if the published literature with transactions uses sequential i suppose i could live
 %% with it (although i can't stand it as it reads to me like the program is not executed
 %% in parallel.....not what you really intend to say....
-There have been many implementations of TM systems since its conception, mostly in
-software \cite{}.  Software Transactional Memory (STM) offers better portability but at
-the cost of performance.  Gajinov \emph{et al} performed a study with STM by developing a
-parallel version of the Quake multi-player game server from the ground up using OpenMP
-parallelizations pragmas and atomic blocks \cite{quake_stm}.  Their results showed that
-the overhead required for STM resulted in execution times that were 4 to 6 times longer
-than the sequential version of the server.  STM in general has been found to result in
-significant slowdown \cite{stm_cascaval}.  Although STM is more widely available than HTM,
-this study dismissed it as a potential solution due to the performance reasons discussed
-above.
+%% 
+%% If you are referrign to the "sequential version of the the server", that is
+%% the actual sequential, single threaded version
+There have been many implementations of TM systems since its conception
+\cite{yoo_tsx,chitters_tsx,rock_dice,chung_amd,blue_wang,quake_stm,stm_cascaval},
+mostly in software.  Software Transactional Memory (STM) systems implement the
+memory tracking, conflict detection, write buffering etc. in software, as the
+name suggests.  Most systems are implementation specific, but memory tracking is
+typically done through some form of logging.  While this allows transactional
+memory enabled applications to be executed on a variety of platforms,
+performance usually suffers.  Gajinov \emph{et al} performed a study with STM by
+developing a parallel version of the Quake multi-player game server from the
+ground up using OpenMP parallelizations pragmas and atomic blocks
+\cite{quake_stm}.  Their results showed that the logging overhead required for
+STM resulted in execution times that were 4 to 6 times longer than the
+sequential version of the server.  STM in general has been found to result in
+significant slowdown \cite{stm_cascaval}.  Although STM is more widely available
+than HTM, this study dismissed it as a potential solution due to the performance
+reasons discussed above.
 
 Hardware Transactional Memory (HTM) provides the physical resources necessary to implement
 transactional memory effectively.  Many chip manufacturers have added, or at least sought
