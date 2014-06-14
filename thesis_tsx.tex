@@ -1023,16 +1023,19 @@ further with TSX.
     \label{fig:multipleLTSF}
 \end{figure}
 
-\section{Thread Migration: Another Solution to Contention}
+\section{Thread Migration}
 
-Another potential solution to contention is to distribute worker threads that try to
-simultaneously access the same LTSF queue to different LTSF queues.  In the original
-scheduling scheme, worker threads are assigned to a specific LTSF queue.  The worker
-thread would insert the next event into the same LTSF it had just scheduled from as seen
-in Figure ~\ref{workerThreadAlgorithm}.  In this implementation, the worker thread inserts
-the next event into a different LTSF queue, based on a circularly incremented counter.
-The worker threads are dynamically reassigned to LTSF queues. The number of LTSF queues is
-specified in a configuration file, and has no restrictions as in the static assignment.
+Another potential solution to contention is to distribute worker threads that
+try to simultaneously access the same LTSF queue to different LTSF queues.  In
+the original scheduling scheme, worker threads are assigned to a specific LTSF
+queue.  The worker thread would insert the next event into the same LTSF it had
+just scheduled from as seen in Figure ~\ref{workerThreadAlgorithm}.  In this
+implementation, the worker thread inserts the next event into a different LTSF
+queue, based on a circularly incremented counter.  This approach dynamically
+reassigns worker threads LTSF queues by migrating the threads to new LTSF
+queues.  It also implicitly balances the load between the all the LTSF queues.
+The number of LTSF queues is specified in a configuration file, and has no
+restrictions as in the static assignment.
 
 \linespread{1.0}
 \begin{figure}
@@ -1081,7 +1084,7 @@ This section analyzes the various critical sections that use the TSX mechanism.
 As previously mentioned, the primary focus of this study is the shared LTSF
 queue.  The per LP unprocessed and processed queues also use the TSX mechanism.
 
-\section{Shared Data Structure Critical Sections}
+\section{\textsc{warped} Critical Sections}
 
 First, it is important to understand the operations performed in a critical
 section.  If a critical section always writes to the entire shared data
@@ -1151,7 +1154,7 @@ processed queue:
   \item\texttt{ofcPurge()} - same as the ofcPurge() function for the unprocessed queue.
 \end{itemize}
 
-\section{Shared Data Structure Transactional Regions}
+\section{\textsc{warped} Transactional Regions}
 
 The functions described above perform a variety of memory operations, and any thread can
 execute any critical section at any time.  Based on static analysis, there's no way of
@@ -1326,7 +1329,13 @@ total of 119 LPs.  The epidemic is modeled by reaction processes to model progre
 the disease within an individual entity, and diffusion processes to model transmission of
 the disease among individual entities.
 
-\section{Static Thread Assignment}
+\section{The Default Multi-set Schedule Queue}
+
+The default implementation of the LTSF queue is the STL multi-set data
+structure.  It is a self-adjusting binary search tree which keeps the least
+time-stamped event in the left most leaf node of the tree.
+
+\subsection{Static Thread Assignment}
 
 In the original \textsc{warped} thread scheduling implementation, threads are
 statically assigned to an LTSF queue.  Contention will clearly be a problem if
@@ -1354,7 +1363,7 @@ It is evident from Figure ~\ref{fig:noThrMig_timeVSthreads_1schq} that
 contention is increasing as the number of worker threads increases, regardless
 of the synchronization mechanism used.  This is somewhat expected as contention
 is still high for the single LTSF queue.  Transactional memory exposes
-concurrency where it can, but some critical sections just cannot be executed
+concurrency where it can, but some critical sections simply cannot be executed
 concurrently.  It should be noted that the performance of HLE does not flatten
 quite as much as the other synchronization mechanisms.
 
@@ -1366,11 +1375,19 @@ are assigned to LTSF queues; if the numbers are not evenly divisible, the
 simulation becomes unbalanced.  LPs assigned to a certain LTSF queue can get far
 ahead or behind of other LPs on LTSF queue resulting in significant rollbacks
 and thus performance degradation.  The various LTSF queue count configuration
-results are shown in Tables ~\ref{noThrMig_2threadsXschq},
-~\ref{noThrMig_3threadsXschq}, ~\ref{noThrMig_5threadsXschq}, and Figures
+results are shown in Tables ~\ref{tab:noThrMig_2threadsXschq},
+~\ref{tab:noThrMig_3threadsXschq}, ~\ref{tab:noThrMig_5threadsXschq}, and Figures
 ~\ref{fig:noThrMig_timeVSschq_4threads} and
 ~\ref{fig:noThrMig_timeVSschq_6threads}.
 
+The only configuration that seems to alleviate contention is two LTSF queues
+with 2 or 6 worker threads.  The other configurations result in increased
+simulation times.  The rollback counts for these configurations were also
+consideraly high.  These poor performance could be attributed to the lack of a
+proper load balancing procedure.\par
+%TODO: I thought these worked fine, need to think about this one.
+% Could be attributed to the lack of load balancing
+%TODO: discuss trends
 
 \begin{table}[H]
     \centering
@@ -1429,26 +1446,22 @@ results are shown in Tables ~\ref{noThrMig_2threadsXschq},
     \label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
 
-The only configuration that seems to alleviate contention is two LTSF queues
-with 2 or 6 worker threads.  The other configurations result in increased
-simulation times.  The rollback counts for these configurations were also
-consideraly high.  These poor performance could be attributed to recent changes
-made to the \textsc{warped} kernel.\par
-%TODO: I thought these worked fine, need to think about this one.
-% Could be attributed to the lack of load balancing
-
-\section{Dynamic Thread Assignment}
+\subsection{Dynamic Thread Assignment}
 
 Another solution to contention is to distribute worker threads that try to
 simultaneously access the same LTSF queue to different LTSF queues.  Worker
-threads are dynmically assigned to LTSF queues rather than statically.  This
-solution implicitly balances the work load between LTSF queues.  Therefore, any
-number of LTSF queues can be used with any number of worker threads.  These
+threads are dynmically assigned to LTSF queues rather than statically.  
+
+\subsubsection{Continuous Thread Migration}
+
+The first solution continuously reassigns worker threads to the next  
+This solution implicitly balances the work load between LTSF queues.  Therefore,
+any number of LTSF queues can be used with any number of worker threads.  These
 results are shown in Table ~\ref{tab:contThrMig_2threadsXschq} and Figures
 ~\ref{fig:contThrMig_timeVSschq_3threads} through
 ~\ref{fig:contThrMig_timeVSschq_7threads}. 
 
-\subsection{Continuous Thread Migration}
+%TODO: discuss trends
 
 \begin{table}[H]
     \centering
@@ -1508,9 +1521,25 @@ results are shown in Table ~\ref{tab:contThrMig_2threadsXschq} and Figures
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
+\subsubsection{Event Limited Thread Migration}
 
+As previously discussed, the continuous thread migration approach does not work
+well for NUMA architectures due to memory locality issues.  The thread migration
+scheme was modified to migrate threads between LTSF queues for the first 50
+events a thread executes.  The threads continue to schedule from the same LTSF
+queue they executed the fiftieth event from.  
 
-\subsection{Event Limited Thread Migration}
+While the continous migration scheme is not problematic for the system under
+test, the comparison was made to thoroughly evaluate TSX using this scheme as a
+viable solution to contention.  TSX may also one day become available on NUMA
+architectures.  Further testing would need to be performed, but at least it will
+be known if this solution has any significant impact on contention.  These
+results are shown in Tables ~\ref{tab:xThrMig_2threadsXschq},
+~\ref{tab:xThrMig_3threadsXschq}.  ~\ref{tab:xThrMig_5threadsXschq}, and Figures
+~\ref{fig:xThrMig_timeVSschq_4threads} and
+~\ref{fig:xThrMig_timeVSschq_6threads}.
+
+%TODO: discuss trends
 
 \begin{table}[H]
     \centering
@@ -1569,11 +1598,55 @@ results are shown in Table ~\ref{tab:contThrMig_2threadsXschq} and Figures
     \label{fig:xThrMig_timeVSschq_6threads}
 \end{figure}
 
-\chapter{Conclusions}
+\section{The Splay Tree Implementation}
 
+%TODO: compare individual sync mechs with their respective synch mechs using
+%multiset
 
+\chapter{Discussion}
 
+\section{Conclusions}
 
+This thesis explored the use of Intel's transactional memory implementation,
+Transactional Synchronization Extensions (TSX) in the multi-threaded
+\textsc{warped} PDES kernel to alleviate contention for the pending event set.
+The \textsc{warped} pending event set consists of a global Least Time-Stamped
+First (LTSF) queue and local event set queues for each LP.  The LTSF queue, the
+processed queues, and unprocessed queues were modified to use various
+synchronization mechanisms as a stand alone solution to contention.  Performance
+increased when the TSX Hardware Lock Elision interface was used.
+
+To further alleviate contention, multiple LTSF queues were used in the
+simulation.
+%TODO: talk about how it didn't help that much
+
+Another attempt to alleviate contention with multiple LTSF queues was the
+migration of threads between LTSF queues.
+
+\section{Future Work}
+
+\subsection{LTSF Queue Implementation}
+
+The LTSF queue was only implemented with two different data structures in this
+study.  The ladder queue implementation was still being developed at the time of
+this writing. 
+
+\subsection{Transactionally Designed Critical Sections}
+
+\textsc{warped} was not designed with transactional memory in mind.  The
+critical sections described above were designed based on the notion that they
+would be protected by locks and executed sequentially by the threads.
+Transactional memory changes that mindset.  Programming with concurrency in mind
+could allow transactional memory to perform more effectively.
+
+\subsection{More Models}
+
+At the time of this study, only the epidemic simulation model was working well
+enough to be tested.  Several other models have been developed for
+\textsc{warped}, such as a RAID model and several circuit simulation models, but
+are going through rigorous development.  Future studies should explore other
+models as the very nature of the model could impact the performance of TSX in
+any configuration described above.
 
 \newpage
 \bibliographystyle{abbrv}
