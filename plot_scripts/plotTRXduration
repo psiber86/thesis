@@ -8,8 +8,8 @@ else
     filename=$(echo "$filenameEXT" | sed 's/\(.*\).txt$/\1/g')
 
     # write gnuplot.gpi file for 1schQ 
-    echo "set term pngcairo dashed" > "$filename.gpi"
-    echo "set output \"$filename.png\"" >> "$filename.gpi"
+    echo "set terminal pdf" > "$filename.gpi"
+    echo "set output \"$filename.pdf\"" >> "$filename.gpi"
     echo "set key left top" >> "$filename.gpi"
     echo "set logscale x" >> "$filename.gpi"
     echo "set xrange [1000:1000000]" >> "$filename.gpi"
@@ -22,5 +22,5 @@ else
     gnuplot "$filename.gpi"
 
     rm *.gpi
-    mv *.png ../figures/
+    mv *.pdf ../figures/
 fi

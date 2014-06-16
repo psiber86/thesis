@@ -8,8 +8,8 @@ else
     filename=$(echo "$filenameEXT" | sed 's/\(.*\).txt$/\1/g') 
 
     # write gnuplot.gpi file for 4thread 
-    echo "set term pngcairo dashed" > "$filename.gpi"
-    echo "set output \"$filename.png\"" >> "$filename.gpi"
+    echo "set terminal pdf" > "$filename.gpi"
+    echo "set output \"$filename.pdf\"" >> "$filename.gpi"
     echo "set key right top" >> "$filename.gpi"
     echo "set style line 1 lt 1 lc rgb \"red\" lw 1" >> "$filename.gpi"
     echo "set style line 2 lt 2 lc rgb \"orange\" lw 1" >> "$filename.gpi"
@@ -46,5 +46,5 @@ else
     gnuplot "$filename.gpi"
 
     rm *.gpi
-    mv *.png ../figures/
+    mv *.pdf ../figures/
 fi 

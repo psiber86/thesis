@@ -11,8 +11,8 @@ else
     schq1_upper=11
     
     # write gnuplot.gpi file for 1schQ 
-    echo "set term pngcairo dashed" > "$filename-1schQ.gpi"
-    echo "set output \"notsx_profile.png\"" >> "$filename-1schQ.gpi"
+    echo "set terminal pdf" > "$filename-1schQ.gpi"
+    echo "set output \"notsx_profile.pdf\"" >> "$filename-1schQ.gpi"
     echo "set key right top" >> "$filename-1schQ.gpi"
     echo "set xrange [1:7]" >> "$filename-1schQ.gpi"
     echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-1schQ.gpi"
@@ -29,5 +29,5 @@ else
     gnuplot "$filename-1schQ.gpi"
 
     rm *.gpi
-    mv *.png ../figures/
+    mv *.pdf ../figures/
 fi

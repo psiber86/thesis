@@ -1,0 +1,144 @@
+#!/bin/bash
+
+if [ $# -lt 4 ]; then
+    echo "usage: ./plotVSschedq_Xthreads </path/to/data/file.MultiSet> </path/to/data/file.SplayTree> <static|dynamic> <std|hle|rtm-1retry|rtm-9retry|rtm-19retry>"
+else
+    filenameEXT=$(basename "$1")
+    title=$(echo "$filenameEXT" | sed 's/.*-\(.*\)$/\1/g')
+    filename=$(echo "$filenameEXT" | sed 's/\(.*\)-.*.txt$/\1/g') 
+
+    if [ $3 == "static" ]; then
+        four_lo=15
+        four_hi=18
+        six_lo=24
+        six_hi=28
+    elif [ $3 == "dynamic" ]; then
+        three_lo=11
+        three_hi=14
+        four_lo=16
+        four_hi=20
+        five_lo=22
+        five_hi=27
+        six_lo=29
+        six_hi=35
+        seven_lo=37
+        seven_hi=48
+    else 
+        echo $3
+        echo "invalid option"
+        exit
+    fi
+
+    if [ $4 == "std" ]; then
+        data=2
+        err=3
+    elif [ $4 == "hle" ]; then
+        data=4
+        err=5
+    elif [ $4 == "rtm-1retry" ]; then
+        data=6
+        err=7
+    elif [ $4 == "rtm-9retry" ]; then
+        data=8
+        err=9
+    elif [ $4 == "rtm-19retry" ]; then
+        data=10
+        err=11
+    else
+        echo $4
+        echo "invalid option"
+        exit
+    fi
+
+    if [ $2 == "dynamic" ]; then
+        echo "set terminal pdf" > "$filename-msVSst-3thread-$4.gpi"
+        echo "set output \"$filename-msVSst-3thread-$4.pdf\"" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set key top left" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set xrange [1:3]" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set xlabel 'Number of LTSF Queues'" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "plot \"<(sed -n '$three_lo,${three_hi}p' $1)\" using 1:$data:$err title 'multi-set' with lines ls 1, \\" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 1, \\" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "\"<(sed -n '$three_lo,${three_hi}p' $2)\" using 1:$data:$err title 'splay tree' with lines ls 2, \\" >> "$filename-msVSst-3thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 2" >> "$filename-msVSst-3thread-$4.gpi"
+        
+        # perform actual plotting
+        gnuplot "$filename-msVSst-3thread-$4.gpi"
+    fi
+
+    # write gnuplot.gpi file for 4thread 
+    echo "set terminal pdf" > "$filename-msVSst-4thread-$4.gpi"
+    echo "set output \"$filename-msVSst-4thread-$4.pdf\"" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set key top left" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set xrange [1:4]" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set xlabel 'Number of LTSF Queues'" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "plot \"<(sed -n '$four_lo,${four_hi}p' $1)\" using 1:$data:$err title 'multi-set' with lines ls 1, \\" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "'' using 1:$data:$err notitle with yerrorbars ls 1, \\" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "\"<(sed -n '$four_lo,${four_hi}p' $2)\" using 1:$data:$err title 'splay tree' with lines ls 2, \\" >> "$filename-msVSst-4thread-$4.gpi"
+    echo "'' using 1:$data:$err notitle with yerrorbars ls 2" >> "$filename-msVSst-4thread-$4.gpi"
+    
+    # perform actual plotting
+    gnuplot "$filename-msVSst-4thread-$4.gpi"
+
+    if [ $2 == "dynamic" ]; then
+        echo "set terminal pdf" > "$filename-msVSst-5thread-$4.gpi"
+        echo "set output \"$filename-msVSst-5thread-$4.pdf\"" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set key top left" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set xrange [1:3]" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set xlabel 'Number of LTSF Queues'" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "plot \"<(sed -n '$five_lo,${five_hi}p' $1)\" using 1:$data:$err title 'multi-set' with lines ls 1, \\" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 1, \\" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "\"<(sed -n '$five_lo,${five_hi}p' $2)\" using 1:$data:$err title 'splay tree' with lines ls 2, \\" >> "$filename-msVSst-5thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 2" >> "$filename-msVSst-5thread-$4.gpi"
+        
+        # perform actual plotting
+        gnuplot "$filename-msVSst-5thread-$4.gpi"
+    fi
+
+    # write gnuplot.gpi file for 4thread 
+    echo "set terminal pdf" > "$filename-msVSst-6thread-$4.gpi"
+    echo "set output \"$filename-msVSst-6thread-$4.pdf\"" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set key top left" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set xrange [1:4]" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set xlabel 'Number of LTSF Queues'" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "plot \"<(sed -n '$six_lo,${six_hi}p' $1)\" using 1:$data:$err title 'multi-set' with lines ls 1, \\" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "'' using 1:$data:$err notitle with yerrorbars ls 1, \\" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "\"<(sed -n '$six_lo,${six_hi}p' $2)\" using 1:$data:$err title 'splay tree' with lines ls 2, \\" >> "$filename-msVSst-6thread-$4.gpi"
+    echo "'' using 1:$data:$err notitle with yerrorbars ls 2" >> "$filename-msVSst-6thread-$4.gpi"
+    
+    # perform actual plotting
+    gnuplot "$filename-msVSst-6thread-$4.gpi"
+
+
+    if [ $2 == "dynamic" ]; then
+        echo "set terminal pdf" > "$filename-msVSst-7thread-$4.gpi"
+        echo "set output \"$filename-msVSst-7thread-$4.pdf\"" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set key top left" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set xrange [1:3]" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set xlabel 'Number of LTSF Queues'" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "plot \"<(sed -n '$seven_lo,${seven_hi}p' $1)\" using 1:$data:$err title 'multi-set' with lines ls 1, \\" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 1, \\" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "\"<(sed -n '$seven_lo,${seven_hi}p' $2)\" using 1:$data:$err title 'splay tree' with lines ls 2, \\" >> "$filename-msVSst-7thread-$4.gpi"
+        echo "'' using 1:$data:$err notitle with yerrorbars ls 2" >> "$filename-msVSst-7thread-$4.gpi"
+        
+        # perform actual plotting
+        gnuplot "$filename-msVSst-7thread-$4.gpi"
+    fi
+
+    rm *.gpi
+    mv *.pdf ../figures/
+fi

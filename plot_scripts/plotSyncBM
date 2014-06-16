@@ -8,8 +8,8 @@ else
     filename=$(echo "$filename" | sed 's/\(.*\).txt$/\1/g')
 
 
-    echo "set terminal postscript eps enhanced 14" > "$1.gpi"
-    echo "set output \"SyncBM.eps\"" >> "$1.gpi"
+    echo "set terminal pdf" > "$1.gpi"
+    echo "set output \"SyncBM.pdf\"" >> "$1.gpi"
     echo "set style data histogram" >> "$1.gpi"
     echo "set style histogram errorbars gap 2 lw 1" >> "$1.gpi"
     echo "set style fill solid border -1" >> "$1.gpi"
@@ -25,5 +25,5 @@ else
 
     rm *../data/*.gpi
     rm *.gpi
-    mv *.eps ../figures/
+    mv *.pdf ../figures/
 fi
