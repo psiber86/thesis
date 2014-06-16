@@ -1807,15 +1807,26 @@ synchronization mechanisms.
 HLE clearly improves the simulation runtime of the \textsc{warped}.  While the
 various configurations may not reduce contention as much as hoped, HLE reduced
 simulation runtime as much as 20\% in some cases.  RTM did not fare as well.
-MOre often than not, the simulation performance using RTM was comparable to the
+More often than not, the simulation performance using RTM was comparable to the
 standard synchronization mechansism.  RTM required more overhead to maintain
 statistics for the retry algorithm.  While the retry algorithm meant well, it
 did not improve the performance of RTM as hoped.  
 
-%TODO: talk about how it didn't help that much
+Increasing the number of LTSF queues from 1 to 2 usually resulted in reduced
+contention and thus improved performance.  Increasing the LTSF queue to anything
+greater than 2 usually resulted in performance degradation in the migration
+schemes involving static thread assignment.  This is due to the
+lack of adequate load balancing procedures.  The continuous migration scheme did
+show performance improvements increasing the LTSF queue up to 4, but leveled
+off with any number of LTSF queues greater than 4.  
 
-Another attempt to alleviate contention with multiple LTSF queues was the
-migration of threads between LTSF queues.
+The multi-set data structure performed better than splay tree data structure
+when using TSX synchronization mechanisms.  The splay tree usually has to
+traverse the whole tree for the least time-stamped event, or at least to ensure
+the least time-stamped event is being scheduled.  This adds a majority of the
+data in the tree to the read-set of transactions, thus increasing the chances of
+data conflicts and memory overflows with respect to the transactional memory
+tracking.
 
 \section{Future Work}
 
@@ -1823,7 +1834,9 @@ migration of threads between LTSF queues.
 
 The LTSF queue was only implemented with two different data structures in this
 study.  The ladder queue implementation was still being developed at the time of
-this writing. 
+this writing.  The ladder queue performs faster insertions and deletions, as
+well as provides new opportunities for alternative synchronization methods. 
+%I don't know much about this, need some help here.
 
 \subsection{Transactionally Designed Critical Sections}
 
