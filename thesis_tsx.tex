@@ -81,7 +81,7 @@ years, but still suffers from significant lock contention on SMP platforms.  The
 event set is a crucial element to PDES, and its management is critical to simulation
 performance.  This is especially true for optimistically synchronized PDES, such as those
 implementing the Time Warp protocol.  Rather than prevent causality errors, events are
-continually scheduled and executed until a causality error is detected.
+aggressively scheduled and executed until a causality error is detected.
 
 This thesis explores the use of transactional memory as an alternative to conventional
 synchronization mechanisms for managing the pending event set in a time warp synchronized
@@ -90,9 +90,15 @@ transactional memory, TSX, to manage shared access to the pending event set by t
 simulation threads.  In conjunction with transactional memory, other solutions to
 contention are explored such as the use of multiple queues to hold the pending event set
 and the binding of threads to these multiple queues.  The latter is an attempt to
-distribute worker threads that attempt to access the same pending event queue.  Each
-configuration is compared with conventional locking mechanisms to evaluate the performance
-of each in \textsc{warped} to reduce contention for the pending event set.
+decentralize the data structure holding pending event queue and distribute worker threads
+among the decentralized data structure.  For each configuration a comparison between
+conventional locking mechanisms and transactional memory access is performed to evaluate
+each within the \textsc{warped} parallel simulation kernel.  In this testing, evaluation
+of both forms of transactional memory (HLE and RTM) implemented in the Haswell
+architecture were performed.  The results show that RTM generally performs on par with
+conventional mutex locking primitives and that HLE provides consistently better
+performance than conventional locking mechanisms.  HLE frequently outperforms conventional
+locks by as much as 20\%.
 
 \chapter*{Acknowledgments} 
 
@@ -120,51 +126,47 @@ executed by one thread at any given time \cite{os_concepts}.  For example, consi
 multi-threaded application that is designed to operate on a shared two-dimensional array.
 For the sake of simplicity, the programmer uses coarse-grained locking mechanisms to
 control access to the critical section, \emph{e.g.,} a single atomic lock for the entire
-structure.  The critical section reads a single element, performs a calculation, and updates
-the element of the array.  Once a thread enters the critical section, it locks all other
-threads out of the entire array until it has completed its task, thus forcing the
-collection threads to essentially execute sequentially through the critical section even
-when they are accessing completely independent subparts of the array.  This results in
-lock contention, and consequently negatively impacts performance, as threads must now wait
-for the currently executing thread to relinquish access to the shared resource.
+structure.  The critical section reads a single element, performs a calculation, and
+updates the element of the array.  Once a thread enters the critical section, it locks all
+other threads out of the entire array until it has completed its task, thus forcing the
+collection of threads to essentially execute sequentially through the critical section
+even when they are accessing completely independent subparts of the array.  This results
+in lock contention, and consequently negatively impacts performance, as threads must now
+wait for the currently executing thread to relinquish access to the shared resource.
 Programmers can employ more fine-grained locking mechanisms to expose concurrency, such as
 locking individual rows or even individual elements in the previous example.  However,
 this approach is vastly more complicated and error prone \cite{sle_rajwar}; this approach
 requires the programmer to define and maintain a separate lock for each row or each
-element.  Unfortunately, programmers are limited to using static information to 
-decide when threads must execute a critical section sequentially regardless of whether
-coarse-grained or fine-grained locking is used.
+element.  Unfortunately, programmers are limited to using static information to decide
+when threads must execute a critical section regardless of whether coarse-grained or
+fine-grained locking is used.
 
-%%JOSH this organization is not perfect; you describe the use of transactional memory
-%%before defining transactional memory.  consider swapping the next two paragraphs and
-%%rewrite as necessary to facilitate flow of the discussion....alternatively simply take
-%%the idea from the first sentence and meld it with the above paragraph and delete the
-%%remainder (or move it lower in the prose)....
+In the previous example, a scenario arises where one thread will access one element of the
+two dimensional array, while another thread will access a element in an entirely different
+row.  The programmer only knows that any thread can access any given element at any given
+time, and thus locks all elements when one thread is executing the critical
+section. Untapped concurrency can be exposed if the decision to execute a critical section
+made dynamically \cite{intel_prog_ref}.
 
-%%I was going more with a "here is the problem with the conventional approach."
-%%Does it make sense if I rearrange it like this? 
-
-In the previous example, a scenario arises where one thread will access one
-element of the two dimensional array, while another thread will access a element
-in an entirely different row.  The programmer only knows that any thread can
-access any given element at any given time, and thus locks all elements when one
-thread is executing the critical section. Untapped concurrency can be exposed if
-the decision to execute a critical section or wait is made dynamically
-\cite{intel_prog_ref}.  
+%% This paragraph is still highly confusing.  we can leave it for now, but it remains a
+%% poor introduction of transactional memory.  if the reader really needs this
+%% information, your prose would not make it clear to them....  the paragraph below this
+%% is actually a better introduction.
 
 Transactional memory (TM) is a concurrency control mechanism that attempts to eliminate
 the static sequential execution of a critical section by dynamically determining when
-accesses to shared resources can be executed concurrently \cite{sle_rajwar}.  In the previous
-example, instead of using locks, the programmer identifies the critical section as a
-transactional region (these terms, critical region and transaction, will be used
-interchangeably hereafter).  As the threads enter the transactional region, they attempt
-to transactionally execute the critical section.  The TM system records memory accesses
-as the transactions execute and finds that the transactions operate on independent regions
-of the data structure, \emph{i.e.,} there are no conflicting memory accesses.  Instead of
-being forced to execute sequentially by the programmer, the threads are allowed to
-concurrently and safely execute the critical section.  Transactional memory is analogous
-to traffic roundabouts whereas conventional synchronization mechanisms are analogous to
-conventional traffic lights \cite{neuling_vid}.
+accesses to shared resources can be executed concurrently \cite{sle_rajwar}.  In the
+previous example, instead of using locks, the programmer identifies the critical section
+as a transactional region (hereafter, the terms, \emph{critical region} and
+\emph{transaction} will be used interchangeably).  As the threads enter the transactional
+region, they attempt to ``atomically'' execute the critical section.  The TM system
+records memory accesses as the transactions execute and finds that the transactions
+operate on independent regions of the data structure, \emph{i.e.,} there are no
+conflicting memory accesses.  Instead of being forced to execute sequentially by the
+programmer, the threads are allowed to concurrently and safely execute the critical
+section.  Transactional memory is analogous to traffic roundabouts whereas conventional
+synchronization mechanisms are analogous to conventional traffic lights
+\cite{neuling_vid}.
 
 Transactional memory operates on the same principles as database transactions
 \cite{tm_2nd}.  The processor atomically commits \emph{all} memory operations of a
@@ -264,26 +266,17 @@ programmer can develop TSX enabled multi-threaded applications.
 
 \section{Transactional Memory Overview}
 
-%%JOSH: ok, so you've basically identified hardware transactional memory.  this is not the
-%%same thing as transactional memory.  it is ok to not address software based
-%%transactional memory, but you need to expressly tell the reader that you are excluding
-%%it from the discussion (probably in the introduction to this chapter; in fact, simply
-%%adding a second (and possibly more) paragraph(s) to it to give a brief intro to
-%%transactional memory (hardware and software) and then exclude further discussion of
-%%software based solutions). 
-
-Transactional memory (TM) is a concurrency control mechanism that dynamically
-determines when two or more threads can safely execute a critical section
-\cite{sle_rajwar}.  The programmer identifies a transactional region, typically
-a critical section, for monitoring.  When the transaction executes, the TM
-system, whether it is implemented in hardware or software, tracks memory
-operations performed within the transactional region to determine whether or not
-two or more transactions conflict with one another, \emph{i.e.,} if any memory
-accesses conflict with one another.  If the threads do not conflict with one
-another, the transactions can be safely and concurrently executed.  If they do
-conflict, the process must abort the transaction and execute the critical
-section non-transactionally, \emph{i.e.,} by serializing execution of the
-critical section with conventional synchronization mechanisms.
+Transactional memory (TM) is a concurrency control mechanism that dynamically determines
+when two or more threads can safely execute a critical section \cite{sle_rajwar}.  The
+programmer identifies a transactional region, typically a critical section, for
+monitoring.  When the transaction executes, the TM system, whether it is implemented in
+hardware or software, tracks memory operations performed within the transactional region
+to determine whether or not two or more transactions conflict with one another,
+\emph{i.e.,} if any memory accesses conflict with one another.  If the threads do not
+conflict with one another, the transactions can be safely and concurrently executed.  If
+they do conflict, the process must abort the transaction and execute the critical section
+non-transactionally, \emph{i.e.,} by serializing execution of the critical section with
+conventional synchronization mechanisms.
 
 %% JOSH: review this rewritten paragraph and verify/correct it accordingly.
 %%As a transaction is executed, the processor buffers the memory write operations and
@@ -298,44 +291,42 @@ critical section with conventional synchronization mechanisms.
 %%commit all of the buffered memory operations, henceforth referred to simply as a
 %%\emph{commit}.
 
-%%Here's a more general description that can be applied to STM
-As a transaction is executed, the memory operations performed within the
-transaction are buffered, specifically write operations.  Write operations will
-only be fully executed when the transaction is complete and safe access has been
-determined.  Safe access is determined by comparing the set of addresses each
-transaction reads from  (called the \emph{read-set} and the set of addresses
-each transation writes to (called the \emph{write-set}).  Each transaction
-builds its own read-set and write-set as it executes.  The TM system compares the read-sets and
-write-sets of all concurrently executing transactions to determine if any memory
-operations conflict.  If the transaction completes execution and the TM system
-has not detected any conflicting memory operations, the transaction atomically
-commits all of hte buffered memory operations, henceforth referred to simply as
-a \emph{commit}.
+%% JOSH: here's a question, what happens if the code accesses a shared memory region
+%% outside of a transaction (say it reads it); does this get considered in the validity of
+%% the transaction?  or would it simply commit?
 
-%% JOSH: i am confused by (i) and (ii)  how are they different?  do you mean that another
-%% thread reads OR writes a memory address from the transaction?
-%% Whoops, they were exactly the same.  Corrected.
+As a transaction is executed, the memory operations performed within the transaction are
+buffered, specifically write operations.  Write operations will only be fully committed
+when the transaction is complete and safe access has been determined.  Safe access is
+determined by comparing the set of addresses each transaction reads from (called the
+\emph{read-set} and the set of addresses each transation writes to (called the
+\emph{write-set}).  Each transaction builds its own read-set and write-set as it executes.
+The TM system compares the read-sets and write-sets of all concurrently executing
+transactions to determine if any memory operations conflict.  If the transaction completes
+execution and the TM system has not detected any conflicting memory operations, the
+transaction atomically commits all of hte buffered memory operations, henceforth referred
+to simply as a \emph{commit}.
+
 Whenever safe access does not occur, the transaction cannot safely continue execution.
-This is referred to as a \emph{data conflict} and only occurs if: (i) one
-transaction attempts to read a location that is part of another transaction's write-set, 
-or (ii) a transaction attempts to write a location that is part of another transaction's
-read-set \cite{intel_prog_ref}.  Once a memory location is written to by a 
-transaction, it cannot be accessed in any way by any other transaction; any
-access by any other transaction results in a race condition.  If such a
-situation arises, all concurrently executing transactions will abort execution,
-henceforth referred to simply as an \emph{abort}.
+This is referred to as a \emph{data conflict} and only occurs if: (i) one transaction
+attempts to read a location that is part of another transaction's write-set, or (ii) a
+transaction attempts to write a location that is part of another transaction's read-set
+\cite{intel_prog_ref}.  Once a memory location is written to by a transaction, it cannot
+be accessed in any way by any other transaction; any access by any other transaction
+results in a race condition.  If such a situation arises, all concurrently executing
+transactions will abort execution, henceforth referred to simply as an \emph{abort}.
 
 Revisiting the example from Chapter \ref{intro}, assume that a programmer uses
-transactional memory synchronization mechanisms to access a shared two dimensional
-array.  Recall that any thread can access any element at any given time.  One thread
-enters the transactional region and begins transactional execution.  It adds the element's
-memory location to its read-set.  At the same time, another thread enters the
-transactional region; however, it accesses a different element.  As the first thread
-continues execution, it adds the element's memory location to its write-set.  The second
-thread adds its element's memory location to its read-set at the same time.  However,
-because the memory location is not part of the first thread's read-set, the threads
-continue executing concurrently.  No memory conflicts are detected in this case and the
-transactions execute successfully and commit.
+transactional memory synchronization mechanisms to access a shared two dimensional array.
+Recall that any thread can access any element at any given time.  One thread enters the
+transactional region and begins transactional execution.  It adds the element's memory
+location to its read-set.  At the same time, another thread enters the transactional
+region; however, it accesses a different element.  As the first thread continues
+execution, it adds the element's memory location to its write-set.  The second thread adds
+its element's memory location to its read-set at the same time.  However, because the
+memory location is not part of the first thread's read-set, the threads continue executing
+concurrently.  No memory conflicts are detected in this case and the transactions execute
+successfully and commit.
 
 Now, assume that another thread enters the transactional region.  It begins its read
 operation on a specific element and adds the element memory address to the read-set.
@@ -370,34 +361,20 @@ Upon abort, all memory operations are discarded to maintain atomicity.
 
 \section{Related Studies}
 
-%% JOSH, your first sentence here should end with a collection of citations to several of
-%% these implementations.  for your second sentence, the reader is asking ``better
-%% portability than what?'' ``cost of performace compared to what?''  
-
-%% JOSH, you also use the term ``sequential'' when i think a better term is ``sequential
-%% execution of threads accessing the critical region'' or ``serial access''.  of course
-%% if the published literature with transactions uses sequential i suppose i could live
-%% with it (although i can't stand it as it reads to me like the program is not executed
-%% in parallel.....not what you really intend to say....
-%% 
-%% If you are referrign to the "sequential version of the the server", that is
-%% the actual sequential, single threaded version
-There have been many implementations of TM systems since its conception
-\cite{yoo_tsx,chitters_tsx,rock_dice,chung_amd,blue_wang,quake_stm,stm_cascaval},
-mostly in software.  Software Transactional Memory (STM) systems implement the
-memory tracking, conflict detection, write buffering etc. in software, as the
-name suggests.  Most systems are implementation specific, but memory tracking is
-typically done through some form of logging.  While this allows transactional
-memory enabled applications to be executed on a variety of platforms,
-performance usually suffers.  Gajinov \emph{et al} performed a study with STM by
-developing a parallel version of the Quake multi-player game server from the
-ground up using OpenMP parallelizations pragmas and atomic blocks
-\cite{quake_stm}.  Their results showed that the logging overhead required for
-STM resulted in execution times that were 4 to 6 times longer than the
-sequential version of the server.  STM in general has been found to result in
-significant slowdown \cite{stm_cascaval}.  Although STM is more widely available
-than HTM, this study dismissed it as a potential solution due to the performance
-reasons discussed above.
+There have been many implementations of TM systems since its conception mostly in software
+\cite{yoo_tsx,chitters_tsx,rock_dice,chung_amd,blue_wang,quake_stm,stm_cascaval}.  As the
+name suggests, Software Transactional Memory (STM) systems implement the memory tracking,
+conflict detection, write buffering and so on in software.  Most systems are
+implementation specific, but memory tracking is typically done through some form of
+logging.  While this allows transactional memory enabled applications to be executed on a
+variety of platforms, performance usually suffers.  Gajinov \emph{et al} performed a study
+with STM by developing a parallel version of the Quake multi-player game server from the
+ground up using OpenMP parallelizations pragmas and atomic blocks \cite{quake_stm}.  Their
+results showed that the logging overhead required for STM resulted in execution times that
+were 4 to 6 times longer than the sequential version of the server.  In general, STM has
+been found to result in significant slowdown \cite{stm_cascaval}.  Although STM is more
+widely available than HTM, its use in this this study was dismissed due to the significant
+performance penalty.
 
 Hardware Transactional Memory (HTM) provides the physical resources necessary to implement
 transactional memory effectively.  Many chip manufacturers have added, or at least sought
@@ -417,15 +394,13 @@ a global mutex.  Their implementation shower 20-25\% increased throughput for wr
 workloads and increased throughput for 50\% read / 50\% write workloads
 \cite{chitters_tsx}.  Wang \emph{et al} studied the performance scalability of a
 concurrent skip-list using TSX Restricted Transactional Memory (RTM).  They compared the
-TSX implementation to a fine-grain locking implementation and a lock-free implementation,
-and found that the performance was comparable to the lock-free implementation without the
+TSX implementation to a fine-grain locking implementation and a lock-free implementation.
+They found that the performance was comparable to the lock-free implementation without the
 added complexity \cite{wang_tsx}.  Yoo \emph{et al} evaluated the performance of TSX using
 high-performance computing (HPC) workloads, as well as in a user-level TCP/IP stack.  They
 measured an average speed up of 1.41x and 1.31x respectively \cite{yoo_tsx}.  The decision
 to use Intel's TSX for this research was based on its wide availability and the
 performance improvements observed in other studies.
-
-%% PHIL, stopped here....
 
 \section{Transactional Synchronization Extensions (TSX)}
 
@@ -433,17 +408,20 @@ Intel's Transactional Synchronization Extensions (TSX) is an extension to the x8
 instruction set architecture that adds support for HTM.  TSX operates in the L1 cache
 using the cache coherence protocol \cite{intel_opt_man}.  It is a best effort
 implementation, meaning it does not guarantee transactions will commit
-\cite{intel_prog_ref}.  TSX has two interfaces: 1) Hardware Lock Elision (HLE), and 2)
+\cite{intel_prog_ref}.  TSX has two interfaces: (1) Hardware Lock Elision (HLE), and (2)
 Restricted Transactional Memory (RTM).  While both operate on the same principles of
 transactional memory, they have subtle differences.  This section discusses some of the
 implementation details of TSX as well as how the programmer utilizes TSX.
 
 \subsection{Hardware Lock Elision (HLE)}\label{sec:hle}
 
-The Hardware Lock Elision (HLE) interface is a legacy-compatible interface
-introducing two instruction prefixes: 1) XACQUIRE and 2) XRELEASE.  XACQUIRE is
-placed before a locking instruction to mark the beginning of a transaction.
-XRELEASE is placed before an unlocking instruction to mark the end of a
+%% JOSH: OK. so i have a qustion.  if one HLE thread fails and falls back to locks, does 
+%% everyone else as well??  you need to make this discussion more clear.
+
+The Hardware Lock Elision (HLE) interface is a legacy-compatible interface introducing two
+instruction prefixes, namely: \texttt{XACQUIRE} and \texttt{XRELEASE}.  \texttt{XACQUIRE}
+is placed before a locking instruction to mark the beginning of a transaction.
+\texttt{XRELEASE} is placed before an unlocking instruction to mark the end of a
 transaction.
 
 These prefixes tell the processor to elide the write operation to the lock variable during
@@ -453,13 +431,13 @@ variable to the transaction's read-set instead of issuing any write requests to 
 \cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus allowing
 those threads to enter the critical section and execute concurrently.  All transactions
 can execute concurrently as long as no transactions abort and explicitly write to the
-lock variable.  If that were to happen, a data conflict technically occurs - one
+lock variable.  If that were to happen, a data conflict technically occurs --- one
 transaction writes to a memory location that is part of another transaction's read-set.
 
-The XRELEASE prefix is placed before the instruction used to release the lock.  It also
-attempts to elide the write associated with the lock release instruction.  If the lock
-release instruction attempts to restore the lock to the value it had prior to the XACQUIRE
-prefixed locking instruction, the write operation on the lock is elided
+The \texttt{XRELEASE} prefix is placed before the instruction used to release the lock.
+It also attempts to elide the write associated with the lock release instruction.  If the
+lock release instruction attempts to restore the lock to the value it had prior to the
+\texttt{XACQUIRE} prefixed locking instruction, the write operation on the lock is elided
 \cite{intel_prog_ref}.  It is at this time that the processor attempts to commit the
 transaction.
 
@@ -469,8 +447,18 @@ memory operations performed within the transaction, return to the locking instru
 resume execution without lock elision, \emph{i.e.,} the write operation will be performed on the
 lock variable.  This guarantees forward progress \cite{intel_prog_ref}.
 
-A general implementation for the HLE software interface is shown in Figure
-~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory model
+%% JOSH: OK, this really does not help the reader.  i do not know how to read the example,
+%% what is &lock, your statement that ``GCC 4.8 and above....'' does not explain anything
+%% to the reader.  what are these items?  besides not knowing what they are, i also do not
+%% know why you or them together (__ATOMIC_HLE_ACQUIRE with __ATOMIC_AQUIRE), also what is
+%% __atomic_exchange_n and why is it needed.  where does the while loop end?  why is it
+%% necessary?  the reader is quite lost.  i assume your description of RTM is equally
+%% vague.  please go through this stuff much more carefully.  it might be helpful to have
+%% a common example that you present that illustrates a traditional locking
+%% implementation, an HLE illustration and an RTM illustration.  
+
+A general implementation for the HLE software interface is shown in
+Figure~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory model 
 parameters in the locking function intrinsic.  GCC 4.8 and above includes support for the
 \texttt{\_\_ATOMIC\_HLE\_ACQUIRE} and \texttt{\_\_ATOMIC\_HLE\_RELEASE} memory models \cite{gcc}.
 
@@ -488,6 +476,8 @@ processor will always perform the write operation on the locking variable and ex
 critical section non-transactionally.  While this interface does nothing for
 multi-threaded applications on legacy hardware, it does allow for easier cross-platform
 code deployment.
+
+%% PHIL, stopped here.....
 
 \subsection{Restricted Transactional Memory (RTM)}\label{sec:rtm}
 
