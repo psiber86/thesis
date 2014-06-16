@@ -1,7 +1,8 @@
 #!/usr/bin/gnuplot
 
-set terminal postscript eps size 3.5,2.62 enhanced color \
-    font 'Helvetica,10' linewidth 4
+#set terminal postscript eps size 3.5,2.62 enhanced color \
+#    font 'Helvetica,10' linewidth 4
+set term pngcairo dashed
 
 reset
 #set key left top
@@ -9,13 +10,14 @@ set xrange ["0":"12"]
 set xtics 1
 set xlabel "Number of Schedule Queues"
 set ylabel "Runtime"
+set key top left
 # i should be able to pick this title out of the data files but cannot.
-set output "plots/epidemic_large_summary.eps"
+#set output "plots/epidemic_large_summary.eps"
 
 
 # these first two lines of each plotting command should be picked up from the commands in the data file, but for some reason it does not
+set output "plots/migComp_4threads.png"
 set xrange ["0":"5"]
-set title "Summary of 4 threads w/ X Schedule Queues"
 plot "summary-threadMigrationComparison.dat" index 3 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 3 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
      "summary-threadMigrationComparison.dat" index 3 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
@@ -23,8 +25,8 @@ plot "summary-threadMigrationComparison.dat" index 3 using 1:2 title 'Lock Stati
      "summary-threadMigrationComparison.dat" index 3 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
      "summary-threadMigrationComparison.dat" index 3 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
+set output "plots/migComp_5threads.png"
 set xrange ["0":"6"]
-set title "Summary of 5 threads w/ X Schedule Queues"
 plot "summary-threadMigrationComparison.dat" index 4 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 4 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
      "summary-threadMigrationComparison.dat" index 4 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
@@ -32,8 +34,8 @@ plot "summary-threadMigrationComparison.dat" index 4 using 1:2 title 'Lock Stati
      "summary-threadMigrationComparison.dat" index 4 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
      "summary-threadMigrationComparison.dat" index 4 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
+set output "plots/migComp_6threads.png"
 set xrange ["0":"7"]
-set title "Summary of 6 threads w/ X Schedule Queues"
 plot "summary-threadMigrationComparison.dat" index 5 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 5 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
      "summary-threadMigrationComparison.dat" index 5 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
@@ -41,8 +43,8 @@ plot "summary-threadMigrationComparison.dat" index 5 using 1:2 title 'Lock Stati
      "summary-threadMigrationComparison.dat" index 5 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
      "summary-threadMigrationComparison.dat" index 5 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
+set output "plots/migComp_7threads.png"
 set xrange ["0":"12"]
-set title "Summary of 7 threads w/ X Schedule Queues"
 plot "summary-threadMigrationComparison.dat" index 6 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 6 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
      "summary-threadMigrationComparison.dat" index 6 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
