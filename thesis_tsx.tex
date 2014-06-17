@@ -212,12 +212,12 @@ discrete event simulator.  In particular, experiments with transactional memory 
 access to the pending event set data structures of the \textsc{warped} parallel discrete
 event simulation enging are examined.
 
-The primary objective of this research is to \emph{modify the \textsc{warped} pending event set
-  locking mechanisms to utilize the underlying hardware support for transactional memory
-  on Intel's Hardware Transactional Memory (HTM) supported Haswell platform}.  The
-principal hypothesis is that making the aforementioned modifications will exposed untapped
-concurrency during simulation execution, thereby improving the performance of \textsc{warped} on
-the Haswell platform.
+The primary objective of this research is to \emph{modify the \textsc{warped} pending
+  event set locking mechanisms to utilize the underlying hardware support for
+  transactional memory on Intel's Hardware Transactional Memory (HTM) supported Haswell
+  platform}.  The principal hypothesis is that making the aforementioned modifications
+will exposed untapped concurrency during simulation execution, thereby improving the
+performance of \textsc{warped} on the Haswell platform.
 
 Due to the wide availability of Intel's HTM supported platforms, it was selected as the
 focus of this research.  Intel's HTM implementation is aptly named Transactional
@@ -245,9 +245,8 @@ Chapter 4 provides a background of the PDES problem space.  It introduces \texts
 and some of the implementation details relevant to this study.  Previous studies with the
 \textsc{warped} pending event set are also briefly discussed.
 
-Chapter 5 discusses how TSX is implemented in \textsc{warped}.  It also provides
-a brief overview of the critical sections utilizing TSX and why TSX will be
-beneficial.
+Chapter 5 discusses how TSX is implemented in \textsc{warped}.  It also provides a brief
+overview of the critical sections utilizing TSX and why TSX will be beneficial.
 
 Chapter 6 provides and discusses the experimental results of this research for several
 different simulation configurations.
@@ -258,6 +257,7 @@ areas of future research.
 
 \chapter{Background}
 
+yaoi1023
 This section provides a high level explanation of how transactional memory operates.  It
 then introduces other implementations, as well as reasons why they were not explored in
 this study.  Next, it provides some examples of related studies with transactional memory,
@@ -301,6 +301,17 @@ conventional synchronization mechanisms.
 %% memory region is accessed outside of a transaction (which I'm not 100% sure what
 %% you mean by that). it will still be added to the transactions read-set for
 %% conflict detection.
+
+%% JOSH: outside of a transaction means exactly that, a memory reference that is not
+%% contained within a transction (critical region).  
+%%
+%% ok, now that we have established that the tracking of memory references outside of a
+%% transaction do indeed happen, i have two comments:
+%% (1) you should revise the prose below to make that fact more clear in your description
+%%     of (at least the haswell implementation of) transactional memory.
+%% (2) would there be any performance benefit of skipping the use of the transaction
+%%     operations for a read to a shared variable?  if so, what can/should we say about
+%%     that?
 
 As a transaction is executed, the memory operations performed within the transaction are
 buffered, specifically write operations.  Write operations will only be fully committed
@@ -422,24 +433,32 @@ implementation details of TSX as well as how the programmer utilizes TSX.
 
 \subsection{Hardware Lock Elision (HLE)}\label{sec:hle}
 
-%% JOSH: OK. so i have a qustion.  if one HLE thread fails and falls back to locks, does 
-%% everyone else as well??  you need to make this discussion more clear.
-
 The Hardware Lock Elision (HLE) interface is a legacy-compatible interface introducing two
-instruction prefixes, namely: \texttt{XACQUIRE} and \texttt{XRELEASE}.  \texttt{XACQUIRE}
-is placed before a locking instruction to mark the beginning of a transaction.
-\texttt{XRELEASE} is placed before an unlocking instruction to mark the end of a
-transaction.
+instruction prefixes, namely: 
+
+\vspace*{-\bigskipamount}
+\begin{singlespace}
+\begin{enumerate}
+  \item \texttt{XACQUIRE} and 
+  \item \texttt{XRELEASE}.
+\end{enumerate}
+\end{singlespace}
+
+\noindent
+The \texttt{XACQUIRE} prefix is placed before a locking instruction to mark the beginning
+of a transaction.  \texttt{XRELEASE} is placed before an unlocking instruction to mark the
+end of a transaction.
 
 These prefixes tell the processor to elide the write operation to the lock variable during
-lock acquisition/release.  When the processor encounters an XACQUIRE prefixed lock
-instruction, it transitions to transactional execution.  Specifically, it adds the lock
-variable to the transaction's read-set instead of issuing any write requests to the lock
-\cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus allowing
-those threads to enter the critical section and execute concurrently.  All transactions
-can execute concurrently as long as no transactions abort and explicitly write to the
-lock variable.  If that were to happen, a data conflict technically occurs --- one
-transaction writes to a memory location that is part of another transaction's read-set.
+lock acquisition/release.  When the processor encounters an \texttt{XACQUIRE} prefixed
+lock instruction, it transitions to transactional execution.  Specifically, it adds the
+lock variable to the transaction's read-set instead of issuing any write requests to the
+lock \cite{intel_prog_ref}.  To other threads, the lock will appear to be free, thus
+allowing those threads to enter the critical section and execute concurrently.  All
+transactions can execute concurrently as long as no transactions abort and explicitly
+write to the lock variable.  If that were to happen, a data conflict technically occurs
+--- one transaction writes to a memory location (the lock) that is part of another
+transaction's read-set.
 
 The \texttt{XRELEASE} prefix is placed before the instruction used to release the lock.
 It also attempts to elide the write associated with the lock release instruction.  If the
@@ -451,37 +470,27 @@ transaction.
 However, if the transaction aborts for any reason, the region will be re-executed
 non-transactionally.  If the processor encounters an abort condition, it will discard all
 memory operations performed within the transaction, return to the locking instruction, and
-resume execution without lock elision, \emph{i.e.,} the write operation will be performed on the
-lock variable.  If any other thread is executing the same transactional region,
-those transactions will also abort.  The aborted transaction thread performs an
-explicit write on the lock, resulting in a data conflict for any other
-transaction as the lock variable is part of the other transaction's read-set.
-The re-execution of the critical section using conventional synchronization is
-necessary to guarantee forward progress \cite{intel_prog_ref}.
+resume execution without lock elision, \emph{i.e.,} the write operation will be performed
+on the lock variable.  If any other thread is executing the same transactional region,
+those transactions will also abort.  The aborted transaction thread performs an explicit
+write on the lock, resulting in a data conflict for any other transaction as the lock
+variable is part of the other transaction's read-set.  The re-execution of the critical
+section using conventional synchronization is necessary to guarantee forward progress
+\cite{intel_prog_ref}.
 
-%% JOSH: OK, this really does not help the reader.  i do not know how to read the example,
-%% what is &lock, your statement that ``GCC 4.8 and above....'' does not explain anything
-%% to the reader.  what are these items?  besides not knowing what they are, i also do not
-%% know why you or them together (__ATOMIC_HLE_ACQUIRE with __ATOMIC_AQUIRE), also what is
-%% __atomic_exchange_n and why is it needed.  where does the while loop end?  why is it
-%% necessary?  the reader is quite lost.  i assume your description of RTM is equally
-%% vague.  please go through this stuff much more carefully.  it might be helpful to have
-%% a common example that you present that illustrates a traditional locking
-%% implementation, an HLE illustration and an RTM illustration.  
+An example of a standard locked critical section using the x86 atomic exchange instruction
+is shown in Figure~\ref{fig:lock_interface} (as a reference for the TSX HLE interfaces
+shown below).  The \texttt{\_\_atomic\_exchange\_n(type *ptr, type val, int memmodel}
+intrinsic implements the atomic exchange operation as the name suggests.  It writes
+\texttt{val} into \texttt{ptr} and returns the previous contents of \texttt{ptr}.  The
+most important parameter is \texttt{memmodel}; it specifies synchronization requirements
+between threads.  For instance, the \_\_ATOMIC\_ACQUIRE memory model synchronizes the
+local thread with a release semantic store from another thread \cite{gcc}.  Essentially,
+when another thread executes a lock release, the local thread will execute the lock
+acquire.  The while loop further ensures the lock is free before it is acquired (the
+while loop repeats the \texttt{\_\_atomic\_exchange\_n} operation until the lock is
+aquired). 
 
-The standard locked critical section using the atomic exchange instruction is
-shown in Figure ~\ref{fig:lock_interface} as a reference for the TSX HLE
-interfaces shown below.  The \texttt{\_\_atomic\_exchange\_n(type *ptr, type
-val, int memmodel} intrinsic implements the atomic exchange operation as the
-name suggests.  It writes \texttt{val} into \texttt{ptr} and returns the
-previous contents of \texttt{ptr}.  The most important parameter is
-\texttt{memmodel}; it specifies synchronization requirements between threads.
-For instance, the \_\_ATOMIC\_ACQUIRE memory model synchronizes the local thread
-with a release semantic store from another thread \cite{gcc}.  Essentially, when
-another thread executes a lock release, the local thread will execute the lock
-acquire.  The while loop further ensures the lock was free before it is acquired.
-
-\linespread{1.0}
 \begin{figure}
 \begin{verbatim}
 /* Acquire lock */
@@ -495,21 +504,18 @@ while(__atomic_exchange_n(&lock, 1, __ATOMIC_ACQUIRE)):
 /* Free lock */
 __atomic_store_n(&lock, 0,__ATOMIC_RELEASE);
 \end{verbatim}
-    \caption{\textbf{Standard Atomic Lock Implementation}}
-    \label{fig:lock_interface}
+    \caption{\textbf{Standard Atomic Lock Implementation}}\label{fig:lock_interface} 
 \end{figure}
 
-To enable HLE synchronization, the programmer merely adds the HLE memory models
-to the existing locking intrinsics.  The \_\_ATOMIC\_HLE\_ACQUIRE tells the
-thread to execute an XACQUIRE prefixed lock acquire instruction when another
-thread releases the lock.  The combination of memory models,
-\texttt{\_\_ATOMIC\_HLE\_ACQUIRE|\_\_ATOMIC\_HLE\_ACQUIRE)} allows for the
-locking instructions to be executed with or without elision.  The local thread
-can be synchronized to a XRELEASE prefixed lock release instruction or a
-standard lock release instruction.  A general implementation for the HLE
-software interface is shown in Figure ~\ref{fig:hle_interface}. 
+To enable HLE synchronization, the programmer merely adds the HLE memory models to the
+existing locking intrinsics (Figure~\ref{fig:hle_interface}).  The
+\_\_ATOMIC\_HLE\_ACQUIRE tells the thread to execute an \texttt{XACQUIRE} prefixed lock
+acquire instruction when another thread releases the lock.  The combination of memory
+models, \texttt{\_\_ATOMIC\_HLE\_ACQUIRE|\_\_ATOMIC\_HLE\_ACQUIRE)} allows for the locking
+instructions to be executed with or without elision.  The local thread can be synchronized
+to a \texttt{XRELEASE} prefixed lock release instruction or a standard lock release
+instruction.
 
-\linespread{1.0}
 \begin{figure}
 \begin{verbatim}
 /* Acquire lock with lock elision if possible */
@@ -523,67 +529,64 @@ while(__atomic_exchange_n(&lock, 1, __ATOMIC_HLE_ACQUIRE|__ATOMIC_ACQUIRE)):
 /* Free lock with lock elision if possible */
 __atomic_store_n(&lock, 0, __ATOMIC_HLE_RELEASE|__ATOMIC_RELEASE);
 \end{verbatim}
-    \caption{\textbf{Generic HLE Software Implemenation}}
-    \label{fig:hle_interface}
+    \caption{\textbf{Generic HLE Software Implemenation}}\label{fig:hle_interface}
 \end{figure}
 
 HLE is legacy compatible.  Code utilizing the HLE interface can be executed on legacy
-hardware, but the HLE prefixes will be ignored \cite{intel_prog_ref}, \emph{i.e.,} the
-processor will always perform the write operation on the locking variable and execute the
-critical section non-transactionally.  While this interface does nothing for
-multi-threaded applications on legacy hardware, it does allow for easier cross-platform
-code deployment.
-
-%% PHIL, stopped here.....
+hardware, but the HLE prefixes will be ignored \cite{intel_prog_ref} and the processor
+will always perform the write operation on the locking variable and execute the critical
+section non-transactionally.  While this interface does nothing for multi-threaded
+applications on legacy hardware, it does allow for easier cross-platform code deployment.
 
 \subsection{Restricted Transactional Memory (RTM)}\label{sec:rtm}
 
-The Restricted Transactional Memory (RTM) interface introduces four new instructions: 1)
-XBEGIN, 2) XEND, 3) XABORT, and 4) XTEST.  XBEGIN marks the start of a transaction, while
-XEND makes the end of a transaction.  XABORT is used by the programmer to manually abort a
-transaction.  XTEST can be used to test if the processor is executing transactionally or
-non-transactionally.
+The Restricted Transactional Memory (RTM) interface for HTM introduces four new
+instructions, namely: 
 
-The XBEGIN instruction transitions the processor into transactional execution
-\cite{intel_prog_ref}.  Note that the XBEGIN instruction does not jead the
-locking variable as HLE does.  Therefore, the programmer should manually add the
-locking variable to the transaction's read-set by checking if the lock is free
-at the start of the transaction.  If it is free, the transaction can execute
-safely.  Once execution reaches the XEND instruction, the processor will attempt
-to commit the transaction.
+\vspace*{-\bigskipamount}
+\begin{singlespace}
+\begin{enumerate}
+  \item \texttt{XBEGIN}, 
+  \item \texttt{XEND}, 
+  \item \texttt{XABORT}, and 
+  \item \texttt{XTEST}.
+\end{enumerate}
+\end{singlespace}
+
+\noindent
+The \texttt{XBEGIN} instruction marks the start of a transaction, while the \texttt{XEND}
+instruction makes the end of a transaction.  The \texttt{XABORT} instruction is used by
+the programmer to manually abort a transaction.  Finally, the \texttt{XTEST} instruction
+can be used to test if the processor is executing transactionally or non-transactionally.
+
+The \texttt{XBEGIN} instruction transitions the processor into transactional execution
+\cite{intel_prog_ref}.  Note that the \texttt{XBEGIN} instruction does not elide the
+locking variable as HLE does.  Therefore, the programmer should manually add the locking
+variable to the transaction's read-set by checking if the lock is free at the start of the
+transaction.  If it is free, the transaction can execute safely.  Once execution reaches
+the \texttt{XEND} instruction, the processor will attempt to commit the transaction.
 
 As previously mentioned, the transaction can abort for many reasons.  One case specific to
 RTM occurs when the lock is not free upon entering the transaction.  In this case, the
-programmer uses the XABORT instruction to explicitly abort the transaction.  But no matter
-the reason for the abort, execution jumps to the fallback instruction address
-\cite{intel_prog_ref}.  This address is an operand of the XBEGIN instruction.
+programmer uses the \texttt{XABORT} instruction to explicitly abort the transaction.  But
+no matter the reason for the abort, execution jumps to the fallback instruction address
+\cite{intel_prog_ref}.  This address is specified as an operand of the \texttt{XBEGIN}
+instruction.
 
 It is this fallback path that makes RTM a much more flexible interface than HLE because it
-is entirely at the discretion of the programmer.  Even so, the programmer must still
-provide an abort path that guarantees forward progress \cite{intel_prog_ref}.  Therefore,
-the abort path should use explicit synchronization, \emph{e.g.,} acquire the lock, to
-ensure forward progress. However, the programmer can use this abort path to tune the
-performance of RTM enabled applications.  For instance, a retry routine can be used to
-specify how many times the processor should attempt to enter transactional execution
-before using explicit synchronization.  Furthermore, the EAX register reports information
-about the condition of an abort \cite{intel_prog_ref}, such as whether or not the abort
-was caused by the XABORT instruction, a data conflict, etc.  The programmer can use this
-information to make more informed decisions regarding reattempting transactional
+is entirely at the discretion of the programmer to determine precisely what happens on
+failure of a transaction.  Even so, the programmer must still provide an abort path that
+guarantees forward progress \cite{intel_prog_ref}.  Therefore, the abort path should use
+explicit synchronization, \emph{e.g.,} acquire the lock, to ensure forward progress.
+However, the programmer can use this abort path to tune the performance of RTM enabled
+applications.  For instance, a retry routine can be used to specify how many times the
+processor should attempt to enter transactional execution before using explicit
+synchronization.  Furthermore, the \texttt{EAX} register reports information about the
+condition of an abort \cite{intel_prog_ref}, such as whether or not the abort was caused
+by the \texttt{XABORT} instruction, a data conflict, and so on.  The programmer can use
+this information to make more informed decisions regarding reattempting transactional
 execution.
 
-The RTM implementation is more involved because it uses entirely new
-instructions.  The general algorithm for the RTM software interface is shown in
-Figure ~\ref{fig:rtm_interface}.  The programmer moves the existing locking
-mechanism inside an else clause of the xbegin if statement, which will determine
-if the processor transitions to transactional execution or takes the abort path.
-As previously mentioned, the processor will also return to this point should the
-transaction abort in the middle of execution. Moving the locking mechanism into
-the RTM abort path ensures that the abort path ultimately uses explicit
-synchronization and guarantees forward progress.  GCC 4.8 and above includes
-support for the \texttt{\_xbegin}, \texttt{\_xabort}, and \texttt{\_xend}
-intrinsics to implement the associated instructions \cite{gcc}.
-
-\linespread{1.0}
 \begin{figure}
 \begin{verbatim}
 if (_xbegin() == _XBEGIN_STARTED) {
@@ -608,47 +611,67 @@ if (lock is free) {
     release lock
 }
 \end{verbatim}
-    \caption{\textbf{Generic RTM Software Implementation}}
-    \label{fig:rtm_interface}
+    \caption{\textbf{Generic RTM Software Implementation}}\label{fig:rtm_interface}
 \end{figure}
+
+The RTM implementation is more involved because it uses entirely new instructions.  The
+general algorithm for the RTM software interface is shown in
+Figure~\ref{fig:rtm_interface}.  The programmer moves the existing locking mechanism
+inside an else clause of the \texttt{XBEGIN} if statement, which will determine if the
+processor transitions to transactional execution or takes the abort path.  As previously
+mentioned, the processor will also return to this point should the transaction abort in
+the middle of execution.  Moving the locking mechanism into the RTM abort path ensures
+that the abort path ultimately uses explicit synchronization and guarantees forward
+progress.  GCC 4.8 and above includes support for the \texttt{\_xbegin},
+\texttt{\_xabort}, and \texttt{\_xend} intrinsics to implement the associated instructions
+\cite{gcc}.
 
 While RTM is a much more flexible interface than HLE, it can only be used on supported
 Haswell platforms.  If a legacy device attempts to execute one of the RTM instructions, it
-will throw a General Protection Fault.  It should be noted that execution of the XEND
-instruction outside of a transaction will result in a General Protection Fault as well
-\cite{intel_opt_man}.
+will throw a General Protection Fault.  It should be noted that execution of the
+\texttt{XEND} instruction outside of a transaction will result in a General Protection
+Fault as well \cite{intel_opt_man}.
 
 \chapter{Practical Programming with TSX}
 
 Before implementing TSX in the \textsc{warped} simulation kernel, a more in depth
-evaluation of its capabilities needed to be performed.  One of the disadvantages
-of HTM is the physical limitations of the hardware.  This section evaluates
-practical programming techniques to consider when using TSX to ensure optimal
-performance.  Custom benchmarks were developed to evaluate these various
-constraints.  All benchmarks were run on a system with an Intel i7-4770 running
-at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way, set associative L1 cache
-and a 256 L2 cache.  Each cache line is 64 bytes.  This information was verified
-using common Unix commands.  All measurements were performed ten times and
-averaged.
+evaluation of its capabilities needed to be performed.  One of the disadvantages of HTM is
+the physical limitations of the hardware.  This section evaluates practical programming
+techniques to consider when using TSX to ensure optimal performance.  Custom benchmarks
+were developed to evaluate these various constraints.  All benchmarks were run on a system
+with an Intel i7-4770 running at 3.4GHz with 32 GB RAM.  Each core has a 32KB 8-way, set
+associative L1 cache and a 256 L2 cache.  Each cache line is 64 bytes.  This information
+was verified using common Unix commands.  All measurements were performed ten times and
+averaged.  This discussion of this chapter is directly related to the Intel Haswell
+i7-4770 processor implementation of HTM.  Generalization of these results and the
+corresponding discussion to other processor implementations of HTM should not be made. 
 
 \section{Memory Organization}
 
 TSX maintains a read-set and a write-set with the granularity of a cache line
 \cite{intel_prog_ref}.  During transactional execution, TSX constructs a record of memory
 addresses read from and a record of memory addresses written to.  A data conflict occurs
-if another thread tries to read an address in the write-set or tries to write an address
-in the read-set.  This definition can be expanded to state that \emph{a data conflict
-  occurs if: 1) another thread attempts to read a memory address that occupies the same
-  cache line as a memory address to be written, or 2) another thread attempts to write a
-  memory address that occupies the same cache line as a memory address that has been read
-  from.}
+if another thread attempts to (i) read an address in the write-set or (ii) write an
+address in the read-set.  This definition can be expanded to state that \emph{a data
+  conflict} occurs if:
 
-Therefore, aborts can be caused by data occupying the same cache line, especially false
-sharing, \emph{i.e.,} the occupation of the same cache line by unrelated data
-\cite{intel_opt_man}.  To mitigate the effects of shared cache line data conflicts, the
-programmer must be conscientious of how data is organized in memory.  For instance, the
-data in the previously discussed benchmarks is optimally organized by allocating
-individual elements to 64 bytes, \emph{i.e.,} a single cache line.
+\vspace*{-\bigskipamount}
+\begin{singlespace}
+\begin{enumerate}
+  \item another thread attempts to read a memory address that occupies the same cache line
+    as a memory address to be written, or
+  \item another thread attempts to write a memory address that occupies the same cache
+    line as a memory address that has been read from.
+\end{enumerate}
+\end{singlespace}
+
+\noindent
+Therefore, aborts can be caused by data occupying the same cache line, essentially
+reporting a false conflict on the shared data \cite{intel_opt_man}.  To mitigate the
+effects of shared cache line data conflicts, the programmer must be conscientious of how
+data is organized in memory.  For instance, the data in the previously discussed
+benchmarks is optimally organized by allocating individual elements to 64 bytes,
+\emph{i.e.,} a single cache line.
 
 Furthermore, data elements should be aligned to cache line boundaries to ensure that each
 element is limited to exactly one cache line.  If a data element crosses a cache line
@@ -657,43 +680,38 @@ now has to check against two cache lines.
 
 \section{Transaction Size}
 
-TSX maintains a transaction read-set and write-set in the L1 cache
-\cite{intel_opt_man}.  The size of these memory sets is therefore limited by the
-size of the L1 cache.  Hyper-threading further restricts the size of the
-transaction data sets because the L1 cache is shared between two threads on the
-same core \cite{intel_opt_man}.  Based on granularity of the read-set and
-write-set stated above, transaction size is defined as the number of cache lines
-accessed within a transaction.
+TSX maintains a transaction read-set and write-set in the L1 cache \cite{intel_opt_man}.
+The size of these memory sets is therefore limited by the size of the L1 cache.
+Hyper-threading further restricts the size of the transaction data sets because the L1
+cache is shared between two threads on the same core \cite{intel_opt_man}.  Based on
+granularity of the read-set and write-set stated above, the transaction size is defined as
+the number of cache lines accessed within a transaction.
 
-The first two benchmarks evaluate the size restrictions of a transaction's
-read-set and write-set, \emph{i.e.,} how many cache lines can a transaction
-track in each set during transactional execution.  The benchmarks access a
-shared array of custom structures.  Each structure is allocated to occupy an
-entire cache line and aligned to the nearest cache line boundary using the GCC
-align attribute.  This ensures that memory is optimally organized as previously
-discussed.  
+The first two benchmarks evaluate the size restrictions of a transaction's read-set and
+write-set, \emph{i.e.,} how many cache lines can a transaction track in each set during
+transactional execution.  The benchmarks access a shared array of custom structures.  Each
+structure is allocated to occupy an entire cache line and aligned to the nearest cache
+line boundary using the GCC align attribute.  This ensures that memory is optimally
+organized as previously discussed.
 
-The objective of the first benchmark is to evaluate the read and write-set sizes
-for a transaction being executed by a single thread on a single core.
-Furthermore, only one thread is used to avoid data conflicts.  The critical
-section performs a certain number of strictly read or strictly write operations
-in the body of a loop.  The loop increments an array index to a limit specified
-by the transaction size being tested, and the body of the loop accesses every
-single element in that range.  This is repeated one hundred times.  The number
-of elements, or cache lines, accessed during the critical section is doubled
-with every iteration of the main test loop.  Figure~\ref{fig:trx_size} shows the
-abort rate, (\# aborts / 100 operations), as the number of cache lines accessed
-within the transaction is increased.  The read-set data points represent
-strictly read operations while the write-set data points represent strictly
-write operations.
+The objective of the first benchmark is to evaluate the read and write-set sizes for a
+transaction being executed by a single thread on a single core.  Furthermore, only one
+thread is used to avoid data conflicts.  The critical section performs a certain number of
+strictly read or strictly write operations in the body of a loop.  The loop increments an
+array index to a limit specified by the transaction size being tested, and the body of the
+loop accesses every single element in that range.  This is repeated one hundred times.
+The number of elements, or cache lines, accessed during the critical section is doubled
+with every iteration of the main test loop.  Figure~\ref{fig:trx_size} shows the abort
+rate, (\# aborts / 100 operations), as the number of cache lines accessed within the
+transaction is increased.  The read-set data points represent strictly read operations
+while the write-set data points represent strictly write operations.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_singleThread}
-    \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single
-    thread on one core}}
-    \label{fig:trx_size}
+    \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single thread on
+        one core}}\label{fig:trx_size} 
 \end{figure}
 
 It is clear that transactions abort 100\% of the time once the thread tries to write to
@@ -704,28 +722,26 @@ thus the transaction cannot occupy the cache in its entirety.  Note that the cac
 split into 64 8-way sets; if memory is not organized properly, the total write-set size
 will be reduced.
 
-It is evident that the same size limitations do not hold for the read-set size.
-While eviction of a cache line containing a write-set address will always cause a
-transactional abort, eviction of a cache line containing a read-set address may not cause
-an immediate transactional abort; these cache lines may be tracked by a second-level
-structure in the L2 cache \cite{intel_opt_man}.
+It is evident that the same size limitations do not hold for the read-set size.  While
+eviction of a cache line containing a write-set address will always cause a transactional
+abort, eviction of a cache line containing a read-set address may not cause an immediate
+transactional abort; these cache lines may be tracked by a second-level structure in the
+L2 cache \cite{intel_opt_man}.
 
-The objective of the second benchmark is to evaluate the read and write-set
-sizes for a transaction being executed by a single thread on a shared core,
-\emph{i.e., a hyper-threaded core}.  This benchmark uses the same procedure as
-above, but with two threads bound to the same core.  Each thread accesses the
-same number of cache lines, but at different memory locations to prevent any
-data conflicts. Figure ~\ref{fig:trx_size_ht} shows the abort rate for one of
-the threads as the number of cache lines accessed within each transaction
-increases.
+The objective of the second benchmark is to evaluate the read and write-set sizes for a
+transaction being executed by a single thread on a shared core, \emph{i.e., a
+  hyper-threaded core}.  This benchmark uses the same procedure as above, but with two
+threads bound to the same core.  Each thread accesses the same number of cache lines, but
+at different memory locations to prevent any data conflicts. Figure~\ref{fig:trx_size_ht}
+shows the abort rate for one of the threads as the number of cache lines accessed within
+each transaction increases.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_hyperthreaded}
-    \caption{\textbf{TSX RTM abort rate versus cache line accesses for two 
-    threads on hyper-threaded core}}
-    \label{fig:trx_size_ht}
+    \caption{\textbf{TSX RTM abort rate versus cache line accesses for two threads on
+        hyper-threaded core.}}\label{fig:trx_size_ht}
 \end{figure}
 
 It is evident that the write-set is strictly limited to half of the L1 cache.  However,
@@ -740,68 +756,68 @@ including but not limited to: interrupts, page faults, I/O operations, context s
 illegal instructions, etc.  This is due to the inability of the processor to save the
 transactional state information \cite{schwahn}.
 
-The objective of the third benchmark is to evaluate the running time
-restrictions for a transaction, \emph{i.e.}, how long can a transaction safely
-execute without failing.  The duration of each transaction is increased by
-increasing the number of operations performed within the transaction. The
-critical section performs a certain number of increment operations on a single
-data element in the body of loop.  The loop increments to a limit specified by
-the duration being tested.  The operation count or duration is increased
+The objective of the third benchmark is to evaluate the running time restrictions for a
+transaction, \emph{i.e.}, how long can a transaction safely execute without failing.  The
+duration of each transaction is increased by increasing the number of operations performed
+within the transaction. The critical section performs a certain number of increment
+operations on a single data element in the body of loop.  The loop increments to a limit
+specified by the duration being tested.  The operation count or duration is increased
 logarithmically from 1000 to 1000000 every iteration of the main test loop.
-Figure ~\ref{fig:trx_duration} shows the transaction abort rate as the duration
-of the transaction is increased.
+Figure~\ref{fig:trx_duration} shows the transaction abort rate as the duration of the
+transaction is increased.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxDuration}
-    \caption{\textbf{TSX RTM abort rate versus number of operations performed
-    during transaction}}
-    \label{fig:trx_duration}
+    \caption{\textbf{TSX RTM abort rate versus number of operations performed during
+        transaction.}}\label{fig:trx_duration}
 \end{figure}
 
-It is clear that the longer a transaction executes, the higher the probability
-is that it will abort.  Practical applications will perform a varying number of
-operations that take varying amounts of time.  This benchmark simply
-demonstrates there is a limit to how long a transaction can be executed.
-Shorter transactions are more likely to succeed than longer transactions.
+It is clear that the longer a transaction executes, the higher the probability is that it
+will abort.  Practical applications will perform a varying number of operations that take
+varying amounts of time.  This benchmark simply demonstrates there is a limit to how long
+a transaction can be executed.  Shorter transactions are more likely to succeed than
+longer transactions.
 
 \section{Synchronization Latency}
-% not sure if this is relevant at all or if this is an adequate test
 
 Conventional synchronization mechanisms have varying latencies, therefore TSX most likely
 also has varying latencies.  While it is incredibly difficult to obtain accurate
-measurements, the objective of this benchmark is to compare the TSX latencies to conventional
-synchronization mechanism latencies.  This benchmark merely demonstrates how
+measurements, the objective of this benchmark is to compare the TSX latencies to
+conventional synchronization mechanism latencies.  This benchmark merely demonstrates how
 long TSX synchronization mechanisms take to enter a transactional region relative to how
 long conventional synchronization mechanisms take to enter a critical section.
 
-Each synchronization mechanism is used to perform a simple increment operation.
-The thread calls the locking function, increments the data, and calls the release
-function 100000 times.  The execution time of the entire loop is
-measured using the gettimeofday functionality in Linux.  The locking/release
-functions use one of the following depending on the configuration: 
+Each synchronization mechanism is used to perform a simple increment operation.  The
+thread calls the locking function, increments the data, and calls the release function
+100000 times.  The execution time of the entire loop is measured using the
+\texttt{gettimeofday} functionality in Linux.  The locking/release functions use one of
+the following depending on the configuration:
 
+\vspace*{-\bigskipamount}
+\begin{singlespace}
 \begin{enumerate}
-  \item no synchronization 
-  \item an atomic compare and exchange lock
-  \item a mutex lock
-  \item HLE
-  \item RTM
+  \item no synchronization,
+  \item an atomic compare and exchange lock,
+  \item a mutex lock,
+  \item HLE, and
+  \item RTM.
 \end{enumerate}
+\end{singlespace}
 
-The results are shown in Figure ~\ref{fig:tsx_latency}.  Clearly the HLE and RTM
-mechanisms take longer to actually complete the synchronization process.  This can most
-likely be attributed to the extra actions performed by the hardware to initiate
-transactional execution.
+\noindent
+The results are shown in Figure~\ref{fig:tsx_latency}.  Clearly the HLE and RTM mechanisms
+take longer to actually complete the synchronization process.  This can most likely be
+attributed to the extra actions performed by the hardware to initiate transactional
+execution.
 
 %need to make image cleaner
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{SyncBM}
-    \caption{\textbf{Synchronization Latency}}
-    \label{fig:tsx_latency}
+    \caption{\textbf{Synchronization Latency}}\label{fig:tsx_latency}
 \end{figure}
 
 \section{Nesting Transactions}
@@ -809,12 +825,13 @@ transactional execution.
 When developing larger TSX enabled multi-threaded applications, it is possible for
 critical sections to be nested within one another.  TSX supports nested transactions for
 both HLE and RTM regions, as well as a combination of the two.  When the processor
-encounters an XACQUIRE instruction prefix or an XBEGIN instruction, it increments a
-nesting count.  Note that the processor transitions to transactional execution when the
-nesting count goes from 0 to 1 \cite{intel_prog_ref}.  When the processor encounters an
-XRELEASE instruction prefix or an XEND instruction, the nesting count is decremented.
-Once the nesting count returns to 0, the processor attempts to commit the transactions as
-one monolithic transaction \cite{intel_prog_ref}.
+encounters an \texttt{XACQUIRE} instruction prefix or an \texttt{XBEGIN} instruction, it
+increments a nesting count.  Note that the processor transitions to transactional
+execution when the nesting count goes from 0 to 1 \cite{intel_prog_ref}.  When the
+processor encounters an \texttt{XRELEASE} instruction prefix or an \texttt{XEND}
+instruction, the nesting count is decremented.  Once the nesting count returns to 0, the
+processor attempts to commit the transactions as one monolithic transaction
+\cite{intel_prog_ref}.
 
 The total nesting depth is still limited by the physical resources of the hardware.  If
 the nesting count exceeds this implementation specific limit, the transaction may abort.
@@ -829,89 +846,99 @@ locks executed after this implementation specific limit has been reached will si
 execute without elision; consequently, the secondary lock variable will be added to the
 transaction's write-set \cite{intel_prog_ref}.
 
-\chapter{PDES and \textsc{Warped}}
+
+\chapter{PDES and \textsc{warped}}
 
 \section{Background}
 
 Discrete Event Simulation (DES) models a system's state changes at discrete points in
-time.  In general, simulators consist of the following data structures \cite{fujimoto}:
+time.  In a DES model, physical processes are represented by Logical Processes (LPs)
+\cite{des_misra}.  For example, in an epidemic simulation, LPs represent geographical
+locations containing a subset of the total population.  The LP's state represents the
+diffusion of the disease within the location and the status of the occupants at that
+location.  Executed Events in this simulation represent the arrival or departure of
+individuals to or from that location, the progression of a disease within an individual at
+that location, the diffusion of a disease throughout that location, etc
+\cite{epidemic}. To effectively model epidemics, a significant population size and number
+of locations needs to be simulated.
 
+In general, DES simulators consist of the following data structures \cite{fujimoto}:
+
+\vspace*{-\bigskipamount}
+\begin{singlespace}
 \begin{itemize}
-  \item\textbf{Pending Event Set:} contains events that have been scheduled, but not
+  \item\textbf{Pending Event Set}: contains events that have been scheduled, but not
     processed.  Events are retrieved from this structure to be executed.
-  \item\textbf{Clock:} denotes how far the simulation has progressed.
-  \item\textbf{State:} describes the state of the system.
+  \item\textbf{Clock}: denotes how far the simulation has progressed.
+  \item\textbf{State}: describes the state of the system.
 \end{itemize}
+\end{singlespace}
 
 \noindent
 The state of the simulation can only change upon execution of an event.  During the
-execution of an event, the simulation: 1) retrieves the least time-stamped event from the
-pending event set, 2) processes the event, 3) updates the LP's state, and 4) if
-necessary, inserts generated events into the pending event set.
+execution of an event, the simulation: 
 
-Physical processes are represented by Logical Processes (LPs) in the simulation
-\cite{des_misra}.  For example, in an epidemic simulation, LPs represent
-geographical locations containing a subset of the total population.  The LP's
-state represents the diffusion of the disease within the location and the status
-of the occupants at that location.  Executed Events in this simulation represent
-the arrival or departure of individuals to or from that location, the
-progression of a disease within an individual at that location, the diffusion of
-a disease throughout that location, etc. \cite{epidemic}. To effectively model
-epidemics, a significant population size and number of locations needs to be
-simulated.  With so many LPs, it becomes infeasible to perform this simulation
-on a sequential machine.  
+\vspace*{-\bigskipamount}
+\begin{singlespace}
+\begin{enumerate}
+  \item retrieves the least time-stamped event from the pending event set,
+  \item processes the event, 
+  \item updates the LP's state, and 
+  \item if necessary, inserts generated events into the pending event set.
+\end{singlespace}
 
-The need for such large simulations has energized research in Parallel Discrete
-Event Simulation (PDES).  Events from separate LPs are executed concurrently by
-one of \emph{N} threads.  Each LPs' events execute in chronological order to
-ensure local causality constraints are met \cite{fujimoto}.  However, PDES is
-susceptible to other causality errors.  Optimistically synchronized simulators
-are the most susceptible to these causality errors.  While conservatively synchronized
-simulators do not execute events until the system has determined it is safe to
-do so \cite{fujimoto}, optimistic approaches, such as the Time Warp protocol,
-detect rather than prevent causal errors. The advantage of optimistic approaches
-is increased concurrency as events are continually executed until a causal error
-is detected. 
+The need for large simulation models has energized research in Parallel Discrete Event
+Simulation (PDES).  Events from separate LPs are executed concurrently by one of \emph{N}
+threads.  Each LPs' events execute in chronological order to ensure local causality
+constraints are met \cite{fujimoto}.  However, PDES is susceptible to other causality
+errors.  Optimistically synchronized simulators are the most susceptible to these
+causality errors.  While conservatively synchronized simulators do not execute events
+until the system has determined it is safe to do so \cite{fujimoto}, optimistic
+approaches, such as the Time Warp protocol, detect rather than prevent causal errors. The
+advantage of optimistic approaches is increased concurrency as events are continually
+executed until a causal error is detected.
 
 One of the most well-known optimistic protocols is the Time Warp mechanism
 \cite{fujimoto}.  In addition to the standard DES data structures, each LP in a simulation
 implementing the Time Warp protocol consists of the following data structures:
 
+\vspace*{-\bigskipamount}
+\begin{singlespace}
 \begin{itemize}
-  \item \textbf{Unprocessed Queue:} contains events that have been scheduled, but have yet
+  \item \textbf{Unprocessed Queue}: contains events that have been scheduled, but have yet
     to be executed.  This structure acts as the pending event set for the LP.
-  \item\textbf{Processed Queue:} records previously executed events.
-  \item\textbf{Output Queue:} contains event messages sent to other LPs.
+  \item\textbf{Processed Queue}: records previously executed events.
+  \item\textbf{Output Queue}: contains event messages sent to other LPs.
 \end{itemize}
+\end{singlespace}
 
 In Time Warp, a causality error occurs if an event message is received containing an event
 time-stamp smaller than the time-stamp of the previously executed event.  Such an event is
-known as a straggler event.  When a straggler event is received by an LP, that LP must
-undo all effects of all events executed with a time-stamp greater than that of the
-straggler event, henceforth referred to as a rollback.  During a rollback, prematurely
-executed events are removed from the processed queue and reinserted into the unprocessed
-queue after the straggler event. For every event message in the output queue with an event
-time-stamp greater than that of the straggler event, an anti-message is generated.
-Anti-messages are sent to the associated LP of that event and remove the
+known as a \emph{straggler} event.  When a straggler event is received by an LP, that LP
+must undo all effects of all events executed with a time-stamp greater than that of the
+straggler event, henceforth referred to as a \emph{rollback}.  During a rollback,
+prematurely executed events are removed from the processed queue and reinserted into the
+unprocessed queue after the straggler event.  For every event message in the output queue
+with an event time-stamp greater than that of the straggler event, an \emph{anti-message}
+is generated.  Anti-messages are sent to the associated LP of that event and remove the
 prematurely generated event from the remote LP's queue.
-Figure~\ref{fig:rollback_stragglerrecvd} shows the scheduling state of the LP as
-a straggler event is received.  Figure~\ref{fig:rollback_processed} shows the
-scheduling state of the LP after the rollback is processed \cite{dickman}.
+Figure~\ref{fig:rollback_stragglerrecvd} shows the scheduling state of the LP as a
+straggler event is received.  Figure~\ref{fig:rollback_processed} shows the scheduling
+state of the LP after the rollback is processed \cite{dickman}.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_recv}
-    \caption{\textbf{LP at the time of a straggler event is received}}
-    \label{fig:rollback_stragglerrecvd}
+    \caption{\textbf{LP at the time of a straggler event is
+        received}}\label{fig:rollback_stragglerrecvd}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_processed}
-    \caption{\textbf{LP after a rollback is processed}}
-    \label{fig:rollback_processed}
+    \caption{\textbf{LP after a rollback is processed}}\label{fig:rollback_processed}
 \end{figure}
 
 While rollbacks are a problem in themselves, rollbacks represent another issue relevant to
@@ -923,10 +950,14 @@ set is crucial to the overall performance of PDES \cite{twpes}.
 
 \section{The \textsc{warped} Pending Event Set}
 
-\textsc{warped} is a publicly available Discrete Event Simulation (DES) kernel implementing the
-Time Warp protocol \cite{martin,fujimoto}.  It was recently redesigned for parallel
-execution on multi-core processing nodes \cite{muthalagu}.  It has many configuration
-options and utilizes many different algorithms of the Time Warp protocol \cite{fujimoto}.
+\textsc{warped} is a publicly available Discrete Event Simulation (DES) kernel
+implementing the Time Warp protocol \cite{martin,fujimoto}.  It was recently redesigned
+for parallel execution on multi-core processing nodes \cite{muthalagu}.  It has many
+configuration options and utilizes many different algorithms of the Time Warp protocol
+\cite{fujimoto}.
+
+%% JOSH: a figure illustrating the pending event set here would facilitate the
+%% description. 
 
 The pending event set is maintained as a two-level structure in \textsc{warped}
 \cite{dickman}.  Each LP maintains its own event set as a time-stamp ordered
@@ -939,6 +970,8 @@ so that worker threads can simply retrieve an event from he head of the queue.
 This guarantees the worker thread retrieves the least time-stamped event without
 having to search through the queue. The LTSF queue is also referred to as the
 schedule queue in \textsc{warped}; these terms will be used interchangeably.
+
+%% PHIL stopped here....
 
 \subsection{Pending Event Set Data Structures}
 
@@ -1034,8 +1067,7 @@ worker_thread()
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{single_ltsf_queue}
-    \caption{\textbf{Pending Event Set Scheduling}}
-    \label{fig:singleLTSFqueue}
+    \caption{\textbf{Pending Event Set Scheduling}}\label{fig:singleLTSFqueue}
 \end{figure}
 
 \subsection{Contention}
@@ -1061,8 +1093,7 @@ threads available, consequently increasing the contention problem.
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{notsx_profile}
     \caption{\textbf{\textsc{warped} Simulation Time versus Worker Thread Count for
-    Epidemic Model}}
-    \label{fig:notsx_profile}
+        Epidemic Model}}\label{fig:notsx_profile}
 \end{figure}
 
 \section{Previous Solutions to Contention}
@@ -1090,8 +1121,8 @@ further with TSX.
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{multiple_ltsf}
-    \caption{\textbf{Pending Event Set Scheduling with Multiple LTSF Queues}}
-    \label{fig:multipleLTSF}
+    \caption{\textbf{Pending Event Set Scheduling with Multiple LTSF
+        Queues}}\label{fig:multipleLTSF}
 \end{figure}
 
 \section{Thread Migration}
@@ -1380,7 +1411,6 @@ end loop
 acquire lock
 
 execute critical section
-
 \end{verbatim}
 \caption{\textbf{RTM Retry Algorithm}}\label{rtm_retry}
 \end{figure}
@@ -1487,9 +1517,8 @@ proper load balancing procedure.\par
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 4 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_4threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
+        Worker Threads}}\label{fig:noThrMig_timeVSschq_4threads}
 \end{figure}
 
 \begin{table}[H]
@@ -1501,17 +1530,16 @@ proper load balancing procedure.\par
             1 &69.62144  &54.59489 &67.10837 &67.34648 &67.61373\\ 
             5 &93.21429  &76.85048 &89.62641 &76.4832  &72.18505\\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF Queues}}
-    \label{tab:noThrMig_5threadsXschq}
+    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF
+        Queues}}\label{tab:noThrMig_5threadsXschq}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 6 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_6threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
+        Worker Threads}}\label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
 
 \subsection{Dynamic Thread Assignment}
@@ -1545,53 +1573,48 @@ same trend as standard synchronization mechanisms.
             1 &121.4532  &105.2221 &118.95   &131.0166 &139.4046 \\ 
             2 &122.5693  &105.7831 &118.8288 &130.422  &141.834  \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
-    \label{tab:contThrMig_2threadsXschq}
+    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF
+        Queues}}\label{tab:contThrMig_2threadsXschq}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-3thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 3 Worker Threads}}
-    \label{fig:contThrMig_timeVSschq_3threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 3
+        Worker Threads}}\label{fig:contThrMig_timeVSschq_3threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 4 Worker Threads}}
-    \label{fig:contThrMig_timeVSschq_4threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
+        Worker Threads}}\label{fig:contThrMig_timeVSschq_4threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-5thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 5 Worker Threads}}
-    \label{fig:contThrMig_timeVSschq_5threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 5
+        Worker Threads}}\label{fig:contThrMig_timeVSschq_5threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 6 Worker Threads}}
-    \label{fig:contThrMig_timeVSschq_6threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
+        Worker Threads}}\label{fig:contThrMig_timeVSschq_6threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 7 Worker Threads}}
-    \label{fig:contThrMig_timeVSschq_7threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 7
+        Worker Threads}}\label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
 \subsubsection{Event Limited Thread Migration}
@@ -1627,8 +1650,8 @@ load balancing than contention.
             1 &121.2448  &105.6107 &124.1983 &123.6149 &123.0078\\ 
             2 &117.6654  &102.0753 &121.0667 &137.9824 &154.3929\\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
-    \label{tab:xThrMig_2threadsXschq}
+    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF
+        Queues}}\label{tab:xThrMig_2threadsXschq} 
 \end{table}
 
 \begin{table}[H]
@@ -1640,17 +1663,16 @@ load balancing than contention.
             1 &92.36592  &74.22306 &93.23531  &92.67724 &92.6402 \\ 
             3 &88.91337  &70.67712 &89.53974  &107.369  &126.557 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF Queues}}
-    \label{tab:xThrMig_3threadsXschq}
+    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF
+        Queues}}\label{tab:xThrMig_3threadsXschq} 
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 4 Worker Threads}}
-    \label{fig:xThrMig_timeVSschq_4threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
+        Worker Threads}}\label{fig:xThrMig_timeVSschq_4threads}
 \end{figure}
 
 \begin{table}[H]
@@ -1662,70 +1684,64 @@ load balancing than contention.
             1 &69.30301  &54.40232 &70.85832  &70.46488 &70.4784 \\ 
             5 &95.31338  &77.55966 &93.71796  &85.63724 &76.2384 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF Queues}}
-    \label{tab:xThrMig_5threadsXschq}
+    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF
+        Queues}}\label{tab:xThrMig_5threadsXschq}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
-    for 6 Worker Threads}}
-    \label{fig:xThrMig_timeVSschq_6threads}
+    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
+        Worker Threads}}\label{fig:xThrMig_timeVSschq_6threads}
 \end{figure}
 
 \subsubsection{Migration Scheme Comparison}
 
-Figures ~\ref{fig:migComp_4threads} through ~\ref{fig:migComp_7threads} show the comparison of the migration schemes
-used.
+Figures~\ref{fig:migComp_4threads} through \ref{fig:migComp_7threads} show the comparison
+of the migration schemes used.
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{migComp_4threads}
-    \caption{\textbf{Comparison of Migration Schemes for 4 Worker Threads with X
-    LTSF Queues}}
-    \label{fig:migComp_4threads}
+    \caption{\textbf{Comparison of Migration Schemes for 4 Worker Threads with X LTSF
+        Queues}}\label{fig:migComp_4threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{migComp_5threads}
-    \caption{\textbf{Comparison of Migration Schemes for 5 Worker Threads with X
-    LTSF Queues}}
-    \label{fig:migComp_5threads}
+    \caption{\textbf{Comparison of Migration Schemes for 5 Worker Threads with X LTSF
+        Queues}}\label{fig:migComp_5threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{migComp_6threads}
-    \caption{\textbf{Comparison of Migration Schemes for 6 Worker Threads with X
-    LTSF Queues}}
-    \label{fig:migComp_6threads}
+    \caption{\textbf{Comparison of Migration Schemes for 6 Worker Threads with X LTSF
+        Queues}}\label{fig:migComp_6threads}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{migComp_7threads}
-    \caption{\textbf{Comparison of Migration Schemes for 7 Worker Threads with X
-    LTSF Queues}}
-    \label{fig:migComp_7threads}
+    \caption{\textbf{Comparison of Migration Schemes for 7 Worker Threads with X LTSF
+        Queues}}\label{fig:migComp_7threads}
 \end{figure}
 
 \section{The Splay Tree Implementation}
 
-The data structure used to implement the pending event set is a factor in the
-performance of the overall simulation.  First, the difference between the two
-data structures is demonstrated for standard synchronization methods.  These
-results are shown in Tables ~\ref{tab:noThrMig_2threadsXschq_msVSst_std},
-~\ref{tab:noThrMig_3threadsXschq_msVSst_std}.
-~\ref{tab:noThrMig_5threadsXschq_msVSst_std}, and Figures
-~\ref{fig:noThrMig_timeVSschq_4threads_msVSst_std} and
-~\ref{fig:noThrMig_timeVSschq_6threads_msVSst_std}.
+The data structure used to implement the pending event set is a factor in the performance
+of the overall simulation.  First, the difference between the two data structures is
+demonstrated for standard synchronization methods.  These results are shown in Tables
+~\ref{tab:noThrMig_2threadsXschq_msVSst_std}, \ref{tab:noThrMig_3threadsXschq_msVSst_std},
+\ref{tab:noThrMig_5threadsXschq_msVSst_std}, and
+Figures~\ref{fig:noThrMig_timeVSschq_4threads_msVSst_std} and
+\ref{fig:noThrMig_timeVSschq_6threads_msVSst_std}.
 
 It is evident that the splay tree implementation performs better for one LTSF
 queue, but becomes comparable to the multi-set performance as the number of LTSF
@@ -1741,9 +1757,8 @@ queues is increased.
             1 &121.2255  &0.709044 &115.8633  &0.560395\\ 
             2 &118.1558  &0.870117 &115.6354  &0.614937\\
     \end{tabular}
-    \caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard
-    Synchronization Mechanisms using 2 Worker Threads}}
-    \label{tab:noThrMig_2threadsXschq_msVSst_std}
+    \caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard Synchronization
+        Mechanisms using 2 Worker Threads}}\label{tab:noThrMig_2threadsXschq_msVSst_std}
 \end{table}
 
 \begin{table}[H]
@@ -1755,18 +1770,16 @@ queues is increased.
         1 &91.68472  &0.623036 &86.40983  &0.361082\\ 
         3 &89.50474  &0.390017 &86.52189  & 0.969298\\
 \end{tabular}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard
-Synchronization Mechanisms using 3 Worker Threads}}
-\label{tab:noThrMig_3threadsXschq_msVSst_std}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard Synchronization
+    Mechanisms using 3 Worker Threads}}\label{tab:noThrMig_3threadsXschq_msVSst_std}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-msVSst-4thread-std}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard
-Synchronization Mechanisms using 4 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_4threads_msVSst_std}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard Synchronization
+    Mechanisms using 4 Worker Threads}}\label{fig:noThrMig_timeVSschq_4threads_msVSst_std}
 \end{figure}
 
 \begin{table}[H]
@@ -1778,26 +1791,23 @@ Synchronization Mechanisms using 4 Worker Threads}}
         1 &69.62144   &0.283633 &65.40437   &0.180788\\ 
         5 &93.21429   &1.972659 &95.41614   &1.331701\\
 \end{tabular}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard
-Synchronization Mechanisms using 5 Worker Threads}}
-\label{tab:noThrMig_5threadsXschq_msVSst_std}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard Synchronization
+    Mechanisms using 5 Worker Threads}}\label{tab:noThrMig_5threadsXschq_msVSst_std}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-msVSst-6thread-std}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard
-Synchronization Mechanisms using 6 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_6threads_msVSst_std}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for Standard Synchronization
+    Mechanisms using 6 Worker Threads}}\label{fig:noThrMig_timeVSschq_6threads_msVSst_std}
 \end{figure}
 
-The data structure used to implement the LTSF queue will also impact how TSX
-performs.  These results are shown in Tables ~\ref{tab:noThrMig_2threadsXschq_msVSst_hle},
-~\ref{tab:noThrMig_3threadsXschq_msVSst_hle}.
-~\ref{tab:noThrMig_5threadsXschq_msVSst_hle}, and Figures
-~\ref{fig:noThrMig_timeVSschq_4threads_msVSst_hle} and
-~\ref{fig:noThrMig_timeVSschq_6threads_msVSst_hle}.
+The data structure used to implement the LTSF queue will also impact how TSX performs.
+These results are shown in Tables~\ref{tab:noThrMig_2threadsXschq_msVSst_hle},
+\ref{tab:noThrMig_3threadsXschq_msVSst_hle}.  \ref{tab:noThrMig_5threadsXschq_msVSst_hle},
+and Figures~\ref{fig:noThrMig_timeVSschq_4threads_msVSst_hle} and
+\ref{fig:noThrMig_timeVSschq_6threads_msVSst_hle}.
 
 For a single LTSF queue, the splay tree implementation performs slightly better
 than the multi-set implementation.  However, the splay tree performs
@@ -1813,8 +1823,8 @@ with HLE synchronization.
             1 &105.0569   &0.866889 &102.51192  &1.22734  \\ 
             2 &101.12417  &0.616301 &93.12871   &21.783966\\
     \end{tabular}
-    \caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 2 Worker Threads}}
-    \label{tab:noThrMig_2threadsXschq_msVSst_hle}
+    \caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 2 Worker
+        Threads}}\label{tab:noThrMig_2threadsXschq_msVSst_hle}
 \end{table}
 
 \begin{table}[H]
@@ -1826,16 +1836,16 @@ with HLE synchronization.
         1 &73.58687   &0.45751  &72.57065   &0.449519\\ 
         3 &70.24289   &0.665394 &70.4064    &0.729255\\
 \end{tabular}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 3 Worker Threads}}
-\label{tab:noThrMig_3threadsXschq_msVSst_hle}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 3 Worker
+    Threads}}\label{tab:noThrMig_3threadsXschq_msVSst_hle}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-msVSst-4thread-hle}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 4 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_4threads_msVSst_hle}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 4 Worker
+    Threads}}\label{fig:noThrMig_timeVSschq_4threads_msVSst_hle}
 \end{figure}
 
 \begin{table}[H]
@@ -1847,16 +1857,16 @@ with HLE synchronization.
         1 &54.59489   &0.331819 &53.25156   &0.280322\\ 
         5 &76.85048   &1.975723 &81.47112   &1.135243\\
 \end{tabular}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 5 Worker Threads}}
-\label{tab:noThrMig_5threadsXschq_msVSst_hle}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 5 Worker
+    Threads}}\label{tab:noThrMig_5threadsXschq_msVSst_hle}
 \end{table}
 
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-msVSst-6thread-hle}
-\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 6 Worker Threads}}
-    \label{fig:noThrMig_timeVSschq_6threads_msVSst_hle}
+\caption{\textbf{Multi-Set VS Splay Tree LTSF Queues for HLE TSX using 6 Worker
+    Threads}}\label{fig:noThrMig_timeVSschq_6threads_msVSst_hle}
 \end{figure}
 
 %TODO: compare RTM 
