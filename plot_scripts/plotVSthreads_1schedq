@@ -11,8 +11,8 @@ else
     schq1_upper=11
     
     # write gnuplot.gpi file for 1schQ 
-    echo "set terminal pdf" > "$filename-1schQ.gpi"
-    echo "set output \"$filename-1schQ.pdf\"" >> "$filename-1schQ.gpi"
+    echo "set term pngcairo dashed" > "$filename-1schQ.gpi"
+    echo "set output \"$filename-1schQ.png\"" >> "$filename-1schQ.gpi"
     echo "set key right top" >> "$filename-1schQ.gpi"
     echo "set xrange [1:7]" >> "$filename-1schQ.gpi"
     echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-1schQ.gpi"
@@ -28,14 +28,14 @@ else
     echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-1schQ.gpi"
     echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-1schQ.gpi"
-    echo "'' using 1:8:9 title 'rtm-4retry' with lines ls 4, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-1schQ.gpi"
-    echo "'' using 1:10:11 title 'rtm-9retry' with lines ls 5, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-1schQ.gpi"
     echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-1schQ.gpi"
 
     # perform actual plotting
     gnuplot "$filename-1schQ.gpi"
 
     rm *.gpi
-    mv *.pdf ../figures/
+    mv *.png ../figures/
 fi
