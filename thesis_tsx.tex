@@ -295,6 +295,12 @@ conventional synchronization mechanisms.
 %% outside of a transaction (say it reads it); does this get considered in the validity of
 %% the transaction?  or would it simply commit?
 
+%% Dr. Wilsey: It is my understanding that ANY memory operation performed
+%% during transactional execution is tracked by the TM system.  So if a shared
+%% memory region is accessed outside of a transaction (which I'm not 100% sure what
+%% you mean by that). it will still be added to the transactions read-set for
+%% conflict detection.
+
 As a transaction is executed, the memory operations performed within the transaction are
 buffered, specifically write operations.  Write operations will only be fully committed
 when the transaction is complete and safe access has been determined.  Safe access is
@@ -445,7 +451,12 @@ However, if the transaction aborts for any reason, the region will be re-execute
 non-transactionally.  If the processor encounters an abort condition, it will discard all
 memory operations performed within the transaction, return to the locking instruction, and
 resume execution without lock elision, \emph{i.e.,} the write operation will be performed on the
-lock variable.  This guarantees forward progress \cite{intel_prog_ref}.
+lock variable.  If any other thread is executing the same transactional region,
+those transactions will also abort.  The aborted transaction thread performs an
+explicit write on the lock, resulting in a data conflict for any other
+transaction as the lock variable is part of the other transaction's read-set.
+The re-execution of the critical section using conventional synchronization is
+necessary to guarantee forward progress \cite{intel_prog_ref}.
 
 %% JOSH: OK, this really does not help the reader.  i do not know how to read the example,
 %% what is &lock, your statement that ``GCC 4.8 and above....'' does not explain anything
@@ -457,16 +468,59 @@ lock variable.  This guarantees forward progress \cite{intel_prog_ref}.
 %% a common example that you present that illustrates a traditional locking
 %% implementation, an HLE illustration and an RTM illustration.  
 
-A general implementation for the HLE software interface is shown in
-Figure~\ref{fig:hle_interface}.  All the programmer has to do is add the HLE memory model 
-parameters in the locking function intrinsic.  GCC 4.8 and above includes support for the
-\texttt{\_\_ATOMIC\_HLE\_ACQUIRE} and \texttt{\_\_ATOMIC\_HLE\_RELEASE} memory models \cite{gcc}.
+The standard locked critical section using the atomic exchange instruction is
+shown in Figure ~\ref{fig:lock_interface} as a reference for the TSX HLE
+interfaces shown below.  The \texttt{\_\_atomic\_exchange\_n(type *ptr, type
+val, int memmodel} intrinsic implements the atomic exchange operation as the
+name suggests.  It writes \texttt{val} into \texttt{ptr} and returns the
+previous contents of \texttt{ptr}.  The most important parameter is
+\texttt{memmodel}; it specifies synchronization requirements between threads.
+For instance, the \_\_ATOMIC\_ACQUIRE memory model synchronizes the local thread
+with a release semantic store from another thread \cite{gcc}.  Essentially, when
+another thread executes a lock release, the local thread will execute the lock
+acquire.  The while loop further ensures the lock was free before it is acquired.
 
-\begin{figure}[H]
-    \centering
-    \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{fig_hleInterface}
-    \caption{\textbf{Generic HLE Software Interface}}
+\linespread{1.0}
+\begin{figure}
+\begin{verbatim}
+/* Acquire lock */
+/* Loop until the returned val indicates the lock was free */
+while(__atomic_exchange_n(&lock, 1, __ATOMIC_ACQUIRE)):
+
+/* Begin executing critical section */
+...
+/* End critical section */
+
+/* Free lock */
+__atomic_store_n(&lock, 0,__ATOMIC_RELEASE);
+\end{verbatim}
+    \caption{\textbf{Standard Atomic Lock Implementation}}
+    \label{fig:lock_interface}
+\end{figure}
+
+To enable HLE synchronization, the programmer merely adds the HLE memory models
+to the existing locking intrinsics.  The \_\_ATOMIC\_HLE\_ACQUIRE tells the
+thread to execute an XACQUIRE prefixed lock acquire instruction when another
+thread releases the lock.  The combination of memory models allows for the
+locking instructions to be executed with or without elision.  A general
+implementation for the HLE software interface is shown in Figure
+~\ref{fig:hle_interface}. 
+
+\linespread{1.0}
+\begin{figure}
+\begin{verbatim}
+/* Acquire lock with lock elision if possible */
+/* Loop until the returned val indicates the lock was free */
+while(__atomic_exchange_n(&lock, 1, __ATOMIC_HLE_ACQUIRE|__ATOMIC_ACQUIRE)):
+
+/* Begin executing critical section/transactional region */
+...
+/* End critical section/transactional region */
+
+/* Free lock with lock elision if possible */
+__atomic_store_n(&lock, 0, __ATOMIC_HLE_RELEASE|__ATOMIC_RELEASE);
+\end{verbatim}
+    \caption{\textbf{Generic HLE Software Implemenation}}
     \label{fig:hle_interface}
 \end{figure}
 
@@ -514,21 +568,44 @@ was caused by the XABORT instruction, a data conflict, etc.  The programmer can 
 information to make more informed decisions regarding reattempting transactional
 execution.
 
-The general algorithm for the RTM software interface is shown in Figure
-~\ref{fig:rtm_interface}.  The programmer moves the existing locking mechanism inside an
-else clause of the xbegin if statement, which will determine if the processor transitions
-to transactional execution or takes the abort path.  As previously mentioned, the
-processor will also return to this point should the transaction abort in the middle of
-execution. Moving the locking mechanism into the RTM abort path ensures that the abort
-path ultimately uses explicit synchronization and guarantees forward progress.  GCC 4.8
-and above includes support for the \texttt{\_xbegin}, \texttt{\_xabort}, and
-\texttt{\_xend} intrinsics \cite{gcc}.
+The RTM implementation is more involved because it uses entirely new
+instructions.  The general algorithm for the RTM software interface is shown in
+Figure ~\ref{fig:rtm_interface}.  The programmer moves the existing locking
+mechanism inside an else clause of the xbegin if statement, which will determine
+if the processor transitions to transactional execution or takes the abort path.
+As previously mentioned, the processor will also return to this point should the
+transaction abort in the middle of execution. Moving the locking mechanism into
+the RTM abort path ensures that the abort path ultimately uses explicit
+synchronization and guarantees forward progress.  GCC 4.8 and above includes
+support for the \texttt{\_xbegin}, \texttt{\_xabort}, and \texttt{\_xend}
+intrinsics to implement the associated instructions \cite{gcc}.
 
-\begin{figure}[H]
-    \centering
-    \graphicspath{ {./figures/} }
-    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{fig_rtmInterface}
-    \caption{\textbf{Generic RTM Software Interface}}
+\linespread{1.0}
+\begin{figure}
+\begin{verbatim}
+if (_xbegin() == _XBEGIN_STARTED) {
+    /* Add lock to read-set */
+    if (lock is not free) {
+        /* Abort if lock is already acquired */
+        _xabort(_ABORT_LOCK_BUSY);
+    }
+} else {
+    /* Abort path */
+    acquire lock
+}
+
+/* Begin critical section/transactional region */
+...
+/* End critical section/transactional region */
+
+if (lock is free) {
+    /* End transaction and commit results*/
+    _xend();
+} else {
+    release lock
+}
+\end{verbatim}
+    \caption{\textbf{Generic RTM Software Implementation}}
     \label{fig:rtm_interface}
 \end{figure}
 
@@ -537,7 +614,6 @@ Haswell platforms.  If a legacy device attempts to execute one of the RTM instru
 will throw a General Protection Fault.  It should be noted that execution of the XEND
 instruction outside of a transaction will result in a General Protection Fault as well
 \cite{intel_opt_man}.
-
 
 \chapter{Practical Programming with TSX}
 
@@ -1795,12 +1871,12 @@ synchronization mechanisms.
 \section{Conclusions}
 
 HLE clearly improves the simulation runtime of the \textsc{warped}.  While the
-various configurations may not reduce contention as much as hoped, HLE reduced
-simulation runtime as much as 20\% in some cases.  RTM did not fare as well.
-More often than not, the simulation performance using RTM was comparable to the
-standard synchronization mechansism.  RTM required more overhead to maintain
-statistics for the retry algorithm.  While the retry algorithm meant well, it
-did not improve the performance of RTM as hoped.  
+various configurations may not reduce contention as much as hoped, HLE
+consistenly reduced simulation runtime, as much as 20\% in some cases.  RTM did
+not fare quite as well.  More often than not, the simulation performance using RTM was
+comparable to the standard synchronization mechansism.  RTM required more
+overhead to maintain statistics for the retry algorithm.  While the retry
+algorithm meant well, it did not improve the performance of RTM as hoped.  
 
 Increasing the number of LTSF queues from 1 to 2 usually resulted in reduced
 contention and thus improved performance.  Increasing the LTSF queue to anything
