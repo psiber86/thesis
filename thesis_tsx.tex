@@ -14,6 +14,7 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{mathtools}
+\usepackage{float}
 \usepackage{morefloats}
 
 \setcounter{topnumber}{2}
@@ -501,10 +502,12 @@ __atomic_store_n(&lock, 0,__ATOMIC_RELEASE);
 To enable HLE synchronization, the programmer merely adds the HLE memory models
 to the existing locking intrinsics.  The \_\_ATOMIC\_HLE\_ACQUIRE tells the
 thread to execute an XACQUIRE prefixed lock acquire instruction when another
-thread releases the lock.  The combination of memory models allows for the
-locking instructions to be executed with or without elision.  A general
-implementation for the HLE software interface is shown in Figure
-~\ref{fig:hle_interface}. 
+thread releases the lock.  The combination of memory models,
+\texttt{\_\_ATOMIC\_HLE\_ACQUIRE|\_\_ATOMIC\_HLE\_ACQUIRE)} allows for the
+locking instructions to be executed with or without elision.  The local thread
+can be synchronized to a XRELEASE prefixed lock release instruction or a
+standard lock release instruction.  A general implementation for the HLE
+software interface is shown in Figure ~\ref{fig:hle_interface}. 
 
 \linespread{1.0}
 \begin{figure}
@@ -687,7 +690,7 @@ write operations.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[totalheight=0.50\textheight,keepaspectratio]{trxSize_singleThread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_singleThread}
     \caption{\textbf{TSX RTM abort rate versus cache lines accessed for a single
     thread on one core}}
     \label{fig:trx_size}
@@ -1422,7 +1425,7 @@ the number of worker threads is increased.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSthreads-multiset-1schQ}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ}
     \caption{\textbf{Simulation Time versus Number of Worker Threads 1 STL Multi-set LTSF Queue}}
     \label{fig:noThrMig_timeVSthreads_1schq}
 \end{figure}
@@ -1457,11 +1460,11 @@ proper load balancing procedure.\par
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
-            1 &121.2255  &105.0569 &123.4132  &124.0336 &122.8344 \\ 
-            2 &118.1558  &101.1242 &120.085   &137.5637 &153.0293 \\
+            1 &121.2255  &105.0569 &119.6892 &131.3282 &141.6453 \\ 
+            2 &118.1558  &101.1242 &114.1276 &128.93   &144.2886 \\
     \end{tabular}
     \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
     \label{tab:noThrMig_2threadsXschq}
@@ -1470,11 +1473,11 @@ proper load balancing procedure.\par
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
-            1 &91.68472 &73.58687 &92.58229  &93.42086 &92.83141 \\ 
-            3 &89.50474 &70.24289 &89.48378  &105.8095 &125.8599 \\
+            1 &91.68472 &73.58687 &87.36819 &87.34794 &87.38973 \\ 
+            3 &89.50474 &70.24289 &84.21861 &94.00537 &104.4246 \\
     \end{tabular}
     \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF Queues}}
     \label{tab:noThrMig_3threadsXschq}
@@ -1483,7 +1486,7 @@ proper load balancing procedure.\par
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:noThrMig_timeVSschq_4threads}
@@ -1492,11 +1495,11 @@ proper load balancing procedure.\par
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 4-retry &RTM-9retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
-            1 &69.62144  &54.59489 &70.33108  &70.1835  &70.42886 \\ 
-            5 &93.21429  &76.85048 &93.23045  &84.19164 &76.23965 \\
+            1 &69.62144  &54.59489 &67.10837 &67.34648 &67.61373\\ 
+            5 &93.21429  &76.85048 &89.62641 &76.4832  &72.18505\\
     \end{tabular}
     \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF Queues}}
     \label{tab:noThrMig_5threadsXschq}
@@ -1505,7 +1508,7 @@ proper load balancing procedure.\par
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{noThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:noThrMig_timeVSschq_6threads}
@@ -1536,11 +1539,11 @@ same trend as standard synchronization mechanisms.
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
-            1 &121.4532  &105.2221 &123.2083  &124.1073 &124.1445 \\ 
-            2 &122.5693  &105.7831 &123.6679  &129.8969 &134.2494 \\
+            1 &121.4532  &105.2221 &118.95   &131.0166 &139.4046 \\ 
+            2 &122.5693  &105.7831 &118.8288 &130.422  &141.834  \\
     \end{tabular}
     \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
     \label{tab:contThrMig_2threadsXschq}
@@ -1549,7 +1552,7 @@ same trend as standard synchronization mechanisms.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-3thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-3thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 3 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_3threads}
@@ -1558,7 +1561,7 @@ same trend as standard synchronization mechanisms.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_4threads}
@@ -1567,7 +1570,7 @@ same trend as standard synchronization mechanisms.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-5thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-5thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 5 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_5threads}
@@ -1576,7 +1579,7 @@ same trend as standard synchronization mechanisms.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_6threads}
@@ -1585,7 +1588,7 @@ same trend as standard synchronization mechanisms.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{contThrMig-hugeEpidemicSim-timeVSschedQs-multiset-7thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 7 Worker Threads}}
     \label{fig:contThrMig_timeVSschq_7threads}
@@ -1618,11 +1621,11 @@ load balancing than contention.
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
-            1 &121.2448  &105.6107 &124.1983  &123.6149 &123.0078 \\ 
-            2 &117.6654  &102.0753 &121.0667  &137.9824 &154.3929 \\
+            1 &121.2448  &105.6107 &124.1983 &123.6149 &123.0078\\ 
+            2 &117.6654  &102.0753 &121.0667 &137.9824 &154.3929\\
     \end{tabular}
     \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
     \label{tab:xThrMig_2threadsXschq}
@@ -1631,7 +1634,7 @@ load balancing than contention.
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
             1 &92.36592  &74.22306 &93.23531  &92.67724 &92.6402 \\ 
@@ -1644,7 +1647,7 @@ load balancing than contention.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-4thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 4 Worker Threads}}
     \label{fig:xThrMig_timeVSschq_4threads}
@@ -1653,7 +1656,7 @@ load balancing than contention.
 \begin{table}[H]
     \centering
     \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM 1-retry &RTM 9-retry &RTM-19retry \\
+        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
         \hline
         \midrule
             1 &69.30301  &54.40232 &70.85832  &70.46488 &70.4784 \\ 
@@ -1666,7 +1669,7 @@ load balancing than contention.
 \begin{figure}[H]
     \centering
     \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{xThrMig-hugeEpidemicSim-timeVSschedQs-multiset-6thread}
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-6thread}
     \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues
     for 6 Worker Threads}}
     \label{fig:xThrMig_timeVSschq_6threads}
@@ -1870,13 +1873,26 @@ synchronization mechanisms.
 
 \section{Conclusions}
 
-HLE clearly improves the simulation runtime of the \textsc{warped}.  While the
-various configurations may not reduce contention as much as hoped, HLE
-consistenly reduced simulation runtime, as much as 20\% in some cases.  RTM did
-not fare quite as well.  More often than not, the simulation performance using RTM was
-comparable to the standard synchronization mechansism.  RTM required more
-overhead to maintain statistics for the retry algorithm.  While the retry
-algorithm meant well, it did not improve the performance of RTM as hoped.  
+Based on the results above, it clear that TSX improved performance of
+\textsc{warped}.  HLE consistently shows speedup over conventional
+synchronization mechanisms.  It even slightly reduces execution time when the
+simulation only uses one LTSF queue.  In other configurations, HLE reduces
+execution time by as much as 20\%. 
+
+RTM performance trends were much less consistent.  The number of RTM retries was
+varied to better tune the performance of RTM.  In some configurations, the
+simulation time as the number of retries inceased also increase, while in other
+configurations the simulation time decreased as the number of retries increased.
+There were also configurations where the simulation did not change significantly
+as the number of retries was increased.  Regardless, RTM still showed speedup
+over conventional synchronization mechanisms in most configurations, even though
+it was not nearly as much speedup as HLE.  The inconsistencies in speedup trends
+as well as overall speedup can most likely be attributed to the overhead
+associated with RTM.  The retry algorithm requires abort statistics to be
+calculated and maintained which adds a bit more overhead to RTM.  Furthermore,
+the backup algorithm modifies the number of retries allowed, thus varying the
+actual number of retries attempted between simulations with even the same
+configuration.
 
 Increasing the number of LTSF queues from 1 to 2 usually resulted in reduced
 contention and thus improved performance.  Increasing the LTSF queue to anything
@@ -1893,6 +1909,12 @@ the least time-stamped event is being scheduled.  This adds a majority of the
 data in the tree to the read-set of transactions, thus increasing the chances of
 data conflicts and memory overflows with respect to the transactional memory
 tracking.
+
+In conclusion, TSX significantly improves simulation performance for the
+\textsc{warped} PDES kernel.  While other solutions to contention also improved
+performance, they did not seem to have a significant impact on how TSX
+performed.  The speedup introduced by TSX was fairily consistent between the
+three migration schemes.
 
 \section{Future Work}
 
