@@ -313,26 +313,38 @@ conventional synchronization mechanisms.
 %%     operations for a read to a shared variable?  if so, what can/should we say about
 %%     that?
 
+%% If that shared variable is ever written to, I don't see how you could skip the
+%% transaction operations or any synchronization.  That's the only way to ensure consistent data/results.
+%% And if it's never written to, then it doesn't need to be a critical
+%% section/transactional region in the first place.  I would imagine the commit
+%% overhead is substantially less when only read operations are performed, but
+%% Intel didn't provide that level of implementation detail.
+
 As a transaction is executed, the memory operations performed within the transaction are
 buffered, specifically write operations.  Write operations will only be fully committed
 when the transaction is complete and safe access has been determined.  Safe access is
 determined by comparing the set of addresses each transaction reads from (called the
 \emph{read-set} and the set of addresses each transation writes to (called the
-\emph{write-set}).  Each transaction builds its own read-set and write-set as it executes.
-The TM system compares the read-sets and write-sets of all concurrently executing
-transactions to determine if any memory operations conflict.  If the transaction completes
-execution and the TM system has not detected any conflicting memory operations, the
-transaction atomically commits all of hte buffered memory operations, henceforth referred
-to simply as a \emph{commit}.
+\emph{write-set}).  Each transaction builds its own read-set and write-set as it
+executes.  While a thread is executing transactioanlly, any memory operation
+performed by any other thread is checked against the read-set and write-set of
+the transactionally executing thread to determine if any memory operations
+conflict.  The other threads can be executing either non-transactionally or
+transactionally.  If the transaction completes execution and the TM system has
+not detected any conflicting memory operations, the transaction atomically
+commits all of the buffered memory operations, henceforth referred to simply as
+a \emph{commit}.
 
-Whenever safe access does not occur, the transaction cannot safely continue execution.
-This is referred to as a \emph{data conflict} and only occurs if: (i) one transaction
-attempts to read a location that is part of another transaction's write-set, or (ii) a
-transaction attempts to write a location that is part of another transaction's read-set
-\cite{intel_prog_ref}.  Once a memory location is written to by a transaction, it cannot
-be accessed in any way by any other transaction; any access by any other transaction
-results in a race condition.  If such a situation arises, all concurrently executing
-transactions will abort execution, henceforth referred to simply as an \emph{abort}.
+Whenever safe access does not occur, the transaction cannot safely continue
+execution.  This is referred to as a \emph{data conflict} and only occurs if:
+(i) one transaction attempts to read a location that is part of another
+transaction's write-set, or (ii) a transaction attempts to write a location that
+is part of another transaction's read-set or write-set \cite{intel_prog_ref}.
+Once a memory location is written to by a transaction, it cannot be accessed in
+any way by any other transaction; any access by any other transaction results in
+a race condition.  If such a situation arises, all concurrently executing
+transactions will abort execution, henceforth referred to simply as an
+\emph{abort}.
 
 Revisiting the example from Chapter \ref{intro}, assume that a programmer uses
 transactional memory synchronization mechanisms to access a shared two dimensional array.
@@ -885,6 +897,7 @@ execution of an event, the simulation:
   \item processes the event, 
   \item updates the LP's state, and 
   \item if necessary, inserts generated events into the pending event set.
+\end{enumerate}
 \end{singlespace}
 
 The need for large simulation models has energized research in Parallel Discrete Event
@@ -959,6 +972,8 @@ configuration options and utilizes many different algorithms of the Time Warp pr
 %% JOSH: a figure illustrating the pending event set here would facilitate the
 %% description. 
 
+%% I put it after the description
+
 The pending event set is maintained as a two-level structure in \textsc{warped}
 \cite{dickman}.  Each LP maintains its own event set as a time-stamp ordered
 queue.  As previously mentioned, each LP maintains an unprocessed queue for
@@ -970,6 +985,15 @@ so that worker threads can simply retrieve an event from he head of the queue.
 This guarantees the worker thread retrieves the least time-stamped event without
 having to search through the queue. The LTSF queue is also referred to as the
 schedule queue in \textsc{warped}; these terms will be used interchangeably.
+The entire pending event set implementation can be seen in
+Figure\ref{fig:singleLTSFqueue} \cite{dickman}.
+
+\begin{figure}[H]
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{single_ltsf_queue}
+    \caption{\textbf{Pending Event Set Scheduling}}\label{fig:singleLTSFqueue}
+\end{figure}
 
 %% PHIL stopped here....
 
@@ -1028,8 +1052,7 @@ with the executed event, and dequeue the next least time-stamped event.  The deq
 event is inserted into the LTSF queue, which resorts itself based on the event
 time-stamps.  An abstract event processing algorithm is shown in Figure
 ~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads perform many
-other functions.  The entire pending event set implementation can be seen in Figure
-~\ref{fig:singleLTSFqueue} \cite{dickman}.
+other functions.  
 
 %Is it legitimate for me to cite figures and pseudocode or do I need to recreate
 %these?
@@ -1061,13 +1084,6 @@ worker_thread()
 \end{verbatim}
 \caption{\textbf{Generalized event execution loop for the worker threads.  Many details
     have been omitted for clarity.}}\label{workerThreadAlgorithm}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{single_ltsf_queue}
-    \caption{\textbf{Pending Event Set Scheduling}}\label{fig:singleLTSFqueue}
 \end{figure}
 
 \subsection{Contention}
@@ -1560,7 +1576,7 @@ results are shown in Table ~\ref{tab:contThrMig_2threadsXschq} and Figures
 It is evident that this scheduling scheme slightly improves performance
 increasing the number of LTSF queues from 1 to 4.  Increasing the number of LTSF
 queues beyond 4 does not seem to significantly improve performance.  The
-performance of HLE synchronization, while still superior ,seems to follow the
+performance of HLE synchronization, while still superior, seems to follow the
 same trend as standard synchronization mechanisms.
 %TODO: more discussion maybe?
 
