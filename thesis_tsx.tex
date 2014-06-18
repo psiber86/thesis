@@ -314,11 +314,14 @@ conventional synchronization mechanisms.
 %%     that?
 
 %% If that shared variable is ever written to, I don't see how you could skip the
-%% transaction operations or any synchronization.  That's the only way to ensure consistent data/results.
-%% And if it's never written to, then it doesn't need to be a critical
-%% section/transactional region in the first place.  I would imagine the commit
-%% overhead is substantially less when only read operations are performed, but
-%% Intel didn't provide that level of implementation detail.
+%% transaction operations or any synchronization.  That's the only way to ensure
+%% consistent data/results.  And if it's never written to, then it doesn't need to be a
+%% critical section/transactional region in the first place.  I would imagine the commit
+%% overhead is substantially less when only read operations are performed, but Intel
+%% didn't provide that level of implementation detail.
+
+%% JOSH: yes certainly we would have to have all shared data writes in a critical region,
+%% i was just asking about the read operations.
 
 As a transaction is executed, the memory operations performed within the transaction are
 buffered, specifically write operations.  Write operations will only be fully committed
@@ -718,7 +721,7 @@ rate, (\# aborts / 100 operations), as the number of cache lines accessed within
 transaction is increased.  The read-set data points represent strictly read operations
 while the write-set data points represent strictly write operations.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_singleThread}
@@ -748,7 +751,7 @@ at different memory locations to prevent any data conflicts. Figure~\ref{fig:trx
 shows the abort rate for one of the threads as the number of cache lines accessed within
 each transaction increases.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxSize_hyperthreaded}
@@ -778,7 +781,7 @@ logarithmically from 1000 to 1000000 every iteration of the main test loop.
 Figure~\ref{fig:trx_duration} shows the transaction abort rate as the duration of the
 transaction is increased.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{trxDuration}
@@ -825,7 +828,7 @@ attributed to the extra actions performed by the hardware to initiate transactio
 execution.
 
 %need to make image cleaner
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{SyncBM}
@@ -939,7 +942,7 @@ Figure~\ref{fig:rollback_stragglerrecvd} shows the scheduling state of the LP as
 straggler event is received.  Figure~\ref{fig:rollback_processed} shows the scheduling
 state of the LP after the rollback is processed \cite{dickman}.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_recv}
@@ -947,7 +950,7 @@ state of the LP after the rollback is processed \cite{dickman}.
         received}}\label{fig:rollback_stragglerrecvd}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.5\textwidth,keepaspectratio]{rollback_processed}
@@ -969,26 +972,19 @@ for parallel execution on multi-core processing nodes \cite{muthalagu}.  It has 
 configuration options and utilizes many different algorithms of the Time Warp protocol
 \cite{fujimoto}.
 
-%% JOSH: a figure illustrating the pending event set here would facilitate the
-%% description. 
-
-%% I put it after the description
-
 The pending event set is maintained as a two-level structure in \textsc{warped}
-\cite{dickman}.  Each LP maintains its own event set as a time-stamp ordered
-queue.  As previously mentioned, each LP maintains an unprocessed queue for
-scheduled events yet to be executed and a processed queue to store previously
-executed events.  A common Least Time-Stamped First queue is populated with the
-least time stamped event from each LP's unprocessed queue.  As the name
-suggests, the LTSF queue is automatically sorted in increasing time-stamp order
-so that worker threads can simply retrieve an event from he head of the queue.
-This guarantees the worker thread retrieves the least time-stamped event without
-having to search through the queue. The LTSF queue is also referred to as the
-schedule queue in \textsc{warped}; these terms will be used interchangeably.
-The entire pending event set implementation can be seen in
-Figure\ref{fig:singleLTSFqueue} \cite{dickman}.
+(Figure\ref{fig:singleLTSFqueue}) \cite{dickman}.  Each LP maintains its own event set as
+a time-stamp ordered queue.  As previously mentioned, each LP maintains an unprocessed
+queue for scheduled events yet to be executed and a processed queue to store previously
+executed events.  A common Least Time-Stamped First queue is populated with the least time
+stamped event from each LP's unprocessed queue.  As the name suggests, the LTSF queue is
+automatically sorted in increasing time-stamp order so that worker threads can simply
+retrieve an event from he head of the queue.  This guarantees the worker thread retrieves
+the least time-stamped event without having to search through the queue. The LTSF queue is
+also referred to as the schedule queue in \textsc{warped}; these terms will be used
+interchangeably.  
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{single_ltsf_queue}
@@ -999,51 +995,53 @@ Figure\ref{fig:singleLTSFqueue} \cite{dickman}.
 
 \subsection{Pending Event Set Data Structures}
 
-The implementation of the pending event set is a key factor in the performance
-of the simulation \cite{twpes}.  The \textsc{warped} simulation kernel has two
-functional implementations: 1) the C++ Standard Template Library (STL) multi-set
-data structure, and 2) the splay tree data structure.  The way in which these
-data structures are accessed and, more importantly, self-adjust will be relevant
-to how effectively TSX can be used to access these structures.
+The implementation of the pending event set is a key factor in the performance of the
+simulation \cite{twpes}.  The \textsc{warped} simulation kernel has two functional
+implementations: (1) the C++ Standard Template Library (STL) multi-set data structure, and
+(2) the splay tree data structure.  Whilea preliminary ladder queue \cite{tang-05}
+implentation for the pending event set is currently under develpment, it is was not ready
+at the time of this study and is therefore not included in this analysis.  The way in
+which these data structures are accessed and, more importantly, self-adjust will be
+relevant to how effectively TSX can be used to access these structures.
 
 \paragraph{STL Multi-set}
 
-The STL multi-set data structure , specifically the sorted STL multi-set data
-structure, is an abstract data structure implemented as a self-balancing,
-red-black binary search tree \cite{redblack}.  Look-up, insertion, and
-deletion operations performed in a red-black tree with \emph{n} elements are
-performed in average O(log n) time.  When insertion or deletion operations are
-performed, the tree is rebalanced by a tree rearrangement algorithm and a
-"painting" algorithm taking average O(1) and O(log n) time respectively. 
+The STL multi-set data structure , specifically the sorted STL multi-set data structure,
+is an abstract data structure implemented as a self-balancing, red-black binary search
+tree \cite{redblack}.  Look-up, insertion, and deletion operations performed in a
+red-black tree with \emph{n} elements are performed in average O(log n) time.  When
+insertion or deletion operations are performed, the tree is rebalanced by a tree
+rearrangement algorithm and a ``painting'' algorithm taking average O(1) and O(log n) time
+respectively.
 
-The STL multi-set is a self sorting data structure.  The lowest value element
-will always be the left most child node of the tree.  To access the least
-time-stamped event at the head of the LTSF queue, multi-set red-black tree must
-be traversed to the left most child node.  Any insertion or removal of events
-requires the red-black tree to rebalance itself.  
+The STL multi-set is a self sorting data structure.  The lowest value element will always
+be the left most child node of the tree.  To access the least time-stamped event at the
+head of the LTSF queue, multi-set red-black tree must be traversed to the left most child
+node.  Any insertion or removal of events requires that the red-black tree rebalance
+itself.
 
 \paragraph{Splay Tree}
 
-The splay tree is a self-adjusting binary search tree in which recently accessed
-elements are moved to the root of the tree for quicker access \cite{splaytree}.
-Look-up, insertion, and deletion operations performed in a splay tee with
-\emph{n} elements are performed in average O(log n) time.  When an element is
-inserted or looked up, a splaying operation is to move that element to the root
-of the tree.
+The splay tree is a self-adjusting binary search tree in which recently accessed elements
+are moved to the root of the tree for quicker access \cite{splaytree}.  Look-up,
+insertion, and deletion operations performed in a splay tee with \emph{n} elements are
+performed in average O(log n) time.  When an element is inserted or looked up, a splaying
+operation is to move that element to the root of the tree.
 
-When an event is inserted into the LTSF queue, it becomes the root of the splay
-tree.  While this is advantageous if it is known that the root of the tree is
-the next least time-stamped event, the tree will have to be most of the time.
-If it is known that the next event to be scheduled is the located at the root of
-the tree, the worker thread scheduling the event can simply retrieve the node at
-the root of the tree without performing any searching operations.  This will
-very rarely be the case.  The tree will have to be search when an event is
-retrieved to ensure the least time-stamped event is being scheduled.   
+%% JOSH: second sentence ``will have to be <what> most of the time'' ?
+When an event is inserted into the LTSF queue, it becomes the root of the splay tree.
+While this is advantageous if it is known that the root of the tree is the next least
+time-stamped event, the tree will have to be most of the time.  If it is known that the
+next event to be scheduled is the located at the root of the tree, the worker thread
+scheduling the event can simply retrieve the node at the root of the tree without
+performing any searching operations.  This will rarely be the case.  The tree will have to
+be search when an event is retrieved to ensure the least time-stamped event is being
+scheduled.
 
 \subsection{Worker Thread Event Execution}
 
-A manager thread initiates \emph{n} worker threads at the beginning of the simulation.
-It can also suspend inactive worker threads if they run out of useful work.  When a worker
+A manager thread initiates \emph{n} worker threads at the beginning of the simulation.  It
+can also suspend inactive worker threads if they run out of useful work.  When a worker
 thread is created, or resumes execution after being suspended by the manager thread, it
 attempts to lock the LTSF queue and dequeue the least time-stamped event.  If the worker
 thread successfully retrieved an event, it executes that event as specified by the
@@ -1052,11 +1050,10 @@ with the executed event, and dequeue the next least time-stamped event.  The deq
 event is inserted into the LTSF queue, which resorts itself based on the event
 time-stamps.  An abstract event processing algorithm is shown in Figure
 ~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads perform many
-other functions.  
+other functions as well.
 
 %Is it legitimate for me to cite figures and pseudocode or do I need to recreate
-%these?
-\linespread{1.0}
+%these? for these small pseudo code examples we should be ok.  
 \begin{figure}
 \begin{verbatim}
 worker_thread()
@@ -1094,17 +1091,16 @@ LTSF queue.  The LTSF queue must also be updated when events are inserted into a
 LP pending event sets.  This occurs when new events are generated or the simulation
 encounters a causality error and must rollback.
 
-Contention increases with the number of worker threads used to perform the
-simulation.  The initial \textsc{warped} implementation execution time was
-measured and analyze using 1 to 7 worker threads.  These results can be seen in
-Figure ~\ref{fig:notsx_profile}.  It is evident that performance begins to
-flatten once the number of worker threads used surpasses four.  This is
-attributed to the increased contention for the LTSF queue; with more threads,
-each thread has to wait longer for access to the LTSF queue.  The multi-core
-processor trend will continue to increase the number of simultaneous execution
-threads available, consequently increasing the contention problem.
+Contention increases with the number of worker threads used to perform the simulation.
+The initial \textsc{warped} implementation execution time was measured and analyze using 1
+to 7 worker threads.  These results can be seen in Figure~\ref{fig:notsx_profile}.  It is
+evident that performance begins to flatten once the number of worker threads used
+surpasses four.  This is attributed to the increased contention for the LTSF queue; with
+more threads, each thread has to wait longer for access to the LTSF queue.  The multi-core
+processor trend will continue to increase the number of simultaneous execution threads
+available, consequently increasing the contention problem.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{notsx_profile}
@@ -1114,26 +1110,27 @@ threads available, consequently increasing the contention problem.
 
 \section{Previous Solutions to Contention}
 
-Dickman \emph{et al} explored the explored the use of various data structures in \textsc{warped}
-pending event set implementation, specifically, the STL multi-set, splay tree, and ladder
-queue data structures \cite{dickman}.  A secondary focus of this study will expand upon
-the use of splay tree versus STL multi-set data structures; at the time of this study, the
-ladder queue implementation was being heavily modified and could not be included in this
-study.
+Dickman \emph{et al} explored the explored the use of various data structures in
+\textsc{warped} pending event set implementation, specifically, the STL multi-set, splay
+tree, and ladder queue data structures \cite{dickman}.  A secondary focus of this study
+will expand upon the use of splay tree versus STL multi-set data structures; at the time
+of this work, the ladder queue implementation was being heavily modified and could not be
+included in this study.
 
-Another focus of their study was the utilization of multiple LTSF queues \cite{dickman}.
-Multiple LTSF queues are created at the beginning of the simulation.  Each LP is assigned
-to a specific LTSF queue as shown in Figure~\ref{fig:multipleLTSF}.  In a simulation
-configured with four LPs, two worker threads, and two LTSF queues, two LPs and one thread
-are assigned to each queue.  This significantly reduced contention as each thread could
-access separate LTSF queues concurrently.  The initial implementation statically assigned
-LPs to LTSF queues.  This resulted in an unbalanced load distribution, leading to an
-increased number of rollbacks and reduced simulation performance.  This was corrected
-using a load balancing algorithm to dynamically reassign LPs to LTSF queues.  This study
-expands the previous multiple LTSF queue to evaluate if contention can be reduced even
-further with TSX.
+Another focus of the Dickman \emph{et al} study was the utilization of multiple LTSF
+queues \cite{dickman}.  Multiple LTSF queues are created at the beginning of the
+simulation.  Each LP is assigned to a specific LTSF queue as shown in
+Figure~\ref{fig:multipleLTSF}.  In a simulation configured with four LPs, two worker
+threads, and two LTSF queues, two LPs and one thread are assigned to each queue.  This
+significantly reduced contention as each thread could access separate LTSF queues
+concurrently.  The initial implementation statically assigned LPs to LTSF queues.  This
+resulted in an unbalanced load distribution, leading to an increased number of rollbacks
+and reduced simulation performance.  This was corrected using a load balancing algorithm
+to dynamically reassign LPs to LTSF queues \cite{dickman}.  This study expands the
+previous multiple LTSF queue to evaluate if contention can be reduced even further with
+TSX.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{multiple_ltsf}
@@ -1143,19 +1140,17 @@ further with TSX.
 
 \section{Thread Migration}
 
-Another potential solution to contention is to distribute worker threads that
-try to simultaneously access the same LTSF queue to different LTSF queues.  In
-the original scheduling scheme, worker threads are assigned to a specific LTSF
-queue.  The worker thread would insert the next event into the same LTSF it had
-just scheduled from as seen in Figure ~\ref{workerThreadAlgorithm}.  In this
-implementation, the worker thread inserts the next event into a different LTSF
-queue, based on a circularly incremented counter.  This approach dynamically
-reassigns worker threads LTSF queues by migrating the threads to new LTSF
-queues.  It also implicitly balances the load between the all the LTSF queues.
-The number of LTSF queues is specified in a configuration file, and has no
-restrictions as in the static assignment.
+Another potential solution to contention is to distribute worker threads that try to
+simultaneously access the same LTSF queue to different LTSF queues.  In the original
+scheduling scheme, worker threads are assigned to a specific LTSF queue.  The worker
+thread would insert the next event into the same LTSF it had just scheduled from as seen
+in Figure~\ref{workerThreadAlgorithm}.  In this implementation, the worker thread inserts
+the next event into a different LTSF queue, based on a circularly incremented counter.
+This approach dynamically reassigns worker threads LTSF queues by migrating the threads to
+new LTSF queues.  It also implicitly balances the load between the all the LTSF queues.
+The number of LTSF queues is specified in a configuration file, and has no restrictions as
+in the static assignment.
 
-\linespread{1.0}
 \begin{figure}
 \begin{verbatim}
 worker_thread()
@@ -1188,12 +1183,14 @@ worker_thread()
     details have been omitted for clarity.}}\label{migratinWorkerThreadAlgorithm}
 \end{figure}
 
-It was discovered that this implementation resulted in poor performance on NUMA
-architectures.  Jingjing Wang et al. noticed similar performance degradation, which they
-attributed to poor memory locality due to the movement of LPs to different threads
-\cite{numa}.  To offset these performance hits, a migration count was implemented in this
-scheme.  Instead continuous migration, threads would be statically assigned to one LTSF
-after executing a certain number of events.
+In a separate (unpublished) study, UC researcher discovered that this implementation
+resulted in poor performance on NUMA architectures.  Jingjing Wang \emph{et al} also
+noticed similar performance degradation, which they attributed to poor memory locality due
+to the movement of LPs to different threads \cite{numa}.  To offset these performance
+hits, a migration count was implemented in this scheme.  Instead of continuous migration,
+threads would be statically assigned to one LTSF after executing a certain number of
+events at the beginning of the simulation.
+
 
 \chapter{\textsc{warped} with TSX}
 
