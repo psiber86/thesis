@@ -1,0 +1,195 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "usage: ./plotVSthreads </path/to/data/file> <static|dynamic>"
+else
+    filenameEXT=$(basename "$1")
+    title=$(echo "$filenameEXT" | sed 's/.*-\(.*\)$/\1/g')
+    filename=$(echo "$filenameEXT" | sed 's/\(.*\).txt$/\1/g') 
+
+    if [ $2 == "static" ]; then
+        schq1_lo=4
+        schq1_hi=11
+        schq2_lo=13
+        schq2_hi=16
+        schq3_lo=18
+        schq3_hi=20
+    elif [ $2 == "dynamic" ]; then
+        schq1_lo=4
+        schq1_hi=11
+        schq2_lo=13
+        schq2_hi=19
+        schq3_lo=21
+        schq3_hi=26
+        schq4_lo=28
+        schq4_hi=32
+        schq5_lo=34
+        schq5_hi=37
+        schq6_lo=39
+        schq6_hi=41
+    else
+        echo "invalid option $3"
+        exit
+    fi
+
+    # write gnuplot.gpi file for 1schQ 
+    echo "set terminal pdf" > "$filename-1schQ.gpi"
+    echo "set output \"$filename-1schQ.pdf\"" >> "$filename-1schQ.gpi"
+    echo "set key right top" >> "$filename-1schQ.gpi"
+    echo "set xrange [1:7]" >> "$filename-1schQ.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-1schQ.gpi"
+    echo "set xlabel 'Number of Worker Threads'" >> "$filename-1schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-1schQ.gpi"
+    echo "plot \"<(sed -n '$schq1_lo,${schq1_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-1schQ.gpi"
+    echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-1schQ.gpi"
+    echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-1schQ.gpi"
+
+    # perform actual plotting
+    gnuplot "$filename-1schQ.gpi"
+
+    # write gnuplot.gpi file for 2schQ 
+    echo "set terminal pdf" > "$filename-2schQ.gpi"
+    echo "set output \"$filename-2schQ.pdf\"" >> "$filename-2schQ.gpi"
+    echo "set key right top" >> "$filename-2schQ.gpi"
+    echo "set xrange [1:7]" >> "$filename-2schQ.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-2schQ.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-2schQ.gpi"
+    echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-2schQ.gpi"
+    echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-2schQ.gpi"
+    echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-2schQ.gpi"
+    echo "set xlabel 'Number of Worker Threads'" >> "$filename-2schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-2schQ.gpi"
+    echo "plot \"<(sed -n '$schq2_lo,${schq2_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-2schQ.gpi"
+    echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-2schQ.gpi"
+    echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-2schQ.gpi"
+
+    # perform actual plotting
+    gnuplot "$filename-2schQ.gpi"
+
+    # write gnuplot.gpi file for 3schQ 
+    echo "set terminal pdf" > "$filename-3schQ.gpi"
+    echo "set output \"$filename-3schQ.pdf\"" >> "$filename-3schQ.gpi"
+    echo "set key right top" >> "$filename-3schQ.gpi"
+    echo "set xrange [1:7]" >> "$filename-3schQ.gpi"
+    echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-3schQ.gpi"
+    echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-3schQ.gpi"
+    echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-3schQ.gpi"
+    echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-3schQ.gpi"
+    echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-3schQ.gpi"
+    echo "set xlabel 'Number of Worker Threads'" >> "$filename-3schQ.gpi"
+    echo "set ylabel 'Simulation Time (s)'" >> "$filename-3schQ.gpi"
+    echo "plot \"<(sed -n '$schq3_lo,${schq3_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-3schQ.gpi"
+    echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-3schQ.gpi"
+    echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-3schQ.gpi"
+
+    # perform actual plotting
+    gnuplot "$filename-3schQ.gpi"
+
+    if [ $2 == "dynamic" ]; then
+        # write gnuplot.gpi file for 4schQ 
+        echo "set terminal pdf" > "$filename-4schQ.gpi"
+        echo "set output \"$filename-4schQ.pdf\"" >> "$filename-4schQ.gpi"
+        echo "set key right top" >> "$filename-4schQ.gpi"
+        echo "set xrange [1:7]" >> "$filename-4schQ.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-4schQ.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-4schQ.gpi"
+        echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-4schQ.gpi"
+        echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-4schQ.gpi"
+        echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-4schQ.gpi"
+        echo "set xlabel 'Number of Worker Threads'" >> "$filename-4schQ.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-4schQ.gpi"
+        echo "plot \"<(sed -n '$schq4_lo,${schq4_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-4schQ.gpi"
+        echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-4schQ.gpi"
+        echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-4schQ.gpi"
+
+        # perform actual plotting
+        gnuplot "$filename-4schQ.gpi"
+
+        # write gnuplot.gpi file for 5schQ 
+        echo "set terminal pdf" > "$filename-5schQ.gpi"
+        echo "set output \"$filename-5schQ.pdf\"" >> "$filename-5schQ.gpi"
+        echo "set key right top" >> "$filename-5schQ.gpi"
+        echo "set xrange [1:5]" >> "$filename-5schQ.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-5schQ.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-5schQ.gpi"
+        echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-5schQ.gpi"
+        echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-5schQ.gpi"
+        echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-5schQ.gpi"
+        echo "set xlabel 'Number of Worker Threads'" >> "$filename-5schQ.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-5schQ.gpi"
+        echo "plot \"<(sed -n '$schq5_lo,${schq5_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-5schQ.gpi"
+        echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-5schQ.gpi"
+        echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-5schQ.gpi"
+
+        # perform actual plotting
+        gnuplot "$filename-5schQ.gpi"
+
+        # write gnuplot.gpi file for 6schQ 
+        echo "set terminal pdf" > "$filename-6schQ.gpi"
+        echo "set output \"$filename-6schQ.pdf\"" >> "$filename-6schQ.gpi"
+        echo "set key right top" >> "$filename-6schQ.gpi"
+        echo "set xrange [1:7]" >> "$filename-6schQ.gpi"
+        echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-6schQ.gpi"
+        echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-6schQ.gpi"
+        echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-6schQ.gpi"
+        echo "set style line 4 lt 4 lc rgb \"green\" lw 1" >> "$filename-6schQ.gpi"
+        echo "set style line 5 lt 5 lc rgb \"blue\" lw 1" >> "$filename-6schQ.gpi"
+        echo "set xlabel 'Number of Worker Threads'" >> "$filename-6schQ.gpi"
+        echo "set ylabel 'Simulation Time (s)'" >> "$filename-6schQ.gpi"
+        echo "plot \"<(sed -n '$schq6_lo,${schq6_hi}p' $1)\" using 1:2:3 title 'std' with lines ls 1, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:2:3 notitle with yerrorbars ls 1, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:4:5 title 'hle' with lines ls 2, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:4:5 notitle with yerrorbars ls 2, \\">> "$filename-6schQ.gpi"
+        echo "'' using 1:6:7 title 'rtm-1retry' with lines ls 3, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:6:7 notitle with yerrorbars ls 3, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:8:9 title 'rtm-9retry' with lines ls 4, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:8:9 notitle with yerrorbars ls 4, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:10:11 title 'rtm-19retry' with lines ls 5, \\" >> "$filename-6schQ.gpi"
+        echo "'' using 1:10:11 notitle with yerrorbars ls 5 " >> "$filename-6schQ.gpi"
+
+        # perform actual plotting
+        gnuplot "$filename-6schQ.gpi"
+    fi
+
+    rm *.gpi
+    mv *.pdf ../figures/
+fi
