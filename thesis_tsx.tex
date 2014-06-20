@@ -1190,14 +1190,15 @@ worker_thread()
     details have been omitted for clarity.}}\label{migratinWorkerThreadAlgorithm}
 \end{figure}
 
-In a separate (unpublished) study, UC researcher discovered that this implementation
-resulted in poor performance on NUMA architectures.  Jingjing Wang \emph{et al} also
-noticed similar performance degradation, which they attributed to poor memory locality due
-to the movement of LPs to different threads \cite{numa}.  To offset these performance
-hits, a migration count was implemented in this scheme.  Instead of continuous migration,
-threads would be statically assigned to one LTSF after executing a certain number of
-events at the beginning of the simulation.
-
+In a separate (unpublished) study, UC researcher discovered that this
+implementation resulted in poor performance on Non-uniform Memory Access (NUMA)
+architectures.  Jingjing Wang \emph{et al} also noticed similar performance
+degradation, which they attributed to poor memory locality due to the movement
+of LPs to different threads \cite{numa}.  To offset these performance hits, a
+migration count was implemented in this scheme.  Instead of continuous
+migration, threads are reassigned to their original LTSF queue after executing a
+certain number of events.  The threads will continue to schedule events from
+their original LTSF queue for the remainder of the simulation.
 
 \chapter{\textsc{warped} with TSX}
 
@@ -1764,7 +1765,7 @@ configuration, RTM generally outperformed standard locking mechanisms by about
     \label{fig:contThrMig_timeVSschq_6threads}
 \end{figure}
 
-Using standard locking mechanisms with 6 worker threads and 1 to LTSF queues
+Using standard locking mechanisms with 6 worker threads and 1 to 6 LTSF queues
 reduced simulation from 4\% to 6\% as the number of LTSF queues is increased.
 Again, HLE shows similar reductions in contention.  However, it still
 outperforms standard locking by as much as 23\% using 4 LTSF queues.  While RTM
@@ -1779,7 +1780,19 @@ runtime from 6\% to 9\% as the number of LTSF queues is increased.
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
-
+The final simulation configuration uses 7 worker threads with 1 to 11 LTSF
+queues.  Using standard locking mechanisms with multiple LTSF queues reduces
+execution time from 6\% to  9\% as the number of LTSF queues is increased.
+Surprisingly, HLE only reduces execution time from 3\% to 5\%.  But again, HLE
+still well outperforms the standard locking mechanisms by as much as 27\%.  RTM
+still only outperforms standard locking mechanisms by about 5\%.  However, it
+significantly improves performance with increased LTSF queues.  Execution time
+was reduced from 9\% to almost 14\% when using RTM with multiple LTSF queues.
+While the number of LTSF queues is not restricted with this migration scheme, it
+is clear that using any more than 4 LTSF queues does not yield any more
+performance improvements.  This configuration was executed with up to 11 LTSF
+queues simply to demonstrate that this configuration can exceed the number of worker
+threads, but no does not improve performance.
 
 \subsubsection{Event Limited Thread Migration}
 
@@ -1792,77 +1805,90 @@ runtime from 6\% to 9\% as the number of LTSF queues is increased.
 As previously discussed, the continuous thread migration approach does not work well for
 NUMA architectures due to memory locality issues.  The thread migration scheme was
 modified to migrate threads between LTSF queues for the first 50 events a thread executes.
-The threads continue to schedule from the same LTSF queue they executed the fiftieth event
-from.
+After the thread has executed 50 events, it is reassigned to its original LTSF
+queue and continues to schedule from that queue for the remainder of the
+simulation.
 
 While the continous migration scheme is not problematic for the system under test, the
 comparison was made to thoroughly evaluate TSX using this scheme as a viable solution to
 contention.  TSX may also one day become available on NUMA architectures.  Further testing
 would need to be performed, but at least it will be known if this solution has any
-significant impact on contention.  These results are shown in
-Tables~\ref{tab:xThrMig_2threadsXschq}, \ref{tab:xThrMig_3threadsXschq}, and
-\ref{tab:xThrMig_5threadsXschq}, and Figures~\ref{fig:xThrMig_timeVSschq_4threads} and
-\ref{fig:xThrMig_timeVSschq_6threads}.
+significant impact on contention.  
 
-It is evident that any static thread to LTSF queue assignment suffers from the same
-problems.  Except for the 2 worker thread, 2 LTSF queue and 3 worker thread, 3 LTSF queue
-configurations, performance suffers as the number of LTSF queues is increased.  This is
-most likely attributed more to lack of adequate load balancing than contention.
+Unfortunately, the simulation results were incredibly inconsistent using this
+scheduling scheme.  A significant portion of the simulations did not complete
+execution in the allotted time.  For instance, the 6 worker thread, 3 LTSF queue
+configuration using standard locking mechanisms configuration took anywherefrom
+70 seconds to 160 seconds.  The simulations that took 160 seconds to execute
+experienced significantly higher rollbacks.  When the simulation does appear to
+run normally, it executes slightly faster than the strictly static thread
+assignment scheme.  The instability of this migration scheme made it infeasible
+to obtain good data.
 
-\begin{table}
-    \centering
-    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
-        \hline
-        \midrule
-            1 &121.2448  &105.6107 &124.1983 &123.6149 &123.0078\\ 
-            2 &117.6654  &102.0753 &121.0667 &137.9824 &154.3929\\
-    \end{tabular}
-    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF
-        Queues}}\label{tab:xThrMig_2threadsXschq} 
-\end{table}
-
-\begin{table}
-    \centering
-    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
-        \hline
-        \midrule
-            1 &92.36592  &74.22306 &93.23531  &92.67724 &92.6402 \\ 
-            3 &88.91337  &70.67712 &89.53974  &107.369  &126.557 \\
-    \end{tabular}
-    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF
-        Queues}}\label{tab:xThrMig_3threadsXschq} 
-\end{table}
-
-\begin{figure}
-    \centering
-    \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
-        Worker Threads}}\label{fig:xThrMig_timeVSschq_4threads}
-\end{figure}
-
-\begin{table}
-    \centering
-    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
-        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
-        \hline
-        \midrule
-            1 &69.30301  &54.40232 &70.85832  &70.46488 &70.4784 \\ 
-            5 &95.31338  &77.55966 &93.71796  &85.63724 &76.2384 \\
-    \end{tabular}
-    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF
-        Queues}}\label{tab:xThrMig_5threadsXschq}
-\end{table}
-
-\begin{figure}
-    \centering
-    \graphicspath{ {./figures/} }
-    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
-        Worker Threads}}\label{fig:xThrMig_timeVSschq_6threads}
-\end{figure}
+%These results are shown in
+%Tables~\ref{tab:xThrMig_2threadsXschq}, \ref{tab:xThrMig_3threadsXschq}, and
+%\ref{tab:xThrMig_5threadsXschq}, and Figures~\ref{fig:xThrMig_timeVSschq_4threads} and
+%\ref{fig:xThrMig_timeVSschq_6threads}.
+%
+%It is evident that any static thread to LTSF queue assignment suffers from the same
+%problems.  Except for the 2 worker thread, 2 LTSF queue and 3 worker thread, 3 LTSF queue
+%configurations, performance suffers as the number of LTSF queues is increased.  This is
+%most likely attributed more to lack of adequate load balancing than contention.
+%
+%\begin{table}
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
+%        \hline
+%        \midrule
+%            1 &121.2448  &105.6107 &124.1983 &123.6149 &123.0078\\ 
+%            2 &117.6654  &102.0753 &121.0667 &137.9824 &154.3929\\
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF
+%        Queues}}\label{tab:xThrMig_2threadsXschq} 
+%\end{table}
+%
+%\begin{table}
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
+%        \hline
+%        \midrule
+%            1 &92.36592  &74.22306 &93.23531  &92.67724 &92.6402 \\ 
+%            3 &88.91337  &70.67712 &89.53974  &107.369  &126.557 \\
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF
+%        Queues}}\label{tab:xThrMig_3threadsXschq} 
+%\end{table}
+%
+%\begin{figure}
+%    \centering
+%    \graphicspath{ {./figures/} }
+%    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread}
+%    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
+%        Worker Threads}}\label{fig:xThrMig_timeVSschq_4threads}
+%\end{figure}
+%
+%\begin{table}
+%    \centering
+%    \begin{tabular}{l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}}
+%        \textbf{\# LTSF Queues}&Lock &HLE &RTM-1retry &RTM-9retry &RTM-19retry \\
+%        \hline
+%        \midrule
+%            1 &69.30301  &54.40232 &70.85832  &70.46488 &70.4784 \\ 
+%            5 &95.31338  &77.55966 &93.71796  &85.63724 &76.2384 \\
+%    \end{tabular}
+%    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF
+%        Queues}}\label{tab:xThrMig_5threadsXschq}
+%\end{table}
+%
+%\begin{figure}
+%    \centering
+%    \graphicspath{ {./figures/} }
+%    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-6thread}
+%    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
+%        Worker Threads}}\label{fig:xThrMig_timeVSschq_6threads}
+%\end{figure}
 
 \subsubsection{Migration Scheme Comparison}
 
