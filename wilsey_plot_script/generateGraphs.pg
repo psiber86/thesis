@@ -20,37 +20,37 @@ set output "plots/migComp_4threads.pdf"
 set xrange ["0":"5"]
 plot "summary-threadMigrationComparison.dat" index 3 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 3 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
-     "summary-threadMigrationComparison.dat" index 3 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
      "summary-threadMigrationComparison.dat" index 3 using 1:8 title 'HLE Static' with linespoints ls 4, \
-     "summary-threadMigrationComparison.dat" index 3 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
-     "summary-threadMigrationComparison.dat" index 3 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
+     "summary-threadMigrationComparison.dat" index 3 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5
+#     "summary-threadMigrationComparison.dat" index 3 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
+#     "summary-threadMigrationComparison.dat" index 3 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
 set output "plots/migComp_5threads.pdf"
 set xrange ["0":"6"]
 plot "summary-threadMigrationComparison.dat" index 4 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 4 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
-     "summary-threadMigrationComparison.dat" index 4 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
      "summary-threadMigrationComparison.dat" index 4 using 1:8 title 'HLE Static' with linespoints ls 4, \
-     "summary-threadMigrationComparison.dat" index 4 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
-     "summary-threadMigrationComparison.dat" index 4 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
+     "summary-threadMigrationComparison.dat" index 4 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5
+#     "summary-threadMigrationComparison.dat" index 4 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
+#     "summary-threadMigrationComparison.dat" index 4 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
 set output "plots/migComp_6threads.pdf"
 set xrange ["0":"7"]
 plot "summary-threadMigrationComparison.dat" index 5 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 5 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
-     "summary-threadMigrationComparison.dat" index 5 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
      "summary-threadMigrationComparison.dat" index 5 using 1:8 title 'HLE Static' with linespoints ls 4, \
-     "summary-threadMigrationComparison.dat" index 5 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
-     "summary-threadMigrationComparison.dat" index 5 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
+     "summary-threadMigrationComparison.dat" index 5 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5
+#     "summary-threadMigrationComparison.dat" index 5 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
+#     "summary-threadMigrationComparison.dat" index 5 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
 set output "plots/migComp_7threads.pdf"
 set xrange ["0":"12"]
 plot "summary-threadMigrationComparison.dat" index 6 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 6 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
-     "summary-threadMigrationComparison.dat" index 6 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
      "summary-threadMigrationComparison.dat" index 6 using 1:8 title 'HLE Static' with linespoints ls 4, \
-     "summary-threadMigrationComparison.dat" index 6 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
-     "summary-threadMigrationComparison.dat" index 6 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
+     "summary-threadMigrationComparison.dat" index 6 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5
+#     "summary-threadMigrationComparison.dat" index 6 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \
+#     "summary-threadMigrationComparison.dat" index 6 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
 
 
