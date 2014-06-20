@@ -98,7 +98,7 @@ testing, evaluation of both forms of transactional memory (HLE and RTM)
 implemented in the Haswell architecture were performed.  The results show that
 RTM generally outperforms  conventional locking mechanisms and that HLE provides
 consistently better performance than conventional locking mechanisms, up to as
-much as 20\%.
+much as 23\%.
 
 %The latter is an attempt to
 %decentralize the data structure holding pending event queue and distribute worker threads
@@ -429,7 +429,7 @@ Synchronization Extensions (TSX) is the currently the only widely available comm
 HTM-enabled system.  Numerous studies have already been performed with TSX, primarily
 evaluating its performance capabilities.  Chitters \emph{et al} modified Google's write
 optimized persistent key-value store, LevelDB, to use TSX based synchronization instead of
-a global mutex.  Their implementation shower 20-25\% increased throughput for write-only
+a global mutex.  Their implementation shows 20-25\% increased throughput for write-only
 workloads and increased throughput for 50\% read / 50\% write workloads
 \cite{chitters_tsx}.  Wang \emph{et al} studied the performance scalability of a
 concurrent skip-list using TSX Restricted Transactional Memory (RTM).  They compared the
@@ -1494,11 +1494,16 @@ execute critical section
 
 \chapter{Experimental Analysis}
 
-This study compares the performance of the \textsc{warped} simulation kernel using
-conventional synchronization mechanisms, Hardware Lock Elision, and Restricted
-Transactional memory.  All simulations were performed on a system with an Intel i7-4770
-running at 3.4 GHz with 32GB of RAM.  The average execution time and standard deviation
-were calculated from a set of 10 trials for each simulation configuration.
+This study compares the performance of the \textsc{warped} simulation kernel
+using conventional synchronization mechanisms, Hardware Lock Elision, and
+Restricted Transactional memory.  All simulations were performed on a system
+with an Intel i7-4770 running at 3.4 GHz with 32GB of RAM.  The average
+execution time and standard deviation were calculated from a set of 10 trials
+for each simulation configuration.  When comparing synchronization mechanisms,
+the simulation runtimes are compared for the same LTSF queue and worker thread
+configurationsj.  When comparing the LTSF queue configurations, the multiple
+LTSF queue configuration runtime is compared with the runtime of the same
+configuration with 1 LTSF queue.
 
 The simulation model used to obtain the following results is an epidemic model.  It
 consists of 110998 geographically distributed people in 119 separate locations requiring a
@@ -1670,10 +1675,10 @@ Table~\ref{tab:contThrMig_2threadsXschq} and
 Figures~\ref{fig:contThrMig_timeVSschq_3threads} through
 \ref{fig:contThrMig_timeVSschq_7threads}.
 
-It is evident that this scheduling scheme slightly improves performance increasing the
-number of LTSF queues from 1 to 4.  Increasing the number of LTSF queues beyond 4 does not
-seem to significantly improve performance.  The performance of HLE synchronization, while
-still superior, seems to follow the same trend as standard synchronization mechanisms.
+%It is evident that this scheduling scheme slightly improves performance increasing the
+%number of LTSF queues from 1 to 4.  Increasing the number of LTSF queues beyond 4 does not
+%seem to significantly improve performance.  The performance of HLE synchronization, while
+%still superior, seems to follow the same trend as standard synchronization mechanisms.
 
 %JOSH: TODO: more discussion maybe?  probably also chart the results with a changing
 %number of worker threads as you also do in figure 6.1.  it would be nice to see how these
@@ -1706,6 +1711,12 @@ still superior, seems to follow the same trend as standard synchronization mecha
     \label{fig:contThrMig_timeVSschq_3threads}
 \end{figure}
 
+With 2 or 3 worker threads, the continuous migration scheme did not yield the
+anticipated results.  Simulation runtime actually slightly increased with
+additional LTSF queues.  However, HLE and RTM with 1 retry still reduced
+simulation runtime when compared to standard locking mechanisms, HLE more so
+than RTM.
+
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
@@ -1713,6 +1724,17 @@ still superior, seems to follow the same trend as standard synchronization mecha
     \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 4 Dynamically Assigned Worker Threads}}
     \label{fig:contThrMig_timeVSschq_4threads}
 \end{figure}
+
+Simulation runtime decreased slightly increasing the LTSF queue with 4 worker
+threads.  Each multiple LTSF configuration reduced simulation runtime by 2-3\%
+with HLE and RTM using 1 retry generally having larger reductions than standard
+locking mechanisms.  The only exception to this trend is the 4 LSTF queue
+configuration with HLE; it reduced simulation runtime slightly less than
+standard locking mechanisms, but the difference seems trivial.  While RTM
+performed well for lower LTSF queue counts, the increased retry counts resulted
+in worse performance for higher LTSF queue counts.  In any configuration, HLE
+still reduces runtime by about 18\%, while RTM generally generally reduces
+runtime by about 3-4\% when comparing the two to standard locking mechanisms.
 
 \begin{figure}
     \centering
@@ -1722,6 +1744,18 @@ still superior, seems to follow the same trend as standard synchronization mecha
     \label{fig:contThrMig_timeVSschq_5threads}
 \end{figure}
 
+Configuring the simulation with 5 worker threads and 1 to 5 LTSF queues appears
+to reduce contention even more so.  Using standard locking mechanisms,
+simulation runtime reduced 2\% to 4\% as the number of LTSF queues was
+increased.  Using HLE, the runtime was reduced by the same amount as standard
+locking mechanisms with increased LTSF queues; however, HLE still outperforms
+the standard locking mechanisms by 20\% to begin with.  Contention was still
+reduced, but not because multiple LTSF queues were used.  Using RTM with 9 retries
+actually reduced the simulation runtime the most.  Runtime reductions increased
+from 4\% to 7\% as the number of LTSF queues was increased.  In this
+configuration, RTM generally outperformed standard locking mechanisms by about
+5\%.
+
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
@@ -1730,6 +1764,13 @@ still superior, seems to follow the same trend as standard synchronization mecha
     \label{fig:contThrMig_timeVSschq_6threads}
 \end{figure}
 
+Using standard locking mechanisms with 6 worker threads and 1 to LTSF queues
+reduced simulation from 4\% to 6\% as the number of LTSF queues is increased.
+Again, HLE shows similar reductions in contention.  However, it still
+outperforms standard locking by as much as 23\% using 4 LTSF queues.  While RTM
+generally only outperforms standard locking by about 5\%, it reduces simulation
+runtime from 6\% to 9\% as the number of LTSF queues is increased.
+
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
@@ -1737,6 +1778,8 @@ still superior, seems to follow the same trend as standard synchronization mecha
     \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 7 Dynamically Assigned Worker Threads}}
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
+
+
 
 \subsubsection{Event Limited Thread Migration}
 
@@ -2010,20 +2053,18 @@ use standard and TSX synchronization mechanisms.
 Based on the results above, it clear that TSX improved performance of \textsc{warped}.
 HLE consistently shows speedup over conventional synchronization mechanisms.  It even
 slightly reduces execution time when the simulation only uses one LTSF queue.  In other
-configurations, HLE reduces execution time by as much as 20\%.
+configurations, HLE reduces execution time by as much as 23\% and consistenly
+reduces execution time by 20\%.   
 
-RTM performance trends were much less consistent.  The number of RTM retries was varied to
-better tune the performance of RTM.  In some configurations, the simulation time as the
-number of retries inceased also increase, while in other configurations the simulation
-time decreased as the number of retries increased.  There were also configurations where
-the simulation did not change significantly as the number of retries was increased.
-Regardless, RTM still showed speedup over conventional synchronization mechanisms in most
-configurations, even though it was not nearly as much speedup as HLE.  The inconsistencies
-in speedup trends as well as overall speedup can most likely be attributed to the overhead
+While HLE is the superior synchronization mechanism, RTM still showed increases
+in performance, generally by about 5\%.  It also responded to multiple
+LTSF queues better than HLE.  This is most likely attributed to the retry
+algorithm.  HLE transactions only have one chance to execute a transaction; if
+contention is high at certain times, the transaction will most likely abort.
+The various RTM configurations allow RTM to retry if contention is
+high at certain times.  RTM might not perform as well as HLE due to the overhead
 associated with RTM.  The retry algorithm requires abort statistics to be calculated and
-maintained which adds a bit more overhead to RTM.  Furthermore, the backup algorithm
-modifies the number of retries allowed, thus varying the actual number of retries
-attempted between simulations with even the same configuration.
+maintained which adds a bit more overhead to RTM.  
 
 Increasing the number of LTSF queues from 1 to 2 usually resulted in reduced contention
 and thus improved performance.  Increasing the LTSF queue to anything greater than 2
