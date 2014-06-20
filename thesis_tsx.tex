@@ -54,10 +54,10 @@
     {\bf MASTER OF SCIENCE}\\[0.20in]
     in the School of Electric and Computing Systems\\
     of the College of Engineering and Applied Sciences\\[0.20in]
-    August xx, 2010\\[0.20in]
+    June 26, 2014\\[0.20in]
     by\\[0.20in]
     {\bf Joshua Hay}\\
-    BSxx, University of Cincinnati, 20xx\\}
+    BSEE, University of Cincinnati, 2013\\}
   \vspace{0.5in}
   {\large Thesis Advisor and Committee Chair:  Dr. Philip A. Wilsey}
 \end{center}
@@ -84,27 +84,33 @@ performance.  This is especially true for optimistically synchronized PDES, such
 implementing the Time Warp protocol.  Rather than prevent causality errors, events are
 aggressively scheduled and executed until a causality error is detected.
 
-This thesis explores the use of transactional memory as an alternative to conventional
-synchronization mechanisms for managing the pending event set in a time warp synchronized
-parallel simulator.  In particular, this thesis examines the use of Intel's hardware
-transactional memory, TSX, to manage shared access to the pending event set by the
-simulation threads.  In conjunction with transactional memory, other solutions to
-contention are explored such as the use of multiple queues to hold the pending event set
-and the binding of threads to these multiple queues.  The latter is an attempt to
-decentralize the data structure holding pending event queue and distribute worker threads
-among the decentralized data structure.  For each configuration a comparison between
-conventional locking mechanisms and transactional memory access is performed to evaluate
-each within the \textsc{warped} parallel simulation kernel.  In this testing, evaluation
-of both forms of transactional memory (HLE and RTM) implemented in the Haswell
-architecture were performed.  The results show that RTM generally performs on par with
-conventional mutex locking primitives and that HLE provides consistently better
-performance than conventional locking mechanisms.  HLE frequently outperforms conventional
-locks by as much as 20\%.
+This thesis explores the use of transactional memory as an alternative to
+conventional synchronization mechanisms for managing the pending event set in a
+time warp synchronized parallel simulator.  In particular, this thesis examines
+the use of Intel's hardware transactional memory, TSX, to manage shared access
+to the pending event set by the simulation threads.  In conjunction with
+transactional memory, other solutions to contention are explored such as the use
+of multiple queues to hold the pending event set and the dynamic binding of
+threads to these multiple queues.  For each configuration a comparison between
+conventional locking mechanisms and transactional memory access is performed to
+evaluate each within the \textsc{warped} parallel simulation kernel.  In this
+testing, evaluation of both forms of transactional memory (HLE and RTM)
+implemented in the Haswell architecture were performed.  The results show that
+RTM generally outperforms  conventional locking mechanisms and that HLE provides
+consistently better performance than conventional locking mechanisms, up to as
+much as 20\%.
+
+%The latter is an attempt to
+%decentralize the data structure holding pending event queue and distribute worker threads
+%among the decentralized data structure.  
 
 \chapter*{Acknowledgments} 
 
 %% put your acknowledgements here.
-
+I would like to thank my parents and grandparents for all of their love and
+support throughout my years of schooling.  I would especially like to thank my
+grandfather who inspired me to pursue a degree in engineering.  I would also
+like to thank Dr. Philip A. Wilsey for all of this assitance and advice.
 
 %% these three lines will cause latex to automatically generate these entries
 %% for you....nice.  you can comment them out if, for example, your thesis does
@@ -1029,15 +1035,17 @@ insertion, and deletion operations performed in a splay tee with \emph{n} elemen
 performed in average O(log n) time.  When an element is inserted or looked up, a splaying
 operation is to move that element to the root of the tree.
 
-%% JOSH: second sentence ``will have to be <what> most of the time'' ?
-When an event is inserted into the LTSF queue, it becomes the root of the splay tree.
-While this is advantageous if it is known that the root of the tree is the next least
-time-stamped event, the tree will have to be most of the time.  If it is known that the
-next event to be scheduled is the located at the root of the tree, the worker thread
-scheduling the event can simply retrieve the node at the root of the tree without
-performing any searching operations.  This will rarely be the case.  The tree will have to
-be search when an event is retrieved to ensure the least time-stamped event is being
-scheduled.
+When an event is inserted into the LTSF queue, it becomes the root of the splay
+tree.  While this is advantageous if it is known that the root of the tree is
+the next least time-stamped event, the tree will have to be most searched most
+of the time.  If it is known that the next event to be scheduled is the located
+at the root of the tree, the worker thread scheduling the event can simply
+retrieve the node at the root of the tree without performing any searching
+operations.  This will rarely be the case, however.  Because the splay tree puts
+the any most recently accessed element at the root of the tree, there is no
+guarantee this node is the least time-stamped event.  The tree will have to be
+searched when an event is retrieved to ensure the least time-stamped event is
+being retrieved.
 
 \subsection{Worker Thread Event Execution}
 
@@ -1053,8 +1061,6 @@ time-stamps.  An abstract event processing algorithm is shown in Figure
 ~\ref{workerThreadAlgorithm} \cite{dickman}.  Note that the worker threads perform many
 other functions as well.
 
-%Is it legitimate for me to cite figures and pseudocode or do I need to recreate
-%these? for these small pseudo code examples we should be ok.  
 \begin{figure}
 \begin{verbatim}
 worker_thread()
@@ -1208,26 +1214,39 @@ critical section always writes to the entire shared data structure, TSX will mos
 not be useful.  Functions are only explained in terms of the operations pertaining to the
 specific data structure they operate on for the sake of clarity.
 
-\subsection{LTSF Queue Functions}
+\subsection{Relevant LTSF Queue Functions}
+\label{sec:ltsfq_functions}
 
 The following functions require synchronization to access the LTSF queue:
 
-%% JOSH: you must properly define the function you are not clear on before we can
-%% distributed this thesis.
 \vspace*{-\bigskipamount}
 \begin{singlespace}
 \begin{itemize}
-  \item\texttt{insert()}: insert an event into the LTSF queue if an event was inserted at
-    the beginning of a specific LP's unprocessed queue.
-  \item\texttt{updatedScheduleQueueAfterExecute()}: insert the dequeued event from a
-    specific LP's unprocessed queue into the LTSF queue.
+    \item\texttt{insert()}: copy the least time-stamped event from a specific
+        LP's unprocessed queue into the LTSF queue.
+  \item\texttt{updatedScheduleQueueAfterExecute()}: find the source LP of the
+      previously executed event, and copy the least time-stamped event from that
+      LP's unprocessed queue into the LTSF queue using the \texttt{insert()}
+      function above.
   \item\texttt{nextEventToBeScheduledTime()}: return the time of the event at the
     beginning of the LTSF queue.
   \item\texttt{clearScheduleQueue()}: clear the LTSF queue.
-  \item\texttt{setLowestObjectPosition()}: \textbf{not clear on this function}
-  \item\texttt{peek()}: retrieve the next event for execution.
-\end{itemize}
+  \item\texttt{setLowestObjectPosition()}: update the lowest object position
+      array. 
+  \item\texttt{peek()}: dequeues the next event for execution from the head of
+      the LTSF queue.
+  \item\texttt{peekEvent()}: if a simulation object is not specified, call \texttt{peek()}. 
+  \end{itemize}
 \end{singlespace}
+
+Most of these critical sections involve write operations, typically through
+queuing and dequeuing events.  Queuing and dequeing requires the multi-set and
+splay tree data structures to readjust themselves thus adding more memory
+locations to the transaction's read-set and write-set.
+\texttt{nextEventToBeScheduleTime()} is the only critical section that performs
+strictly read operations.  Furthermore, many of these critical sections overlap
+with critical sections from the unprocessed and processed queues, which are
+described below.
 
 \subsection{Unprocessed Queue Functions}
 
@@ -1238,31 +1257,44 @@ queue:
 \begin{singlespace}
 \begin{itemize}
   \item\texttt{insert()}: insert an event into a specific LP's unprocessed queue.
-  \item\texttt{updatedScheduleQueueAfterExecute()}: dequeue the next least time-stamped
-    event from a specific LP's unprocessed queue.
-  \item\texttt{getEvent()}: dequeue and return the least time-stamped event in the
+  \item\texttt{updatedScheduleQueueAfterExecute()}: refer to
+      \texttt{updateScheduleQueueAfterExecute()} in section
+      \ref{sec:ltsfq_functions}. 
+  \item\texttt{getEvent()}: dequeue the least time-stamped event in the
     unprocessed queue; insert event into processed queue.
-  \item\texttt{getEventIfStraggler()}: same as \texttt{getEvent()} but does not insert
-    the event into the processed queue as the getEvent function above does.
+  \item\texttt{getEventIfStraggler()}: same as \texttt{getEvent()}, except the
+      event is not inserted into the processed queue.
+  \item\texttt{getEventWhileRollback()}: same as \texttt{getEvent()}, except the unprocessed queue
+    is already locked.
 %% JOSH: verify
   \item\texttt{peekEvent()}: return a reference to the next event in the LP's unprocessed
-    queue.
+    queue when a simulation object is specified; may not release lock 
 %% JOSH: probably not....look closer
-  \item\texttt{peekEventCoastForward()}: same as \texttt{peekEvent()}.
+  \item\texttt{peekEventCoastForward()}: same as \texttt{peekEvent()}; may not
+      release lock.
+  \item\texttt{peekEventLockUnprocessed()}: same as \texttt{peekEvent()}; may
+      not release lock.  
   \item\texttt{handleAntiMessage()}: delete an event in a specific LP's unprocessed queue
     for which the LP received an anti-message.
   \item\texttt{ofcPurge()}: remove all events from the unprocessed queue; used for
     optimistic fossil collection \cite{young-98}, which is beyond the scope of this study.
-  \item\texttt{peekEventLockUnprocessed()}: peek the first event of a specif LP's
-    unprocessed queue, but leave the queue locked.
   \item\texttt{getMinEventTime()}: get the time-stamp of the first event in a specific
     LP's unprocessed queue.
 \end{itemize}
 \end{singlespace}
 
+Just as the LTSF queue, many of the unprocessed queue critical sections involve
+queuing and dequeuing events.  Since the unprocessed queue is implemented as a
+multi-set, queuing and dequeing require the data structure to readjust itself,
+thus adding a larger portion of the data structure to the transaction's read-set
+and write-set.  Other critical sections involve deleting events matching a
+specific criteria, but the same readjusting occurs.  As previously mentioned,
+some unprocessed queue critical sections are executed in the middle of an LTSF
+queue critical section, or vice versa.
+
 \subsection{Processed Queue Functions}
 
-The following functions require synchronization to access a specific LPs processed queue:
+The following functions require synchronization to access a specific LP's processed queue:
 
 \vspace*{-\bigskipamount}
 \begin{singlespace}
@@ -1270,16 +1302,23 @@ The following functions require synchronization to access a specific LPs process
   \item\texttt{getEvent()}: insert the dequeued event from a specific LP's unprocessed
     queue into that LP's processed queue.
 %% JOSH: verify
-  \item\texttt{getEventWhileRollback()}: same as getEvent(), except the unprocessed queue
-    is already locked.
+  \item\texttt{getEventWhileRollback()}: insert an event into the LP's processed
+      queue.
   \item\texttt{rollback()}: traverse a specific LP's entire processed queue and remove any
     events with a time-stamp greater than or equal to the rollback time; the removed
     events are placed in the LP's unprocessed queue.
   \item\texttt{fossilCollect()}: remove events satisfying a certain criteria from a
     specific LP's processed queue.
-  \item\texttt{ofcPurge()}: same as the ofcPurge() function for the unprocessed queue.
+    \item\texttt{ofcPurge()}: same as the \texttt{ofcPurge()} function for the unprocessed queue.
 \end{itemize}
 \end{singlespace}
+
+The processed queue is also implemented as a multi-set data structure.
+Any insertion or deletion of events requires the data structure to readjust.
+All of the processed queue critical sections modify the data structure in some
+way, with the exception of \texttt{rollback()} and \texttt{fossilCollect()};
+there is a chance that no events in the queue match the criteria, therefore, no
+events need to be removed.
 
 \section{\textsc{warped} Transactional Regions}
 
@@ -1326,23 +1365,35 @@ the pending event set implementation, but the performance of TSX is also depende
 data structures implementing the pending event set.
 
 For example, a worker thread is scheduling the next least time-stamped event from the LTSF
-queue and needs to remove that event from the queue.  In the STL multi-set schedule queue
-implementation, the tree must be traversed to the lowest value element, which adds all
-tree nodes in that path to the transactions read-set.  The node is removed, but the STL
+queue and needs to remove that event from the queue.  The LTSF class maintains
+a lowest event position pointer to keep track of the head of the LTSF queue,
+\emph{i.e., the least time-stamped event} in the underlying red-black tree. The
+node is removed and the lowest event position pointer is updated.  The STL
 multi-set must go through the process of rebalancing itself before the transaction ends.
 Before the multi-set can complete the rebalancing process, another worker thread attempts
-to schedule the next least time-stamped event. It traverse the tree to the lowest value
-element and removs it.  This involves a write operation to the parent node of the event.
-But the node was already addded to the first transaction's read-set.  A data conflict
+to schedule the next least time-stamped event. It uses the lowest event position
+pointer to access the next least time-stamped event, \emph{i.e., the parent
+node of the previously removed event}.  This involves a write operation to the
+parent node of the first event.  But the node was already addded to the first
+transaction's read-set during the rebalancing procedure.  A data conflict
 results and both transactions must abort.
 
-In the splay tree schedule queue implementation, the next least time-stamped event is
-already the root of the splay tree, either because it was just peeked at or inserted.  A
-worker thread enters the transaction to schedule the event and remove it from the queue.
-The splay tree must be traversed to ensure that the least time-stamped event is being
-scheduled, thus adding the entire structure to the read-set of the transaction.  This
-increases the likelihood of a data conflict should any other thread try to write to the
-tree in any way while the original transaction is executing.
+In the splay tree schedule queue implementation, the next least time-stamped
+event is already the root of the splay tree, either because it was just peeked
+at or inserted.  A worker thread enters the transaction to schedule the event
+and remove it from the queue.  To verify that the root of the splay tree is the
+least time-stamped event, the tree must be partially traversed.  If the root
+node has no left subtree, representing any events with time-stamps smaller than
+that of the root node, the root node is in fact the least time-stamped event.
+It is removed and the right subtree root node becomes the new root node of the
+entire splay tree.  The reassignment of the right subtree root node to
+the splay tree root node adds that memory location to the transaction read-set.
+Before the first transaction completes, another thread looks at the head of the 
+to schedule the next least time-stamped event.  It attempts to remove the node,
+resulting in a data conflict with the first transcation.  Furthermore,
+traversing the tree to verify the least time-stamped event is at the root node
+of the tree adds a larger portion of the data structure to the transaction's
+read-set.  This increases the likelihood of a data conflict. 
 
 Both of these data structures are some form of binary tree.  It is possible for very few
 nodes to be accessed during certain operations, especially the multi-set red-black tree.
@@ -1366,12 +1417,13 @@ This section discusses how both TSX interfaces were implemented in \textsc{warpe
 
 %% JOSH: an example of the code to do this is needed (or a reference to to the code from a
 %% previous figure that does this will suffice).
-The generic algorithm presented in Figure~\ref{fig:hle_interface} in Section~\ref{sec:hle}
-only works for locks with a binary value, \emph{i.e.,} the lock is free or not free.  The
-\textsc{warped} locking mechanism assigns the thread number to the lock value to indicate
-which thread currently holds the lock.  To comply with this implementation, custom HLE
-lock acquire and lock release functions were implemented.  GCC inline assembly functions
-were developed appending the appropriate HLE prefixes to a lock the \texttt{cmpxchg}
+The generic algorithm presented in Figure~\ref{fig:hle_interface} in
+Section~\ref{sec:hle} only works for locks with a binary value, \emph{i.e.,} the
+lock is free or it isnot free.  The \textsc{warped} locking mechanism assigns
+the thread number to the lock value to indicate which thread currently holds the
+lock.  To comply with this implementation, custom HLE lock acquire and lock
+release functions were implemented.  GCC inline assembly functions were
+developed appending the appropriate HLE prefixes to the CMPXCHG lock
 instruction. 
 
 \subsection{Restricted Transactional Memory (RTM)}
@@ -1483,15 +1535,17 @@ set static thread scheduling implementation using one LTSF queue synchronized wi
 \noindent
 These results are shown in Figure~\ref{fig:noThrMig_timeVSthreads_1schq}.  It is clear
 that using HLE improves simulation performance, but still suffers from the same rise in
-contention as the number of worker threads is increased.
-
-%TODO: discuss RTM results
+contention as the number of worker threads is increased.  The performance using
+RTM for any retry count used is worse than the standard locking mechanism
+initially.  As the number of worker threads is increased, the performance using
+RTM is slightly better than the standard locking mechanism, but only by about 2
+or 3\%.
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ}
-    \caption{\textbf{Simulation Time versus Number of Worker Threads 1 STL Multi-set LTSF Queue}}
+    \caption{\textbf{Performance of a Single Multi-set LTSF Queue}}
     \label{fig:noThrMig_timeVSthreads_1schq}
 \end{figure}
 
@@ -1507,16 +1561,11 @@ multiple LTSF queues.  The data for different numbers of schedule queues is limi
 necessity to have a number of LTSF queues evenly divisble by the number of worker threads.
 This is because of the way threads are assigned to LTSF queues; if the numbers are not
 evenly divisible, the simulation becomes unbalanced.  LPs assigned to a certain LTSF queue
-can get far ahead or behind of other LPs on LTSF queue resulting in significant rollbacks
+can get far ahead or behind of other LPs on different LTSF queues resulting in significant rollbacks
 and thus performance degradation.  The various LTSF queue count configuration results are
 shown in Tables~\ref{tab:noThrMig_2threadsXschq}, \ref{tab:noThrMig_3threadsXschq},
 \ref{tab:noThrMig_5threadsXschq}, and Figures~\ref{fig:noThrMig_timeVSschq_4threads} and
 \ref{fig:noThrMig_timeVSschq_6threads}.
-
-The only configuration that seems to alleviate contention is two LTSF queues with 2 or 6
-worker threads.  The other configurations result in increased simulation times.  The
-rollback counts for these configurations were also consideraly high.  These poor
-performance could be attributed to the lack of a proper load balancing procedure.
 
 \begin{table}
     \centering
@@ -1527,9 +1576,19 @@ performance could be attributed to the lack of a proper load balancing procedure
             1 &121.2255  &105.0569 &119.6892 &131.3282 &141.6453 \\ 
             2 &118.1558  &101.1242 &114.1276 &128.93   &144.2886 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF Queues}}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 2 Statically Assigned Worker Threads}}
     \label{tab:noThrMig_2threadsXschq}
 \end{table}
+
+Using 2 LTSF queues with 2 statically assigned worker threads appears to
+alleviate contention.  Using HLE, simulation runtime was reduced by 13-14\%
+regardless of the number of LTSF queues used.  RTM improved performanced using
+only 1 retry, but only by about 1-3\%.  Using any more retries resulted in worse
+performance.  Using the standard locking mechanisms, simulation runtime reduced
+by about 2.5\% increasing the LTSF queue count from 1 to 2.  But using TSX
+synchronization, simulation runtime reduced by about 4\% increasing the LTSF
+queue count from 1 to 2.  While small, TSX managed to reduce contention a bit
+more in conjunction with multiple LTSF queues.
 
 \begin{table}
     \centering
@@ -1540,16 +1599,28 @@ performance could be attributed to the lack of a proper load balancing procedure
             1 &91.68472 &73.58687 &87.36819 &87.34794 &87.38973 \\ 
             3 &89.50474 &70.24289 &84.21861 &94.00537 &104.4246 \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 3 Worker Threads with X LTSF Queues}}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 3 Statically Assigned Worker Threads}}
     \label{tab:noThrMig_3threadsXschq}
 \end{table}
+
+Using 3 LTSF queues with 3 statically assigned worker threads appears to
+alleviate contention as well.  Using HLE, simulation runtime was reduced by
+about 20\% regardless of the number of LTSF queues used.  RTM improved
+performanced using only 1 retry, but only by about 5\%.  Using any more retries
+resulted in worse performance for 3 LTSF queues, while runtime remained constant
+for the number of retries using one LTSF queue.  Increasing the LTSF queue count
+from 1 to 3 reduced simulation runtime by about 2.5\% using the standard locking
+mechanisms.  But TSX synchronization reduced simulation runtime by about 4\%
+increasing the LTSF queue count from 1 to 3.  While still small, TSX still
+demonstrates a further reduction in contention in conjunction with multiple LTSF
+queues.
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
-        Worker Threads}}\label{fig:noThrMig_timeVSschq_4threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 4 Statically Assigned Worker Threads}}
+    \label{fig:noThrMig_timeVSschq_4threads}
 \end{figure}
 
 \begin{table}
@@ -1561,17 +1632,24 @@ performance could be attributed to the lack of a proper load balancing procedure
             1 &69.62144  &54.59489 &67.10837 &67.34648 &67.61373\\ 
             5 &93.21429  &76.85048 &89.62641 &76.4832  &72.18505\\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 5 Worker Threads with X LTSF
-        Queues}}\label{tab:noThrMig_5threadsXschq}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 5 Statically Assigned Worker Threads}}
+    \label{tab:noThrMig_5threadsXschq}
 \end{table}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
-        Worker Threads}}\label{fig:noThrMig_timeVSschq_6threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 6 Statically Assigned Worker Threads}}
+    \label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
+
+While TSX substantially improved simulation performance, as much 22\%, in the other
+configurations, simulation runtime trends increased as the number of LTSF queues
+used was increased.  It was noted that these simulations resulted in
+significantly higher rollbacks, the most likely cause of the increased runtime.
+These poor performance results could be attributed to the lack of a proper load
+balancing procedure, which is addressed with dynamic thread assignment.
 
 \subsection{Dynamic Thread Assignment}
 
@@ -1581,7 +1659,7 @@ assigned to LTSF queues rather than statically.
 
 \subsubsection{Continuous Thread Migration}
 
-The first solution continuously migrate the worker threads to the next LTSF.  That is, the
+The first solution continuously migrates the worker threads to the next LTSF.  That is, the
 worker thread processes an event from $LTSF_i$ and then $LTSF_{(i+1)mod n}$ where n is the
 number of LTSF queues.  As the worker thread moves among the LTSF queues, the worker
 thread also moves the next event from the just processed LP to the next LTSF queue.  This
@@ -1616,48 +1694,48 @@ still superior, seems to follow the same trend as standard synchronization mecha
             1 &121.4532  &105.2221 &118.95   &131.0166 &139.4046 \\ 
             2 &122.5693  &105.7831 &118.8288 &130.422  &141.834  \\
     \end{tabular}
-    \caption{\textbf{Simulation Times for 2 Worker Threads with X LTSF
-        Queues}}\label{tab:contThrMig_2threadsXschq}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 2 Dynamically Assigned Worker Threads}}
+    \label{tab:contThrMig_2threadsXschq}
 \end{table}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-3thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 3
-        Worker Threads}}\label{fig:contThrMig_timeVSschq_3threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 3 Dynamically Assigned Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_3threads}
 \end{figure}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 4
-        Worker Threads}}\label{fig:contThrMig_timeVSschq_4threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 4 Dynamically Assigned Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_4threads}
 \end{figure}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-5thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 5
-        Worker Threads}}\label{fig:contThrMig_timeVSschq_5threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 5 Dynamically Assigned Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_5threads}
 \end{figure}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-6thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 6
-        Worker Threads}}\label{fig:contThrMig_timeVSschq_6threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 6 Dynamically Assigned Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_6threads}
 \end{figure}
 
 \begin{figure}
     \centering
     \graphicspath{ {./figures/} }
     \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread}
-    \caption{\textbf{Simulation Time versus Number of STL Multi-set LTSF Queues for 7
-        Worker Threads}}\label{fig:contThrMig_timeVSschq_7threads}
+    \caption{\textbf{Performance of Multiple Mulit-set LTSF Queues, 7 Dynamically Assigned Worker Threads}}
+    \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
 \subsubsection{Event Limited Thread Migration}
