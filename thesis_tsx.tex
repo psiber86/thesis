@@ -1637,14 +1637,14 @@ shown in Tables~\ref{tab:noThrMig_2threadsXschq}, \ref{tab:noThrMig_3threadsXsch
 \end{table}
 
 Using 2 LTSF queues with 2 statically assigned worker threads appears to
-alleviate contention.  Using HLE, simulation execution time was reduced by 13-14\%
-regardless of the number of LTSF queues used.  RTM improved performance using
-only 1 retry, but only by about 1-3\%.  Using any more retries resulted in worse
-performance.  Using the standard locking mechanisms, simulation execution time reduced
-by about 2.5\% increasing the LTSF queue count from 1 to 2.  But using TSX
-synchronization, simulation execution time reduced by about 4\% increasing the LTSF
-queue count from 1 to 2.  While small, TSX managed to reduce contention a bit
-more in conjunction with multiple LTSF queues.
+alleviate contention.  Using HLE, simulation execution time was reduced by
+13-14\% regardless of the number of LTSF queues used.  RTM improved performance
+using only 1 retry, but only by about 1-3\%.  Using any more retries resulted in
+worse performance.  Using the standard locking mechanisms, simulation execution
+time reduced by about 2.5\% increasing the LTSF queue count from 1 to 2.  With
+TSX, simulation execution time reduced by about 4\%  when increasing the LTSF
+queue count from 1 to 2.  While only a small difference, TSX managed to reduce
+contention a bit more in conjunction with multiple LTSF queues.
 
 \begin{table}
     \centering
@@ -1659,17 +1659,17 @@ more in conjunction with multiple LTSF queues.
     \label{tab:noThrMig_3threadsXschq}
 \end{table}
 
-Using 3 LTSF queues with 3 statically assigned worker threads appears to
-alleviate contention as well.  Using HLE, simulation execution time was reduced by
-about 20\% regardless of the number of LTSF queues used.  RTM improved
-performance using only 1 retry, but only by about 5\%.  Using any more retries
-resulted in worse performance for 3 LTSF queues, while execution time remained constant
-for the number of retries using one LTSF queue.  Increasing the LTSF queue count
-from 1 to 3 reduced simulation execution time by about 2.5\% using the standard locking
-mechanisms.  But TSX synchronization reduced simulation execution time by about 4\%
-increasing the LTSF queue count from 1 to 3.  While still small, TSX still
-demonstrates a further reduction in contention in conjunction with multiple LTSF
-queues.
+Configuring the simulation with 3 LTSF queues and 3 statically assigned worker
+threads appears to alleviate contention as well.  Using HLE, simulation
+execution time was reduced by about 20\% regardless of the number of LTSF queues
+used.  RTM improved performance using only 1 retry, but only by about 5\%.
+Using any more retries resulted in worse performance for 3 LTSF queues, while
+execution time remained constant for the number of retries using one LTSF queue.
+Increasing the LTSF queue count from 1 to 3 reduced simulation execution time by
+about 2.5\% using the standard locking mechanisms.  TSX synchronization reduced
+simulation execution time by about 4\% with multiple LTSF queues.  While still
+small, TSX still demonstrates a further reduction in contention in conjunction
+with multiple LTSF queues.
 
 \begin{figure}
     \centering
@@ -1700,12 +1700,13 @@ queues.
     \label{fig:noThrMig_timeVSschq_6threads}
 \end{figure}
 
-While TSX substantially improved simulation performance, as much 22\%, in the other
-configurations, simulation execution time trends increased as the number of LTSF queues
-used was increased.  It was noted that these simulations resulted in
-significantly higher rollbacks, the most likely cause of the increased execution time.
-These poor performance results could be attributed to the lack of a proper load
-balancing procedure, which is addressed with dynamic thread assignment.
+While TSX substantially improved simulation performance, as much 22\%,
+simulation execution time increased as the number of LTSF queues used was
+increased in other configurations.  It was noted that these simulations resulted
+in significantly higher rollbacks, the most likely cause of the increased
+execution time.  These poor performance results could be attributed to the lack
+of a proper load balancing procedure, which is addressed with dynamic thread
+assignment.
 
 \subsection{Dynamic Thread Assignment}
 
@@ -1771,16 +1772,17 @@ than RTM.
     \label{fig:contThrMig_timeVSschq_4threads}
 \end{figure}
 
-Simulation execution time decreased slightly increasing the LTSF queue with 4 worker
-threads.  Each multiple LTSF configuration reduced simulation execution time by 2-3\%
-with HLE and RTM using 1 retry generally having larger reductions than standard
-locking mechanisms.  The only exception to this trend is the 4 LTSF queue
+Simulation execution time decreased slightly by increasign the number of LTSF
+queue with 4 worker threads.  Each multiple LTSF configuration reduced
+simulation execution time by 2-3\% when compared to the single LTSF queue
+configuration.  The only exception to this trend is the 4 LTSF queue
 configuration with HLE; it reduced simulation execution time slightly less than
 standard locking mechanisms, but the difference seems trivial.  While RTM
 performed well for lower LTSF queue counts, the increased retry counts resulted
-in worse performance for higher LTSF queue counts.  In any configuration, HLE
-still reduces execution time by about 18\%, while RTM generally generally reduces
-execution time by about 3-4\% when comparing the two to standard locking mechanisms.
+in worse performance for greater LTSF queue counts.  In any configuration, HLE
+still reduces execution time by about 18\%, while RTM generally generally
+reduces execution time by about 3-4\% when comparing the two to standard locking
+mechanisms.
 
 \begin{figure}
     \centering
@@ -1793,14 +1795,13 @@ execution time by about 3-4\% when comparing the two to standard locking mechani
 Configuring the simulation with 5 worker threads and 1 to 5 LTSF queues appears
 to reduce contention even more so.  Using standard locking mechanisms,
 simulation execution time reduced 2\% to 4\% as the number of LTSF queues was
-increased.  Using HLE, the execution time was reduced by the same amount as standard
-locking mechanisms with increased LTSF queues; however, HLE still outperforms
-the standard locking mechanisms by 20\% to begin with.  Contention was still
-reduced, but not because multiple LTSF queues were used.  Using RTM with 9 retries
-actually reduced the simulation execution time the most.  execution time reductions increased
-from 4\% to 7\% as the number of LTSF queues was increased.  In this
-configuration, RTM generally outperformed standard locking mechanisms by about
-5\%.
+increased.  Using HLE, the execution time was reduced by the same amount as
+standard locking mechanisms as the number of LTSF queues was increased; however,
+HLE still outperforms the standard locking mechanisms by 20\% to begin with.
+Contention was still reduced, but not because multiple LTSF queues were used.
+When using RTM with 9 retries, execution time reduced from 4\% to 7\% as the
+number of LTSF queues was increased.  In this configuration, RTM generally
+outperformed standard locking mechanisms by about 5\%.
 
 \begin{figure}
     \centering
@@ -1812,10 +1813,10 @@ configuration, RTM generally outperformed standard locking mechanisms by about
 
 Using standard locking mechanisms with 6 worker threads and 1 to 6 LTSF queues
 reduced simulation from 4\% to 6\% as the number of LTSF queues is increased.
-Again, HLE shows similar reductions in contention.  However, it still
-outperforms standard locking by as much as 23\% using 4 LTSF queues.  While RTM
-generally only outperforms standard locking by about 5\%, it reduces simulation
-execution time from 6\% to 9\% as the number of LTSF queues is increased.
+However, HLE still outperforms standard locking by as much as 23\% using 4 LTSF
+queues.  While RTM generally only outperforms standard locking by about 5\%, it
+reduces simulation execution time from 6\% to 9\% as the number of LTSF queues
+is increased.
 
 \begin{figure}
     \centering
@@ -1934,19 +1935,18 @@ because worker threads can become unevenly divided among the LTSF queues
 leading.
 
 The second implementation attempts to address the load balancing issue by
-reassigning
-After the thread has executed 50 events, it is reassigned to its original LTSF
-queue and continues to schedule from that queue for the remainder of the
-simulation.
+reassigning worker threads to their original LTSF queues after successfully
+executing the specified number of events.  After a thread is reassigned to its
+original LTSF queue, it continues to schedule events from that queue for the
+remainder of the simulation. 
 
 Unfortunately, the simulation results were incredibly inconsistent using this
 scheduling scheme.  A significant portion of the simulations did not complete
-execution in the allotted time.  For instance, the 6 worker thread, 3 LTSF queue
-configuration using standard locking mechanisms configuration took anywhere from
-70 seconds to 160 seconds.  The longer running simulations experienced
+execution in the allotted time.  The longer running simulations experienced
 significantly higher rollbacks.  When the simulation does appear to run
 normally, it executes slightly faster than the strictly static thread assignment
-scheme.  The instability of this migration scheme made it infeasible to obtain data.
+scheme.  However, The instability of this migration scheme made it infeasible to
+obtain data.
 
 \subsubsection{Migration Scheme Comparison}
 
@@ -2180,15 +2180,13 @@ based simulations are shown in the same figures for reference.
 %     using 7 Worker Threads}}\label{fig:contThrMig_timeVSschq_7threads_msVSst_rtm19}
 %\end{figure}
 
-It is evident that using the splay tree implementation with RTM decreased
-execution time slightly more than using the splay tree implementation with standard
-locking mechanisms.  While the difference is small, this implies that the data
-structure accessed within critical sections is a factor in the overall
-effectiveness of transactional memory.  The discrepancy between the HLE and RTM
-observations can again be attributed to the fact that RTM has a retry algorithm
-that responds intelligently to contention.  Whereas HLE is more likely to abort
-at times of high contention, RTM can use abort information to decide when to
-retry transactional execution.
+It is evident that using the splay tree implementation with TSX decreased
+execution time slightly more than using the splay tree implementation with
+standard locking mechanisms.  While the difference is small, a 1.5\% improvement
+versus a 0.5\% improvement, this observation implies that the data structure accessed
+within critical sections is a factor in the overall effectiveness of
+transactional memory.  The difference between the performance improvements is
+fairly consistent.
 
 \chapter{Discussion}
 
@@ -2227,10 +2225,9 @@ continuous migration scheme did show performance improvements increasing the LTS
 to 4, but leveled off when configured with more than 4 LTSF queues.
 
 The splay tree data structure performs better than the multi-set regardless of
-synchronization.  When synchronized with TSX, specifically RTM, the splay tree
-implementation seemed to reduce execution time a bit more.  The way in which
-data structures are accessed is a factor in how effectively transactional memory
-operates. 
+synchronization.  When synchronized with TSX, the splay tree implementation
+seemed to reduce execution time a bit more.  The way in which data structures
+are accessed is a factor in how effectively transactional memory operates. 
 
 In conclusion, TSX significantly improves simulation performance for the \textsc{warped}
 PDES kernel.  While other solutions to contention showed improvements in

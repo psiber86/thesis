@@ -1,14 +1,12 @@
 #!/bin/bash
 
-./plotDSC_VSschedq_Xthreads_std ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static std 
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static hle 
 
-./plotDSC_VSschedq_Xthreads_std ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static hle 
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-1retry 
 
-./plotDSC_VSschedq_Xthreads_std ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-1retry 
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-9retry
 
-./plotDSC_VSschedq_Xthreads_std ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-9retry
-
-./plotDSC_VSschedq_Xthreads_std ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-19retry
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-NOmig-timeVSschedQs-splaytree.txt static rtm-19retry
 
 ./plotVSschedq_Xthreads_separatePlots ../data/hugeepidemicsim-NOmig-timeVSschedQs-multiset.txt static
 
@@ -16,5 +14,15 @@
 
 ./plotVSschedq_Xthreads_separatePlots ../data/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset.txt static
 
-./plotVSthreads_1schedq ../data/hugeepidemicsim-NOmig-timeVSthreads-multiset.txt
+./plotVSthreads ../data/hugeepidemicsim-NOmig-timeVSthreads-multiset.txt static
+
+./plotVSthreads ../data/hugeepidemicsim-CONTmig-timeVSthreads-multiset.txt dynamic 
+
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-CONTmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-CONTmig-timeVSschedQs-splaytree.txt dynamic hle 
+
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-CONTmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-CONTmig-timeVSschedQs-splaytree.txt dynamic rtm-1retry 
+
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-CONTmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-CONTmig-timeVSschedQs-splaytree.txt dynamic rtm-9retry
+
+./plotDSC_VSschedq_Xthreads ../data/hugeepidemicsim-CONTmig-timeVSschedQs-multiset.txt ../data/hugeepidemicsim-CONTmig-timeVSschedQs-splaytree.txt dynamic rtm-19retry
 
