@@ -22,7 +22,7 @@ else
         six_lo=29
         six_hi=35
         seven_lo=37
-        seven_hi=48
+        seven_hi=44
     else 
         echo $2
         echo "invalid option"
@@ -34,7 +34,7 @@ else
         echo "set output \"$filename-3thread.pdf\"" >> "$filename-3thread.gpi"
         echo "set key top left" >> "$filename-3thread.gpi"
         echo "set xrange [1:3]" >> "$filename-3thread.gpi"
-        echo "set xrange [1:3]" >> "$filename-3thread.gpi"
+        echo "set xtics 1" >> "$filename-3thread.gpi"
         echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-3thread.gpi"
         echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-3thread.gpi"
         echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-3thread.gpi"
@@ -62,6 +62,7 @@ else
     echo "set output \"$filename-4thread.pdf\"" >> "$filename-4thread.gpi"
     echo "set key top left" >> "$filename-4thread.gpi"
     echo "set xrange [1:4]" >> "$filename-4thread.gpi"
+    echo "set xtics 1" >> "$filename-4thread.gpi"
     echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-4thread.gpi"
     echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-4thread.gpi"
     echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-4thread.gpi"
@@ -88,6 +89,7 @@ else
         echo "set output \"$filename-5thread.pdf\"" >> "$filename-5thread.gpi"
         echo "set key top right" >> "$filename-5thread.gpi"
         echo "set xrange [1:5]" >> "$filename-5thread.gpi"
+        echo "set xtics 1" >> "$filename-5thread.gpi"
         echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-5thread.gpi"
         echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-5thread.gpi"
         echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-5thread.gpi"
@@ -114,6 +116,7 @@ else
     echo "set output \"$filename-6thread.pdf\"" >> "$filename-6thread.gpi"
     echo "set key top right" >> "$filename-6thread.gpi"
     echo "set xrange [1:6]" >> "$filename-6thread.gpi"
+    echo "set xtics 1" >> "$filename-6thread.gpi"
     echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-6thread.gpi"
     echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-6thread.gpi"
     echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-6thread.gpi"
@@ -139,7 +142,8 @@ else
         echo "set terminal pdf" > "$filename-7thread.gpi"
         echo "set output \"$filename-7thread.pdf\"" >> "$filename-7thread.gpi"
         echo "set key top right" >> "$filename-7thread.gpi"
-        echo "set xrange [1:11]" >> "$filename-7thread.gpi"
+        echo "set xrange [1:7]" >> "$filename-7thread.gpi"
+        echo "set xtics 1" >> "$filename-7thread.gpi"
         echo "set style line 1 lt 1 lc rgb \"black\" lw 1" >> "$filename-7thread.gpi"
         echo "set style line 2 lt 2 lc rgb \"red\" lw 1" >> "$filename-7thread.gpi"
         echo "set style line 3 lt 3 lc rgb \"orange\" lw 1" >> "$filename-7thread.gpi"
