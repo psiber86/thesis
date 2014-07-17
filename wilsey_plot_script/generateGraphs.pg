@@ -43,8 +43,10 @@ plot "summary-threadMigrationComparison.dat" index 5 using 1:2 title 'Lock Stati
      "summary-threadMigrationComparison.dat" index 5 using 1:10 title 'HLE Continuous Migration' with linespoints ls 5, \
      "summary-threadMigrationComparison.dat" index 5 using 1:12 title 'HLE 50 Migrations' with linespoints ls 6
 
+set key top right 
 set output "plots/migComp_7threads.pdf"
-set xrange ["0":"12"]
+set xrange ["0":"8"]
+set yrange ["45":"75"]
 plot "summary-threadMigrationComparison.dat" index 6 using 1:2 title 'Lock Static' with linespoints ls 1 , \
      "summary-threadMigrationComparison.dat" index 6 using 1:4 title 'Lock Continuous Migration' with linespoints ls 2, \
      "summary-threadMigrationComparison.dat" index 6 using 1:6 title 'Lock 50 Migrations' with linespoints ls 3, \

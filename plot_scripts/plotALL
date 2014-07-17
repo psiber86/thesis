@@ -12,9 +12,11 @@
 
 ./plotVSschedq_Xthreads_separatePlots ../data/hugeepidemicsim-CONTmig-timeVSschedQs-multiset.txt dynamic 
 
-./plotVSschedq_Xthreads_separatePlots ../data/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset.txt static
+echo "skipping vsSchedQs_xthreads_separate XEVENT"
+#./plotVSschedq_Xthreads_separatePlots ../data/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset.txt static
 
-./plotVSthreads ../data/hugeepidemicsim-NOmig-timeVSthreads-multiset.txt static
+echo "skipping vsSchedQs_xthreads_separate XEVENT"
+#./plotVSthreads ../data/hugeepidemicsim-NOmig-timeVSthreads-multiset.txt static
 
 ./plotVSthreads ../data/hugeepidemicsim-CONTmig-timeVSthreads-multiset.txt dynamic 
 

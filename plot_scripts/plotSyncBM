@@ -10,16 +10,16 @@ else
 
     echo "set terminal pdf" > "$1.gpi"
     echo "set output \"SyncBM.pdf\"" >> "$1.gpi"
-    echo "set style data histogram" >> "$1.gpi"
     echo "set style histogram errorbars gap 2 lw 1" >> "$1.gpi"
-    echo "set style fill solid border -1" >> "$1.gpi"
-    echo "set boxwidth 1 relative" >> "$1.gpi"
+    echo "set boxwidth 0.9 relative" >> "$1.gpi"
+    echo "set style data histogram" >> "$1.gpi"
+    echo "set style fill solid 1.0 border -1" >> "$1.gpi"
+    echo "set xlabel \"\"" >> "$1.gpi"
     echo "set ylabel 'Execution Time (us)'" >> "$1.gpi"
     echo "plot newhistogram, \"<(sed -n '2, 2p' $1)\" using 1:2:xtic(1) title \"NONE\" linecolor rgb \"red\", \\" >> "$1.gpi"
     echo "'' using 3:4 title \"ATOMIC\" linecolor rgb \"green\", \\" >> "$1.gpi"
-    echo "'' using 5:6 title \"MUTEX\" linecolor rgb \"orange\", \\" >> "$1.gpi"
-    echo "'' using 7:8 title \"HLE\" linecolor rgb \"blue\", \\" >> "$1.gpi"
-    echo "'' using 9:10 title \"RTM\" linecolor rgb \"black\"" >> "$1.gpi"
+    echo "'' using 5:6 title \"HLE\" linecolor rgb \"blue\", \\" >> "$1.gpi"
+    echo "'' using 7:8 title \"RTM\" linecolor rgb \"black\"" >> "$1.gpi"
 
     gnuplot "$1.gpi"
 
