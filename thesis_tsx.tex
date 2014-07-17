@@ -98,7 +98,7 @@ testing, evaluation of both forms of transactional memory (HLE and RTM)
 implemented in the Haswell architecture were performed.  The results show that
 RTM generally outperforms  conventional locking mechanisms and that HLE provides
 consistently better performance than conventional locking mechanisms, up to as
-much as 23\%.
+much as 27\%.
 
 %The latter is an attempt to
 %decentralize the data structure holding pending event queue and distribute worker threads
@@ -110,7 +110,8 @@ much as 23\%.
 I would like to thank my parents and grandparents for all of their love and
 support throughout my years of schooling.  I would especially like to thank my
 grandfather who inspired me to pursue a degree in engineering.  I would also
-like to thank Dr. Philip A. Wilsey for all of this assistance and advice.
+like to thank Dr. Philip A. Wilsey for all of his assistance and advice
+throughout this experience.
 
 %% these three lines will cause latex to automatically generate these entries
 %% for you....nice.  you can comment them out if, for example, your thesis does
@@ -264,7 +265,6 @@ areas of future research.
 
 \chapter{Background}
 
- 1023
 This section provides a high level explanation of how transactional memory operates.  It
 then introduces other implementations, as well as reasons why they were not explored in
 this study.  Next, it provides some examples of related studies with transactional memory,
@@ -1612,15 +1612,37 @@ queue.  Transactional memory exposes concurrency where it can, but some critical
 simply cannot be executed concurrently.  It should be noted that the performance of HLE
 does not flatten quite as much as the other synchronization mechanisms.
 
-The initial solution to alleviate contention for the LTSF queue is the utilization of
-multiple LTSF queues.  The data for different numbers of schedule queues is limited by the
-necessity to have a number of LTSF queues evenly divisible by the number of worker threads.
-This is because of the way threads are assigned to LTSF queues; if the numbers are not
-evenly divisible, the simulation becomes unbalanced.  LPs assigned to a certain LTSF queue
-can get far ahead or behind of other LPs on different LTSF queues resulting in significant rollbacks
-and thus performance degradation.  The various LTSF queue count configuration results are
-shown in Tables~\ref{tab:noThrMig_2threadsXschq}, \ref{tab:noThrMig_3threadsXschq},
-\ref{tab:noThrMig_5threadsXschq}, and Figures~\ref{fig:noThrMig_timeVSschq_4threads} and
+The initial solution to alleviate contention for the LTSF queue is the
+utilization of multiple LTSF queues.  The data for different numbers of
+schedule queues is limited by the necessity to have a number of LTSF queues
+evenly divisible by the number of worker threads.  This is because of the way
+threads are assigned to LTSF queues; if the numbers are not evenly divisible,
+the simulation becomes unbalanced.  LPs assigned to a certain LTSF queue can
+get far ahead or behind of other LPs on different LTSF queues resulting in
+significant rollbacks and thus performance degradation.  
+
+Figure~\ref{fig:noThrMig_timeVSthreads_2schedQ} shows the simulation results for varying
+worker thread configurations using 2 LTSF queues.  The load balancing restrictions discussed
+above restrict the available data for these results.
+
+\begin{figure}
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ}
+    \caption{\textbf{Performance of Multiple Worker Threads, 2 LTSF Queues}}
+    \label{fig:noThrMig_timeVSthreads_2schedQ}
+\end{figure}
+
+Each synchronization configuration yields roughly the same increasing
+performance trend.  RTM performance seems to be worse with more retries with a
+lower worker thread count, but eventually converges with the single retry
+scheme.  On the other hand, HLE synchronized simulations consistently
+outperform simulations using the standard synchronization.  
+
+The LTSF queue count configuration per worker thread configuration results are
+shown in Tables~\ref{tab:noThrMig_2threadsXschq},
+\ref{tab:noThrMig_3threadsXschq}, \ref{tab:noThrMig_5threadsXschq}, and
+Figures~\ref{fig:noThrMig_timeVSschq_4threads} and
 \ref{fig:noThrMig_timeVSschq_6threads}.
 
 \begin{table}
@@ -1722,8 +1744,27 @@ number of LTSF queues.  As the worker thread moves among the LTSF queues, the wo
 thread also moves the next event from the just processed LP to the next LTSF queue.  This
 also helps distribute the critical path of events in the LPs around the LTSF queues.  This
 solution implicitly balances the work load between LTSF queues.  Therefore, any number of
-LTSF queues can be used with any number of worker threads.  These results are shown in
-Table~\ref{tab:contThrMig_2threadsXschq} and
+LTSF queues can be used with any number of worker threads.  
+
+Figure~\ref{fig:contThrMig_timeVSthreads_2schQ} shows the simulation results for 
+2 LTSF queues using the continuous migration scheme as the number of worker threads is varied.
+
+\begin{figure}
+    \centering
+    \graphicspath{ {./figures/} }
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ}
+    \caption{\textbf{Performance of Multiple Dynamically Assigned Worker Threads, 2 LTSF Queues}}
+    \label{fig:contThrMig_timeVSthreads_2schQ}
+\end{figure}
+
+Similarly to the static scheduling scheme, the simulations for each
+synchronization mechanism seem to follow almost the same trends.  The more
+retries the RTM algorithm attempted, the worse performance was for 2 and 3
+worker threads.  However, the number of retries did not affect the RTM
+performance for 4 or more worker threads.
+
+The simulation results for the varying LTSF queue configuration per each worker
+thread configuration are shown in Table~\ref{tab:contThrMig_2threadsXschq} and
 Figures~\ref{fig:contThrMig_timeVSschq_3threads} through
 \ref{fig:contThrMig_timeVSschq_7threads}.
 
@@ -1826,32 +1867,35 @@ is increased.
     \label{fig:contThrMig_timeVSschq_7threads}
 \end{figure}
 
-The final simulation configuration uses 7 worker threads with 1 to 11 LTSF
+The final simulation configuration uses 7 worker threads with 1 to 7 LTSF
 queues.  Using standard locking mechanisms with multiple LTSF queues reduces
 execution time from 6\% to  9\% as the number of LTSF queues is increased.
 Surprisingly, HLE only reduces execution time from 3\% to 5\%.  But again, HLE
 still well outperforms the standard locking mechanisms by as much as 27\%.  RTM
-only outperforms standard locking mechanisms by about 5\%.  However, it
-becomes much more effective with more LTSF queues.  Execution time
-improvements increased from 9\% to almost 14\% when using RTM with multiple LTSF queues.
-While the number of LTSF queues is not restricted with this migration scheme, it
-is clear that using any more than 4 LTSF queues does not yield any more
-performance improvements.  This configuration was executed with up to 11 LTSF
-queues simply to demonstrate that this configuration can exceed the number of worker
-threads, but does not improve performance.
+only outperforms standard locking mechanisms by about 5\%.  However, it becomes
+much more effective with more LTSF queues.  Execution time improvements
+increased from 9\% to almost 14\% when using RTM with increasing LTSF queues
+counts.  
 
-It is evident that this scheduling scheme slightly improves performance increasing the
-number of LTSF queues from 1 to 4.  Increasing the number of LTSF queues beyond 4 does not
-seem to significantly improve performance.  The performance of HLE synchronization, while
-still superior, seems to follow the same trend as standard synchronization mechanisms.
+%While the number of LTSF queues is not restricted with this migration
+%scheme, it is clear that the performance improvements seen by increasing the
+%number of LTSF queues begins to level off after a certain point. Eventually,
+%performance stagnates as seen in Figure~\ref{fig:contThrMig_100schedQs}.
+%
+%\begin{figure}
+%    \centering
+%    \graphicspath{ {./figures/} }
+%%    \includegraphics[width=0.75\textwidth,keepaspectratio]{hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread}
+%    \caption{\textbf{Performance Improvements for Increasing Number of LTSF Queues}}
+%    \label{fig:contThrMig_timeVSschq_7threads}
+%\end{figure}
+%
+%It is evident that this scheduling scheme slightly improves performance increasing the
+%number of LTSF queues from 1 to 4.  Increasing the number of LTSF queues beyond 4 does not
+%seem to significantly improve performance.  The performance of HLE synchronization, while
+%still superior, seems to follow the same trend as standard synchronization mechanisms.
 
 \subsubsection{Event Limited Thread Migration}
-
-%% JOSH: i do not like this design; specifically the last line.  the problem with your
-%% solutions is that the worker thread may not end up evenly divided among the LTSF
-%% queues.  we had originally discussed this such that the worker threads went back to
-%% their original LTSF queue.  how difficult would it be to get that result?  i suspect it
-%% may show a somewhat different final result.
 
 As previously discussed, the continuous thread migration approach does not work well for
 NUMA architectures due to memory locality issues.  The thread migration scheme was
@@ -2217,12 +2261,19 @@ HLE due to the overhead associated with RTM.  The retry algorithm requires abort
 statistics to be calculated and maintained which adds a bit more overhead to
 RTM.  
 
-Increasing the number of LTSF queues from 1 to 2 usually resulted in reduced contention
-and thus improved performance.  Increasing the LTSF queue to anything greater than 2
-usually resulted in performance degradation in the migration schemes involving static
-thread assignment.  This is due to the lack of adequate load balancing procedures.  The
-continuous migration scheme did show performance improvements increasing the LTSF queue up
-to 4, but leveled off when configured with more than 4 LTSF queues.
+TSX is not likely to allow simultaneous access to the same LTSF queue
+when the structure is being written to.  TSX synchronization mechanisms also
+appear to be more expensive as seen in Figure~\ref{fig:tsx_latency}.  The performance
+increases seen with TSX are most likely result from the concurrent execution of 
+critical sections involving only read operations.  Furthermore, some critical
+sections bypassed their write operations under certain conditions.
+For example, a check was performed within a critical section to ensure the LTSF
+queue was not empty.  If the was empty, the critical section ended without performing
+any operations.  With standard synchronization, this critical section would still
+suffer from the locking overhead, even though it wasn't necessary.  With TSX
+synchronization, the check could potentially execute concurrently with another
+thread.  The same scenarios apply to each LP's processed and unprocessed queue.
+Overall, TSX reduced unnecessary contention. 
 
 The splay tree data structure performs better than the multi-set regardless of
 synchronization.  When synchronized with TSX, the splay tree implementation
@@ -2233,7 +2284,7 @@ In conclusion, TSX significantly improves simulation performance for the \textsc
 PDES kernel.  While other solutions to contention showed improvements in
 performance, they were not nearly as significant as TSX, especially HLE.  TSX only
 showed slight improvements in its own performance when combined with these other
-solutions.  Regardless, TSX is powerful solution to contention as it is. 
+solutions.  Regardless, TSX is powerful solution to contention. 
 
 \section{Future Work}
 
