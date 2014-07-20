@@ -1813,7 +1813,7 @@ than RTM.
     \label{fig:contThrMig_timeVSschq_4threads}
 \end{figure}
 
-Simulation execution time decreased slightly by increasign the number of LTSF
+Simulation execution time decreased slightly by increasing the number of LTSF
 queue with 4 worker threads.  Each multiple LTSF configuration reduced
 simulation execution time by 2-3\% when compared to the single LTSF queue
 configuration.  The only exception to this trend is the 4 LTSF queue
@@ -1989,7 +1989,7 @@ scheduling scheme.  A significant portion of the simulations did not complete
 execution in the allotted time.  The longer running simulations experienced
 significantly higher rollbacks.  When the simulation does appear to run
 normally, it executes slightly faster than the strictly static thread assignment
-scheme.  However, The instability of this migration scheme made it infeasible to
+scheme.  However, the instability of this migration scheme made it infeasible to
 obtain data.
 
 \subsubsection{Migration Scheme Comparison}
@@ -2252,7 +2252,7 @@ reduces execution time by 20\%.
 While HLE is the superior synchronization mechanism, RTM still showed increases
 in performance, generally by about 5\%.  It also works with multiple
 LTSF queues better than HLE.  This is most likely attributed to the retry
-algorithm.  HLE transactions only have one chance to execute a transaction  If
+algorithm.  HLE transactions only have one chance to execute a transaction. If
 contention is high at certain times, the transaction will most likely abort.
 The RTM retry algorithm uses abort information to decide when to retry
 transactional execution, rather than immediately aborting the transaction or
@@ -2268,7 +2268,7 @@ increases seen with TSX are most likely result from the concurrent execution of
 critical sections involving only read operations.  Furthermore, some critical
 sections bypassed their write operations under certain conditions.
 For example, a check was performed within a critical section to ensure the LTSF
-queue was not empty.  If the was empty, the critical section ended without performing
+queue was not empty.  If the queue was empty, the critical section ended without performing
 any operations.  With standard synchronization, this critical section would still
 suffer from the locking overhead, even though it wasn't necessary.  With TSX
 synchronization, the check could potentially execute concurrently with another
