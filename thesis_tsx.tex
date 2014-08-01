@@ -16,6 +16,13 @@
 \usepackage{mathtools}
 \usepackage{float}
 \usepackage{morefloats}
+\usepackage{afterpage}
+
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
 
 \setcounter{topnumber}{2}
 \setcounter{bottomnumber}{3}
@@ -99,6 +106,9 @@ implemented in the Haswell architecture were performed.  The results show that
 RTM generally outperforms  conventional locking mechanisms and that HLE provides
 consistently better performance than conventional locking mechanisms, up to as
 much as 27\%.
+
+%required blank page
+\afterpage{\blankpage}
 
 %The latter is an attempt to
 %decentralize the data structure holding pending event queue and distribute worker threads
