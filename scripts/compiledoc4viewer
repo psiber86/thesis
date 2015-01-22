@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "usage: ./compiledoc4viewer /path/to/latexfile/without.tex"
+else
+    # compile document
+    latex $1.tex && dvips $1.dvi && ps2pdf $1.ps 
+
+    #send to virtulab.ceas1.uc.edu
+    scp $1.pdf hayja@virtulab.ceas1.uc.edu:/home/hayja/thesis/
+    read -s password
+fi

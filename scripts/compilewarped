@@ -1,0 +1,25 @@
+#!/usr/bin/python
+
+import os
+import shutil
+import re
+
+def config_tsx(use_tsx, retries):
+    source = "/home/hayja/warped/configure.ac"
+    dest = open(source, "wb")
+    src = open(source + '.bak', "r")
+    for line in src:
+        if 'USE_TSX' in line:
+            line = re.sub(r'\d', str(int(use_tsx)), line)
+        if 'TSX_RETRIES' in line:
+            line = re.sub(r'\d', str(retries), line)
+        line = line.replace( "\r", "")
+        dest.write(line)
+    src.close()
+    dest.close()
+
+config_tsx(False, 50)
+os.system("cd /home/hayja/warped/ && autoreconf -i && ./configure --with-mpiheader=/usr/include/mpich2 --with-mpich=/usr/lib/mpich2 --prefix=/home/hayja/lib/warped && make && make install")
+
+config_tsx(True, 50)
+os.system("cd /home/hayja/warped/ && autoreconf -i && ./configure --with-mpiheader=/usr/include/mpich2 --with-mpich=/usr/lib/mpich2 --prefix=/home/hayja/lib/tsxwarped && make && make install")
