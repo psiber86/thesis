@@ -271,7 +271,7 @@ Upon abort, all memory operations are discarded to maintain atomicity.
 
 \subsection{Related Studies}
 
-There have been many implementations of TM systems since its conception mostly in software
+There have been many implementations of TM systems since its conception, mostly in software
 \cite{yoo_tsx,chitters_tsx,rock_dice,chung_amd,blue_wang,quake_stm,stm_cascaval}.  As the
 name suggests, Software Transactional Memory (STM) systems implement the memory tracking,
 conflict detection, write buffering and so on in software.  Most systems are
@@ -296,7 +296,7 @@ support for HTM \cite{chung_amd,rock_dice}.  However, AMD has not released any H
 processors and Sun's Rock processor was canceled after Sun was acquired by Oracle.
 
 With the release of Intel's Haswell generation processors, Intel's Transactional
-Synchronization Extensions (TSX) is the currently the only widely available commercial
+Synchronization Extensions (TSX) is currently the only widely available commercial
 HTM-enabled system.  Numerous studies have already been performed with TSX, primarily
 evaluating its performance capabilities.  Chitters \emph{et al} modified Google's write
 optimized persistent key-value store, LevelDB, to use TSX based synchronization instead of
@@ -391,7 +391,7 @@ To enable HLE synchronization, the programmer merely adds the HLE memory models 
 existing locking intrinsics (Figure~\ref{fig:hle_interface}).  The
 \_\_ATOMIC\_HLE\_ACQUIRE tells the thread to execute an \texttt{XACQUIRE} prefixed lock
 acquire instruction when another thread releases the lock.  The combination of memory
-models, \texttt{\_\_ATOMIC\_HLE\_ACQUIRE|\_\_ATOMIC\_HLE\_ACQUIRE)} allows for the locking
+models, \texttt{\_\_ATOMIC\_HLE\_ACQUIRE|\_\_ATOMIC\_ACQUIRE)} allows for the locking
 instructions to be executed with or without elision.  The local thread can be synchronized
 to a \texttt{XRELEASE} prefixed lock release instruction or a standard lock release
 instruction.
@@ -616,7 +616,7 @@ queue for scheduled events yet to be executed and a processed queue to store pre
 executed events.  A common Least Time-Stamped First queue is populated with the least time
 stamped event from each LP's unprocessed queue.  As the name suggests, the LTSF queue is
 automatically sorted in increasing time-stamp order so that worker threads can simply
-retrieve an event from he head of the queue.  This guarantees the worker thread retrieves
+retrieve an event from the head of the queue.  This guarantees the worker thread retrieves
 the least time-stamped event without having to search through the queue. The LTSF queue is
 also referred to as the schedule queue in \textsc{warped}; these terms will be used
 interchangeably.  
@@ -704,7 +704,7 @@ encounters a causality error and must rollback.
 \end{figure}
 
 Contention increases with the number of worker threads used to perform the simulation.
-The initial \textsc{warped} implementation execution time was measured and analyze using 1
+The initial \textsc{warped} implementation execution time was measured and analyzed using 1
 to 7 worker threads on an Intel i7-4770 with 2-way hyperthreading on 4 processing cores.
 These results can be seen in Figure~\ref{fig:notsx_profile}.  It is evident that
 performance begins to flatten once the number of worker threads used surpasses four.  This
@@ -715,7 +715,7 @@ consequently increasing the contention problem.
 
 \subsection{Previous Solutions to Contention}
 
-Dickman \emph{et al} explored the explored the use of various data structures in
+Dickman \emph{et al} explored the use of various data structures in the
 \textsc{warped} pending event set implementation, specifically, the STL multi-set, splay
 tree, and ladder queue data structures \cite{dickman}.  A secondary focus of this study
 will expand upon the use of splay tree versus STL multi-set data structures; at the time
@@ -731,9 +731,9 @@ significantly reduced contention as each thread could access separate LTSF queue
 concurrently.  The initial implementation statically assigned LPs to LTSF queues.  This
 resulted in an unbalanced load distribution, leading to an increased number of rollbacks
 and reduced simulation performance.  This was corrected using a load balancing algorithm
-to dynamically reassign LPs to LTSF queues \cite{dickman}.  This study expands the
-previous multiple LTSF queue to evaluate if contention can be reduced even further with
-TSX.
+to dynamically reassign LPs to LTSF queues \cite{dickman}.  This study expands upon the
+previous multiple LTSF queue study to evaluate if contention can be reduced even further 
+with TSX.
 
 \begin{figure}
     \centering
@@ -787,7 +787,7 @@ worker_thread()
     details have been omitted for clarity.}}\label{migratinWorkerThreadAlgorithm}
 \end{figure}
 
-In a separate (unpublished) study, UC researcher discovered that this implementation
+In a separate (unpublished) study, UC researchers discovered that this implementation
 resulted in poor performance on Non-uniform Memory Access (NUMA) architectures.  Jingjing
 Wang \emph{et al} also noticed similar performance degradation, which they attributed to
 poor memory locality due to the movement of LPs to different threads \cite{numa}.  To
@@ -800,7 +800,7 @@ their original LTSF queue for the remainder of the simulation.
 
 This section discusses the various critical sections of \textsc{warped} that use the TSX
 mechanism for this study.  As previously mentioned, the primary focus of this study is the
-shared LTSF queue.  The LP event queues also also modified to use the TSX mechanism.  In
+shared LTSF queue.  The LP event queues also modified to use the TSX mechanism.  In
 this study, experiments with both the RTM and HLE mechanisms are explored.
 
 The following functions require synchronization to access the LTSF queue:
@@ -842,16 +842,17 @@ occurs, \emph{i.e.,} a thread attempts to write to a memory location in another
 transaction's read-set, or a thread attempts to read a memory location in another
 transaction's write-set.
 
-For example, one worker thread calls \texttt{nextEventToBeScheduleTime} to get the
-time-stamp of the event at the head of the LTSF queue.  There is a possibility that a
-different worker thread is currently updating the LTSF queue or will attempt to update the
-LTSF queue with the first worker thread is in the middle of executing
-\texttt{nextEventToBeScheduleTime}.  This scenario necessitates synchronization.  However,
-instead of the second worker thread writing to the LTSF queue, it also calls
-\texttt{nextEventToBeScheduleTime}.  Both are read operations and do not interfere with
-each other.  TSX recognizes this scenario and allows the worker threads to execute
-concurrently, whereas locks force one worker thread to wait until the other is done with
-the LTSF queue.
+For example, one worker thread calls \texttt{nextEventToBeScheduleTime} to get
+the time-stamp of the event at the head of the LTSF queue.  There is a
+possibility that a different worker thread is currently updating the LTSF queue
+or will attempt to update the LTSF queue while the first worker thread is in
+the middle of executing \texttt{nextEventToBeScheduleTime}.  This scenario
+necessitates synchronization.  However, in a different scenario, instead of the
+second worker thread writing to the LTSF queue, it also calls
+\texttt{nextEventToBeScheduleTime}.  Both are read operations and do not
+interfere with each other.  TSX recognizes this scenario and allows the worker
+threads to execute concurrently, whereas locks force one worker thread to wait
+until the other is done with the LTSF queue.
 
 Several similar scenarios can arise during simulation execution.  While there are too many
 possible scenarios to identify specifically where TSX can be beneficial, the potential to
@@ -937,13 +938,14 @@ an arbitrary amount of time before retrying.  This offsets the execution of the
 conflicting threads in hopes that the conflicting memory operations will be performed at
 different times on the next retry.
 
-The RTM retry limit is specified at compile time.  Each data structure maintains its own
-retry limit initially set to the global limit.  A back-off algorithm is used to reduce the
-retry limit for a specific data structure.  If the transactions for this data structure
-abort more often than not, the retry limit is reduced.  If the transaction commit rate
-increases, the retry limit increases up to the initial limit specified at compile time.
-This ideally reduces the number of transaction attempts for an extended period of time.
-The retry limit increases if the commit rate passes the abort to commit rate ratio
+The RTM retry limit is specified at compile time.  Each data structure
+maintains its own retry limit initially set to the global limit.  A back-off
+algorithm is used to reduce the retry limit for a specific data structure.  If
+the transactions for this data structure abort more often than not, the retry
+limit is reduced.  This ideally reduces the number of transaction attempts for
+an extended period of time.  If the transaction commit rate increases, the
+retry limit increases up to the initial limit specified at compile time.  The
+retry limit increases if the commit rate passes the abort to commit rate ratio
 threshold.
 
 Furthermore, if transactions for the data structure consistently abort for an extended
