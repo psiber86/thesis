@@ -1,0 +1,780 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2015/dev/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2014/05/01>
+Babel <3.9l> and hyphenation patterns for 2 languages loaded.
+(./sig-alternate.cls
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/epsfig.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)))))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+Document Class 'sig-alternate' <23rd. May '12>. Modified by G.K.M. Tobin/Gerry 
+Murray
+Based in part upon document Style `acmconf' <22 May 89>. Hacked 4/91 by
+shivers@cs.cmu.edu, 4/93 by theobald@cs.mcgill.ca
+Excerpts were taken from (Journal Style) 'esub2acm.cls'.
+****** Bugs/comments/suggestions/technicalities to Gerry Murray -- murray@hq.ac
+m.org ******
+Questions on the style, SIGS policies, etc. to Adrienne Griscti griscti@acm.org
+
+Document Class: sig-alternate 2012/05/23 - V2.5 - based on acmproc.cls V1.3 <No
+v. 30 '99>
+(/usr/share/texlive/texmf-dist/tex/latex/base/latexsym.sty)
+Using 'Abbrev' bibliography style
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aer.fd)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+(/usr/share/texlive/texmf-dist/tex/latex/etex-pkg/etex.sty)) (./main.aux)
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd)
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 125--138
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Underfull \vbox (badness 10000) has occurred while \output is active [1{/var/li
+b/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (4.52573pt too wide) in paragraph at lines 148--153
+\T1/aer/m/n/9 mem-ory is that of Par-al-lel Dis-crete Event Sim-u-la-tion (PDES
+).
+
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 186--197
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Overfull \hbox (3.04077pt too wide) in paragraph at lines 186--197
+\T1/aer/m/n/9 a-nism that dy-nam-i-cally de-ter-mines when two or more threads
+
+Underfull \vbox (badness 10000) has occurred while \output is active [2]
+Overfull \hbox (5.65013pt too wide) in paragraph at lines 305--314
+[]\T1/aer/m/n/9 Hardware Trans-ac-tional Mem-ory (HTM) pro-vides the phys-
+
+Overfull \hbox (1.32166pt too wide) in paragraph at lines 315--331
+\T1/aer/m/n/9 cur-rently the only widely avail-able com-mer-cial HTM-enabled
+
+Overfull \hbox (1.14967pt too wide) in paragraph at lines 332--332
+[]\secfnt Transactional Syn-chro-niza-tion Ex-ten-sions
+
+Underfull \vbox (badness 10000) has occurred while \output is active
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aett.fd)
+Overfull \hbox (16.23325pt too wide) in paragraph at lines 407--415
+\T1/aer/m/n/9 of mem-ory mod-els, \T1/aett/m/n/9 __ATOMIC_HLE_ACQUIRE|__ATOMIC_
+ACQUIRE)
+
+Underfull \vbox (badness 10000) has occurred while \output is active [3]
+Overfull \hbox (13.03624pt too wide) in paragraph at lines 442--445
+\T1/aer/m/n/9 face for HTM in-tro-duces four new in-struc-tions, namely: \T1/ae
+tt/m/n/9 XBEGIN\T1/aer/m/n/9 ,
+
+Overfull \hbox (3.49799pt too wide) in paragraph at lines 451--457
+[]\T1/aer/m/n/9 The \T1/aett/m/n/9 XBEGIN \T1/aer/m/n/9 in-struc-tion tran-si-t
+ions the pro-ces-sor into trans-
+
+Overfull \hbox (12.81216pt too wide) in paragraph at lines 522--522
+[]\secfnt PRACTICAL PRO-GRAM-MING WITH TSX 
+[4] <./figures/trxSize_singleThread.pdf, id=26, 361.35pt x 216.81pt>
+<use ./figures/trxSize_singleThread.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 592--594
+ [][] 
+<./figures/trxSize_hyperthreaded.pdf, id=27, 361.35pt x 216.81pt>
+<use ./figures/trxSize_hyperthreaded.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 622--624
+ [][] 
+
+LaTeX Warning: Citation `schwahn' on page \thepage  undefined on input line 637
+.
+
+[5 <./figures/trxSize_singleThread.pdf>]
+<./figures/trxDuration.pdf, id=39, 361.35pt x 216.81pt>
+<use ./figures/trxDuration.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 652--654
+ [][] 
+<./figures/single_ltsf_queue.pdf, id=40, 989.29597pt x 376.60701pt>
+<use ./figures/single_ltsf_queue.pdf>
+Overfull \hbox (3.94933pt too wide) in paragraph at lines 796--807
+\T1/aer/m/n/9 guar-an-tees the worker thread re-trieves the least time-stamped
+[6 <./figures/trxSize_hyperthreaded.pdf> <./figures/trxDuration.pdf
+
+pdfTeX warning: pdflatex (file ./figures/trxDuration.pdf): PDF inclusion: multi
+ple pdfs with page group included in a single page
+>]
+Underfull \vbox (badness 6493) has occurred while \output is active
+Overfull \hbox (12.30136pt too wide) in paragraph at lines 849--855
+\T1/aer/m/n/9 sim-ple data struc-tures such as \T1/aett/m/n/9 std:list \T1/aer/
+m/n/9 and \T1/aett/m/n/9 std:forward_list
+<./figures/notsx_profile.pdf, id=59, 361.35pt x 216.81pt>
+<use ./figures/notsx_profile.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 910--912
+ [][] 
+
+LaTeX Font Warning: Font shape `T1/aer/bx/sc' undefined
+(Font)              using `T1/aer/bx/n' instead on input line 912.
+
+[7 <./figures/single_ltsf_queue.pdf>]
+<./figures/multiple_ltsf.pdf, id=68, 1006.962pt x 423.984pt>
+<use ./figures/multiple_ltsf.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 958--960
+ [][] 
+[8 <./figures/notsx_profile.pdf> <./figures/multiple_ltsf.pdf
+
+pdfTeX warning: pdflatex (file ./figures/multiple_ltsf.pdf): PDF inclusion: mul
+tiple pdfs with page group included in a single page
+>]
+Overfull \hbox (8.79114pt too wide) in paragraph at lines 1018--1022
+[]\T1/aer/m/n/9 This sec-tion dis-cusses the var-i-ous crit-i-cal sec-tions of 
+\T1/aer/m/sc/9 warped
+
+Overfull \hbox (6.55093pt too wide) in paragraph at lines 1028--1031
+[]\T1/aett/m/n/9 updatedScheduleQueueAfterExecute()\T1/aer/m/n/9 : find the sou
+rce
+
+Overfull \hbox (33.17082pt too wide) in paragraph at lines 1060--1070
+[]\T1/aer/m/n/9 For ex-am-ple, one worker thread calls \T1/aett/m/n/9 nextEvent
+ToBeScheduleTime
+[9]
+
+LaTeX Font Warning: Font shape `T1/aett/bx/n' undefined
+(Font)              using `T1/aett/m/n' instead on input line 1119.
+
+
+Overfull \hbox (5.22821pt too wide) in paragraph at lines 1206--1206
+[]    \T1/aett/bx/n/9 wait before retry using _mm_pause busy-wait loop[] 
+[10]
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf, id=90, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf, id=91, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf>
+Underfull \hbox (badness 3803) in paragraph at lines 1295--1295
+[]\T1/aer/bx/sc/9 Figure 15: Per-for-mance of Mul-ti-ple Worker
+[11 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>]
+<./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf, id=103, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf>
+Overfull \hbox (11.05014pt too wide) in paragraph at lines 1327--1330
+[]\T1/aer/m/n/9 Another so-lu-tion to con-tention is to dis-tribute worker thre
+ads
+
+Overfull \hbox (1.88852pt too wide) in paragraph at lines 1331--1338
+[]\T1/aer/m/n/9 The first so-lu-tion con-tin-u-ously mi-grates the worker threa
+ds
+
+<./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf, id=104, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf>
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf, id=105, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf>
+[12 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf> <./figur
+es/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-NOmig-timeVSschedQs-mu
+ltiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSthreads-
+multiset-2schQ.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-
+multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in
+ a single page
+>]
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf, id=141, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf>
+<./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf, id=142
+, 361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf>
+<./figures/migComp_4threads.pdf, id=143, 361.35pt x 216.81pt>
+<use ./figures/migComp_4threads.pdf>
+<./figures/migComp_7threads.pdf, id=144, 361.35pt x 216.81pt>
+<use ./figures/migComp_7threads.pdf> [13 <./figures/hugeepidemicsim-CONTmig-tim
+eVSschedQs-multiset-7thread.pdf> <./figures/hugeepidemicsim-XEVENTmig-timeVSsch
+edQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQ
+s-multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included 
+in a single page
+> <./figures/migComp_4threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_4threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+> <./figures/migComp_7threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_7threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+>] (./main.bbl
+Underfull \vbox (badness 10000) has occurred while \output is active [14])
+[15] (./main.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ )
+(see the transcript file for additional information){/usr/share/texlive/texmf-d
+ist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmbx9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmbxti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pf
+b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/font
+s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/
+helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (15 pages, 500412 bytes).
+Transcript written on main.log.
+This is BibTeX, Version 0.99d (TeX Live 2015/dev/Debian)
+The top-level auxiliary file: main.aux
+The style file: abbrv.bst
+Database file #1: refs.bib
+Warning--I didn't find a database entry for "schwahn"
+(There was 1 warning)
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2015/dev/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2014/05/01>
+Babel <3.9l> and hyphenation patterns for 2 languages loaded.
+(./sig-alternate.cls
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/epsfig.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)))))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+Document Class 'sig-alternate' <23rd. May '12>. Modified by G.K.M. Tobin/Gerry 
+Murray
+Based in part upon document Style `acmconf' <22 May 89>. Hacked 4/91 by
+shivers@cs.cmu.edu, 4/93 by theobald@cs.mcgill.ca
+Excerpts were taken from (Journal Style) 'esub2acm.cls'.
+****** Bugs/comments/suggestions/technicalities to Gerry Murray -- murray@hq.ac
+m.org ******
+Questions on the style, SIGS policies, etc. to Adrienne Griscti griscti@acm.org
+
+Document Class: sig-alternate 2012/05/23 - V2.5 - based on acmproc.cls V1.3 <No
+v. 30 '99>
+(/usr/share/texlive/texmf-dist/tex/latex/base/latexsym.sty)
+Using 'Abbrev' bibliography style
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aer.fd)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+(/usr/share/texlive/texmf-dist/tex/latex/etex-pkg/etex.sty)) (./main.aux)
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd)
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 125--138
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Underfull \vbox (badness 10000) has occurred while \output is active [1{/var/li
+b/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (4.52573pt too wide) in paragraph at lines 148--153
+\T1/aer/m/n/9 mem-ory is that of Par-al-lel Dis-crete Event Sim-u-la-tion (PDES
+).
+
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 186--197
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Overfull \hbox (3.04077pt too wide) in paragraph at lines 186--197
+\T1/aer/m/n/9 a-nism that dy-nam-i-cally de-ter-mines when two or more threads
+
+Underfull \vbox (badness 10000) has occurred while \output is active [2]
+Overfull \hbox (5.65013pt too wide) in paragraph at lines 305--314
+[]\T1/aer/m/n/9 Hardware Trans-ac-tional Mem-ory (HTM) pro-vides the phys-
+
+Overfull \hbox (1.32166pt too wide) in paragraph at lines 315--331
+\T1/aer/m/n/9 cur-rently the only widely avail-able com-mer-cial HTM-enabled
+
+Overfull \hbox (1.14967pt too wide) in paragraph at lines 332--332
+[]\secfnt Transactional Syn-chro-niza-tion Ex-ten-sions
+
+Underfull \vbox (badness 10000) has occurred while \output is active
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aett.fd)
+Overfull \hbox (16.23325pt too wide) in paragraph at lines 407--415
+\T1/aer/m/n/9 of mem-ory mod-els, \T1/aett/m/n/9 __ATOMIC_HLE_ACQUIRE|__ATOMIC_
+ACQUIRE)
+
+Underfull \vbox (badness 10000) has occurred while \output is active [3]
+Overfull \hbox (13.03624pt too wide) in paragraph at lines 442--445
+\T1/aer/m/n/9 face for HTM in-tro-duces four new in-struc-tions, namely: \T1/ae
+tt/m/n/9 XBEGIN\T1/aer/m/n/9 ,
+
+Overfull \hbox (3.49799pt too wide) in paragraph at lines 451--457
+[]\T1/aer/m/n/9 The \T1/aett/m/n/9 XBEGIN \T1/aer/m/n/9 in-struc-tion tran-si-t
+ions the pro-ces-sor into trans-
+
+Overfull \hbox (12.81216pt too wide) in paragraph at lines 522--522
+[]\secfnt PRACTICAL PRO-GRAM-MING WITH TSX 
+[4] <./figures/trxSize_singleThread.pdf, id=26, 361.35pt x 216.81pt>
+<use ./figures/trxSize_singleThread.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 592--594
+ [][] 
+<./figures/trxSize_hyperthreaded.pdf, id=27, 361.35pt x 216.81pt>
+<use ./figures/trxSize_hyperthreaded.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 622--624
+ [][] 
+
+LaTeX Warning: Citation `schwahn' on page \thepage  undefined on input line 637
+.
+
+[5 <./figures/trxSize_singleThread.pdf>]
+<./figures/trxDuration.pdf, id=39, 361.35pt x 216.81pt>
+<use ./figures/trxDuration.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 652--654
+ [][] 
+<./figures/single_ltsf_queue.pdf, id=40, 989.29597pt x 376.60701pt>
+<use ./figures/single_ltsf_queue.pdf>
+Overfull \hbox (3.94933pt too wide) in paragraph at lines 796--807
+\T1/aer/m/n/9 guar-an-tees the worker thread re-trieves the least time-stamped
+[6 <./figures/trxSize_hyperthreaded.pdf> <./figures/trxDuration.pdf
+
+pdfTeX warning: pdflatex (file ./figures/trxDuration.pdf): PDF inclusion: multi
+ple pdfs with page group included in a single page
+>]
+Underfull \vbox (badness 6493) has occurred while \output is active
+Overfull \hbox (12.30136pt too wide) in paragraph at lines 849--855
+\T1/aer/m/n/9 sim-ple data struc-tures such as \T1/aett/m/n/9 std:list \T1/aer/
+m/n/9 and \T1/aett/m/n/9 std:forward_list
+<./figures/notsx_profile.pdf, id=59, 361.35pt x 216.81pt>
+<use ./figures/notsx_profile.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 910--912
+ [][] 
+
+LaTeX Font Warning: Font shape `T1/aer/bx/sc' undefined
+(Font)              using `T1/aer/bx/n' instead on input line 912.
+
+[7 <./figures/single_ltsf_queue.pdf>]
+<./figures/multiple_ltsf.pdf, id=68, 1006.962pt x 423.984pt>
+<use ./figures/multiple_ltsf.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 958--960
+ [][] 
+[8 <./figures/notsx_profile.pdf> <./figures/multiple_ltsf.pdf
+
+pdfTeX warning: pdflatex (file ./figures/multiple_ltsf.pdf): PDF inclusion: mul
+tiple pdfs with page group included in a single page
+>]
+Overfull \hbox (8.79114pt too wide) in paragraph at lines 1018--1022
+[]\T1/aer/m/n/9 This sec-tion dis-cusses the var-i-ous crit-i-cal sec-tions of 
+\T1/aer/m/sc/9 warped
+
+Overfull \hbox (6.55093pt too wide) in paragraph at lines 1028--1031
+[]\T1/aett/m/n/9 updatedScheduleQueueAfterExecute()\T1/aer/m/n/9 : find the sou
+rce
+
+Overfull \hbox (33.17082pt too wide) in paragraph at lines 1060--1070
+[]\T1/aer/m/n/9 For ex-am-ple, one worker thread calls \T1/aett/m/n/9 nextEvent
+ToBeScheduleTime
+[9]
+
+LaTeX Font Warning: Font shape `T1/aett/bx/n' undefined
+(Font)              using `T1/aett/m/n' instead on input line 1119.
+
+
+Overfull \hbox (5.22821pt too wide) in paragraph at lines 1206--1206
+[]    \T1/aett/bx/n/9 wait before retry using _mm_pause busy-wait loop[] 
+[10]
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf, id=90, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf, id=91, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf>
+Underfull \hbox (badness 3803) in paragraph at lines 1295--1295
+[]\T1/aer/bx/sc/9 Figure 15: Per-for-mance of Mul-ti-ple Worker
+[11 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>]
+<./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf, id=103, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf>
+Overfull \hbox (11.05014pt too wide) in paragraph at lines 1327--1330
+[]\T1/aer/m/n/9 Another so-lu-tion to con-tention is to dis-tribute worker thre
+ads
+
+Overfull \hbox (1.88852pt too wide) in paragraph at lines 1331--1338
+[]\T1/aer/m/n/9 The first so-lu-tion con-tin-u-ously mi-grates the worker threa
+ds
+
+<./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf, id=104, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf>
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf, id=105, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf>
+[12 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf> <./figur
+es/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-NOmig-timeVSschedQs-mu
+ltiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSthreads-
+multiset-2schQ.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-
+multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in
+ a single page
+>]
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf, id=141, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf>
+<./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf, id=142
+, 361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf>
+<./figures/migComp_4threads.pdf, id=143, 361.35pt x 216.81pt>
+<use ./figures/migComp_4threads.pdf>
+<./figures/migComp_7threads.pdf, id=144, 361.35pt x 216.81pt>
+<use ./figures/migComp_7threads.pdf> [13 <./figures/hugeepidemicsim-CONTmig-tim
+eVSschedQs-multiset-7thread.pdf> <./figures/hugeepidemicsim-XEVENTmig-timeVSsch
+edQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQ
+s-multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included 
+in a single page
+> <./figures/migComp_4threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_4threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+> <./figures/migComp_7threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_7threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+>] (./main.bbl
+Underfull \vbox (badness 10000) has occurred while \output is active [14])
+[15] (./main.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ )
+(see the transcript file for additional information){/usr/share/texlive/texmf-d
+ist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmbx9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmbxti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pf
+b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/font
+s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/
+helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (15 pages, 500412 bytes).
+Transcript written on main.log.
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2015/dev/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2014/05/01>
+Babel <3.9l> and hyphenation patterns for 2 languages loaded.
+(./sig-alternate.cls
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/epsfig.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)))))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+Document Class 'sig-alternate' <23rd. May '12>. Modified by G.K.M. Tobin/Gerry 
+Murray
+Based in part upon document Style `acmconf' <22 May 89>. Hacked 4/91 by
+shivers@cs.cmu.edu, 4/93 by theobald@cs.mcgill.ca
+Excerpts were taken from (Journal Style) 'esub2acm.cls'.
+****** Bugs/comments/suggestions/technicalities to Gerry Murray -- murray@hq.ac
+m.org ******
+Questions on the style, SIGS policies, etc. to Adrienne Griscti griscti@acm.org
+
+Document Class: sig-alternate 2012/05/23 - V2.5 - based on acmproc.cls V1.3 <No
+v. 30 '99>
+(/usr/share/texlive/texmf-dist/tex/latex/base/latexsym.sty)
+Using 'Abbrev' bibliography style
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aer.fd)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+(/usr/share/texlive/texmf-dist/tex/latex/etex-pkg/etex.sty)) (./main.aux)
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd)
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 125--138
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Underfull \vbox (badness 10000) has occurred while \output is active [1{/var/li
+b/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (4.52573pt too wide) in paragraph at lines 148--153
+\T1/aer/m/n/9 mem-ory is that of Par-al-lel Dis-crete Event Sim-u-la-tion (PDES
+).
+
+Overfull \hbox (4.29088pt too wide) in paragraph at lines 186--197
+[]\T1/aer/m/n/9 Transactional mem-ory (TM) is a con-cur-rency con-trol mech-
+
+Overfull \hbox (3.04077pt too wide) in paragraph at lines 186--197
+\T1/aer/m/n/9 a-nism that dy-nam-i-cally de-ter-mines when two or more threads
+
+Underfull \vbox (badness 10000) has occurred while \output is active [2]
+Overfull \hbox (5.65013pt too wide) in paragraph at lines 305--314
+[]\T1/aer/m/n/9 Hardware Trans-ac-tional Mem-ory (HTM) pro-vides the phys-
+
+Overfull \hbox (1.32166pt too wide) in paragraph at lines 315--331
+\T1/aer/m/n/9 cur-rently the only widely avail-able com-mer-cial HTM-enabled
+
+Overfull \hbox (1.14967pt too wide) in paragraph at lines 332--332
+[]\secfnt Transactional Syn-chro-niza-tion Ex-ten-sions
+
+Underfull \vbox (badness 10000) has occurred while \output is active
+(/usr/share/texlive/texmf-dist/tex/latex/ae/t1aett.fd)
+Overfull \hbox (16.23325pt too wide) in paragraph at lines 407--415
+\T1/aer/m/n/9 of mem-ory mod-els, \T1/aett/m/n/9 __ATOMIC_HLE_ACQUIRE|__ATOMIC_
+ACQUIRE)
+
+Underfull \vbox (badness 10000) has occurred while \output is active [3]
+Overfull \hbox (13.03624pt too wide) in paragraph at lines 442--445
+\T1/aer/m/n/9 face for HTM in-tro-duces four new in-struc-tions, namely: \T1/ae
+tt/m/n/9 XBEGIN\T1/aer/m/n/9 ,
+
+Overfull \hbox (3.49799pt too wide) in paragraph at lines 451--457
+[]\T1/aer/m/n/9 The \T1/aett/m/n/9 XBEGIN \T1/aer/m/n/9 in-struc-tion tran-si-t
+ions the pro-ces-sor into trans-
+
+Overfull \hbox (12.81216pt too wide) in paragraph at lines 522--522
+[]\secfnt PRACTICAL PRO-GRAM-MING WITH TSX 
+[4] <./figures/trxSize_singleThread.pdf, id=26, 361.35pt x 216.81pt>
+<use ./figures/trxSize_singleThread.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 592--594
+ [][] 
+<./figures/trxSize_hyperthreaded.pdf, id=27, 361.35pt x 216.81pt>
+<use ./figures/trxSize_hyperthreaded.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 622--624
+ [][] 
+
+LaTeX Warning: Citation `schwahn' on page \thepage  undefined on input line 637
+.
+
+[5 <./figures/trxSize_singleThread.pdf>]
+<./figures/trxDuration.pdf, id=39, 361.35pt x 216.81pt>
+<use ./figures/trxDuration.pdf>
+Overfull \hbox (138.0pt too wide) in paragraph at lines 652--654
+ [][] 
+<./figures/single_ltsf_queue.pdf, id=40, 989.29597pt x 376.60701pt>
+<use ./figures/single_ltsf_queue.pdf>
+Overfull \hbox (3.94933pt too wide) in paragraph at lines 796--807
+\T1/aer/m/n/9 guar-an-tees the worker thread re-trieves the least time-stamped
+[6 <./figures/trxSize_hyperthreaded.pdf> <./figures/trxDuration.pdf
+
+pdfTeX warning: pdflatex (file ./figures/trxDuration.pdf): PDF inclusion: multi
+ple pdfs with page group included in a single page
+>]
+Underfull \vbox (badness 6493) has occurred while \output is active
+Overfull \hbox (12.30136pt too wide) in paragraph at lines 849--855
+\T1/aer/m/n/9 sim-ple data struc-tures such as \T1/aett/m/n/9 std:list \T1/aer/
+m/n/9 and \T1/aett/m/n/9 std:forward_list
+<./figures/notsx_profile.pdf, id=59, 361.35pt x 216.81pt>
+<use ./figures/notsx_profile.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 910--912
+ [][] 
+
+LaTeX Font Warning: Font shape `T1/aer/bx/sc' undefined
+(Font)              using `T1/aer/bx/n' instead on input line 912.
+
+[7 <./figures/single_ltsf_queue.pdf>]
+<./figures/multiple_ltsf.pdf, id=68, 1006.962pt x 423.984pt>
+<use ./figures/multiple_ltsf.pdf>
+Overfull \hbox (12.0pt too wide) in paragraph at lines 958--960
+ [][] 
+[8 <./figures/notsx_profile.pdf> <./figures/multiple_ltsf.pdf
+
+pdfTeX warning: pdflatex (file ./figures/multiple_ltsf.pdf): PDF inclusion: mul
+tiple pdfs with page group included in a single page
+>]
+Overfull \hbox (8.79114pt too wide) in paragraph at lines 1018--1022
+[]\T1/aer/m/n/9 This sec-tion dis-cusses the var-i-ous crit-i-cal sec-tions of 
+\T1/aer/m/sc/9 warped
+
+Overfull \hbox (6.55093pt too wide) in paragraph at lines 1028--1031
+[]\T1/aett/m/n/9 updatedScheduleQueueAfterExecute()\T1/aer/m/n/9 : find the sou
+rce
+
+Overfull \hbox (33.17082pt too wide) in paragraph at lines 1060--1070
+[]\T1/aer/m/n/9 For ex-am-ple, one worker thread calls \T1/aett/m/n/9 nextEvent
+ToBeScheduleTime
+[9]
+
+LaTeX Font Warning: Font shape `T1/aett/bx/n' undefined
+(Font)              using `T1/aett/m/n' instead on input line 1119.
+
+
+Overfull \hbox (5.22821pt too wide) in paragraph at lines 1206--1206
+[]    \T1/aett/bx/n/9 wait before retry using _mm_pause busy-wait loop[] 
+[10]
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf, id=90, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>
+<./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf, id=91, 361.3
+5pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf>
+Underfull \hbox (badness 3803) in paragraph at lines 1295--1295
+[]\T1/aer/bx/sc/9 Figure 15: Per-for-mance of Mul-ti-ple Worker
+[11 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-1schQ.pdf>]
+<./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf, id=103, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf>
+Overfull \hbox (11.05014pt too wide) in paragraph at lines 1327--1330
+[]\T1/aer/m/n/9 Another so-lu-tion to con-tention is to dis-tribute worker thre
+ads
+
+Overfull \hbox (1.88852pt too wide) in paragraph at lines 1331--1338
+[]\T1/aer/m/n/9 The first so-lu-tion con-tin-u-ously mi-grates the worker threa
+ds
+
+<./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf, id=104, 36
+1.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf>
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf, id=105, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf>
+[12 <./figures/hugeepidemicsim-NOmig-timeVSthreads-multiset-2schQ.pdf> <./figur
+es/hugeepidemicsim-NOmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-NOmig-timeVSschedQs-mu
+ltiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSthreads-multiset-2schQ.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSthreads-
+multiset-2schQ.pdf): PDF inclusion: multiple pdfs with page group included in a
+ single page
+> <./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-
+multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included in
+ a single page
+>]
+<./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf, id=141, 
+361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-CONTmig-timeVSschedQs-multiset-7thread.pdf>
+<./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf, id=142
+, 361.35pt x 216.81pt>
+<use ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQs-multiset-4thread.pdf>
+<./figures/migComp_4threads.pdf, id=143, 361.35pt x 216.81pt>
+<use ./figures/migComp_4threads.pdf>
+<./figures/migComp_7threads.pdf, id=144, 361.35pt x 216.81pt>
+<use ./figures/migComp_7threads.pdf> [13 <./figures/hugeepidemicsim-CONTmig-tim
+eVSschedQs-multiset-7thread.pdf> <./figures/hugeepidemicsim-XEVENTmig-timeVSsch
+edQs-multiset-4thread.pdf
+
+pdfTeX warning: pdflatex (file ./figures/hugeepidemicsim-XEVENTmig-timeVSschedQ
+s-multiset-4thread.pdf): PDF inclusion: multiple pdfs with page group included 
+in a single page
+> <./figures/migComp_4threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_4threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+> <./figures/migComp_7threads.pdf
+
+pdfTeX warning: pdflatex (file ./figures/migComp_7threads.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+>] (./main.bbl
+Underfull \vbox (badness 10000) has occurred while \output is active [14])
+[15] (./main.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ )
+(see the transcript file for additional information){/usr/share/texlive/texmf-d
+ist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmbx9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmbxti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pf
+b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/font
+s/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/
+helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (15 pages, 500412 bytes).
+Transcript written on main.log.

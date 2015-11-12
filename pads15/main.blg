@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/dev/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: main.aux
+The style file: abbrv.bst
+Database file #1: refs.bib
+Warning--I didn't find a database entry for "schwahn"
+You've used 25 entries,
+            2118 wiz_defined-function locations,
+            633 strings with 8247 characters,
+and the built_in function-call counts, 9511 in all, are:
+= -- 952
+> -- 452
+< -- 12
++ -- 180
+- -- 154
+* -- 633
+:= -- 1510
+add.period$ -- 76
+call.type$ -- 25
+change.case$ -- 150
+chr.to.int$ -- 0
+cite$ -- 25
+duplicate$ -- 387
+empty$ -- 725
+format.name$ -- 154
+if$ -- 2048
+int.to.chr$ -- 0
+int.to.str$ -- 25
+missing$ -- 19
+newline$ -- 125
+num.names$ -- 50
+pop$ -- 179
+preamble$ -- 1
+purify$ -- 126
+quote$ -- 0
+skip$ -- 305
+stack$ -- 0
+substring$ -- 563
+swap$ -- 131
+text.length$ -- 12
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 96
+warning$ -- 0
+while$ -- 91
+width$ -- 27
+write$ -- 278
+(There was 1 warning)

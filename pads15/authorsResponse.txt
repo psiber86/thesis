@@ -1,0 +1,59 @@
+Revisions and response to reviewer comments.
+
+*********************
+* Reviewer 2
+*********************
+Revision #1) Data structures used in experiments suspected of inherently generating
+contention due to constantly readjusting; alternate data structures, linked
+lists in particular, with minimal memory access would possible achieve better
+performance.
+
+    Response #1) This past two weeks we evaluated simpler data structures for the schedule
+    queue.  However, due to time constraints, we had to settle with the STL std:list and
+    std:forward_list and call the sort method every time an event was inserted into the
+    queue.  Because of this, the performance of the overall system suffered significantly.
+    The pending event set will always have to be sorted no matter what data structure is
+    used.  The pending events must be executed in least time stamp order.  While it could
+    be searched for the least time stamped event when each event is retrieved, this would
+    most likely result in cripplingly slow performance.  The only efficient way to
+    guarantee least time stamped execution is to sort the pending event sort in order of
+    increasing time stamp so that threads can simply retrieve the first element (or left
+    most node in the multiset case).  Therefore, using optimized self sorting data
+    structures is the best option.  Two paragraphs were added to the manuscript at the end
+    of Section 3.1 explaining these findings.
+
+Revision #2) Flattening performance for WARPED profile plot in section 3.3 is not
+that evident.
+
+    Response #2) We found that a speedup plot was actually less visually explicit to
+    conveying the message that simulation times become less and less affected by
+    increasing the worker thread count, which was the original intent.  We reworded the
+    paragraph to more explicitly state this and attribute the observation to increased
+    contention.
+
+Revision #3) Elaborate on the means used to "wait an arbitrary amount of time"
+in section 4.1.2
+
+    Response #3) updated explanation and pseudo code to include _mm_pause
+
+*********************
+* Reviewer 3
+*********************
+Revision #1) Mention RTM and HLE in abstract
+
+    Response #1) revision made 
+
+Revision #2) Include Fujimoto's Rollback chip in the related work as that is the
+first work in transactional memory
+    
+    Response #2) After reading through Fujimoto's paper "The Rollback Chip: Hardware
+    Support for Distributed Simulation using Time Warp," we do not see how it is related
+    to transactional memory.  The rollback chip is a means to efficiently restore the
+    state of the simulation upon rollback through state saving.  Transactional memory is a
+    means to dynamically identify conflicting memory accesses to shared memory between
+    execution threads.  The rollback chip is also meant for a distributed system with no
+    shared memory, whereas transactional memory is meant to solve problems with shared
+    memory systems.  Perhaps the reviewer could provide a more specific reference to the
+    paper describing transactional memory in the Rollback Chip.  We would be happy to add
+    the reference if transactional memory is documented there.
+
