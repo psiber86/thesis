@@ -22,7 +22,7 @@ allresults_std = []
 simruntime = 0
 
 def usage():
-    print "ext_simtimes.py /path/to/log-<model> <MultiSet|SplayTree> <t value based on confidence level>"
+    print "ext_simtimes.py /path/to/log-<model> <MultiSet|SplayTree|LinkedList> <t value based on confidence level>"
     sys.exit()
 
 def myprint(src, string):
