@@ -17,7 +17,7 @@ import signal
 #numSchedQs = [ [1],[1,2],[1,3],[1,2,4],[1,5],[1,2,3,6],[1] ]
 #continuous thread migration configurations
 
-numRetries = [ 1, 9, 19 ]
+numRetries = [ 9 ]
 syncMechanisms = ["AtomicLock"]
 #syncMechanisms = ["Mutex"]
 simruns = 10
